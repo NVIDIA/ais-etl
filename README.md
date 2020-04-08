@@ -9,6 +9,6 @@ associated data loaders. The objective is two-fold
 conversions = [Rename(img="jpeg;png"), Decode("img"), Rotate("img"), Resize("img", (224, 244))]
 selections = [Select("img"), Select("cls")]
 
-ais = AisDataset(BUCKET_NAME, PROXY_URL, conversions, selections)
+ais = AisDataset(lpr-imagenet, http://ais-gateway-url, conversions, selections)
 train_dataset = ais.load("train-{0..9999}.tar", num-workers=64)
 ```
