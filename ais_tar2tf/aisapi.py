@@ -33,3 +33,16 @@ class AisClient:
     def start_target_job_stream(self, target_url, target_msg):
         url = "{}/v1/{}/{}/{}".format(target_url, TAR2TF, START, self.bucket)
         return requests.get(url=url, data=json.dumps(dict(target_msg)), stream=True)
+
+    def transform_init(self, spec):
+        url = "{}/transform/init".format(self.__get_base_url())
+        return requests.get(url=url, data=json.dumps(spec)).content
+
+    def transform_object(self, transform_id, object_name):
+        url = "{}/objects/{}/{}?uuid={}".format(
+            self.__get_base_url(),
+            self.bucket,
+            object_name,
+            transform_id,
+        )
+        return requests.get(url=url).content
