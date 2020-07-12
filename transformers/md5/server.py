@@ -3,7 +3,11 @@
 import argparse
 import hashlib
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import requests
+import os
 
+
+host_target = os.environ['AIS_TARGET_URL']
 
 class S(BaseHTTPRequestHandler):
     def _set_headers(self):
@@ -16,7 +20,14 @@ class S(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         md5 = hashlib.md5()
         md5.update(post_data)
+        self._set_headers()
+        self.wfile.write(md5.hexdigest().encode())
 
+    def do_GET(self):
+        global host_target
+        x = requests.get(host_target + self.path)
+        md5 = hashlib.md5()
+        md5.update(x.content)
         self._set_headers()
         self.wfile.write(md5.hexdigest().encode())
 
