@@ -22,7 +22,7 @@ class S(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         md5 = hashlib.md5()
         md5.update(post_data)
-        self._set_headers({"md5-sum":md5.hexdigest()})
+        self._set_headers({"Content-MD5":md5.hexdigest()})
         self.wfile.write(post_data)
 
     def do_GET(self):
