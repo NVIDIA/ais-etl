@@ -3,6 +3,7 @@
 #
 
 import requests, json
+from braceexpand import braceexpand
 
 TAR2TF = "tar2tf"
 OBJECTS = "objects"
@@ -46,3 +47,7 @@ class AisClient:
             transform_id,
         )
         return requests.get(url=url).content
+
+    def transform_objects(self, transform_id, template):
+        for obj_name in braceexpand(template):
+            yield self.transform_object(transform_id, obj_name)
