@@ -3,12 +3,12 @@ kind: Pod
 metadata:
   name: transformer-echo
   annotations:
-    communication_type: redir
+    communication_type: "hpull://"
     wait_timeout: 15s
 spec:
   containers:
     - name: server
-      image: localhost:5000/echo_server:v1
+      image: localhost:5000/echo_data_server:v1
       imagePullPolicy: Always
       ports:
         - containerPort: 80
