@@ -4,8 +4,7 @@ RUN apk add git
 
 RUN mkdir $GOPATH/tar2tf
 WORKDIR $GOPATH/tar2tf
-COPY main.go main.go
-COPY go.mod go.mod
+COPY main.go io.go utils.go go.mod go.sum cached.go ./
 RUN go get && go build -o tar2tf
 
 EXPOSE 80
