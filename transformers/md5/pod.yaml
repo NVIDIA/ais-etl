@@ -1,14 +1,15 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: transformer-echo
+  name: transformer-md5
   annotations:
-    communication_type: "hpull://"
+    # Values it can take ["hpull://","hrev://","hpush://"]
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
     wait_timeout: 15s
 spec:
   containers:
     - name: server
-      image: localhost:5000/echo_data_server:v1
+      image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/md5_server:v1
       imagePullPolicy: Always
       ports:
         - containerPort: 80
