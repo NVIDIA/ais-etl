@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/echo_data_server:v1
+      image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/transformer_echo:latest
       imagePullPolicy: Always
       ports:
         - containerPort: 80
