@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
 #
 
 import requests, json
@@ -28,8 +28,30 @@ class AisClient:
         return requests.get(url, params={"what": "smap"}).json()
 
     def get_objects_names(self, target_url, template):
-        url = "{}/v1/{}/{}/{}/{}".format(target_url, TAR2TF, OBJECTS, self.bucket, template)
-        return requests.get(url=url)
+        proxy_query_url = "{}/v1/query".format(self.url, target_url)
+        init_msg = {
+            "query": {
+                "from": {
+                    "bucket": self.bucket
+                },
+                "fast": True,
+                "outer_select": {
+                    "objects_source": template
+                }
+            }
+        }
+
+        # TODO: start only one query for all targets
+        uuid = requests.post(proxy_query_url, None, init_msg).json()
+        target_query_url = "{}/v1/query/next".format(target_url)
+        next_msg = {
+            "handle": uuid,
+            "size": 0  # all objects
+        }
+
+        resp = requests.get(url=target_query_url, json=next_msg)
+        bck_list = resp.json()
+        return [o["name"] for o in bck_list["entries"]]
 
     def start_target_job_stream(self, target_url, target_msg):
         url = "{}/v1/{}/{}/{}".format(target_url, TAR2TF, START, self.bucket)

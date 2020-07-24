@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
 #
 
 import os, io, tarfile
