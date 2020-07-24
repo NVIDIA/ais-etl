@@ -47,34 +47,32 @@ func tar2tfHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /
 func tar2tfPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := onTheFlyTransform(r, w); err != nil {
 		invalidMsgHandler(w, http.StatusBadRequest, "failed transforming TAR: %s", err.Error())
 	}
 }
 
+// GET /bucket/object
 func tar2tfGetHandler(w http.ResponseWriter, r *http.Request) {
-	escaped := html.EscapeString(r.URL.Path)
-	escaped = strings.TrimPrefix(escaped, "/")
-
-	apiItems := strings.SplitN(escaped, "/", 4)
-	if len(apiItems) < 4 {
-		invalidMsgHandler(w, http.StatusBadRequest, "expected 2 path elements")
-		return
-	}
-
-	// AIS GET object API path
-	assert(apiItems[0] == "v1", "")
-	assert(apiItems[1] == "objects", "")
-
 	if aisTargetUrl == "" {
 		invalidMsgHandler(w, http.StatusBadRequest, "missing env variable AIS_TARGET_URL")
 		return
 	}
 
+	escaped := html.EscapeString(r.URL.Path)
+	escaped = strings.TrimPrefix(escaped, "/")
+
+	apiItems := strings.SplitN(escaped, "/", 2)
+	if len(apiItems) < 2 {
+		invalidMsgHandler(w, http.StatusBadRequest, "expected 2 path elements")
+		return
+	}
+
 	obj := &tarObject{
-		bucket: apiItems[2],
-		name:   apiItems[3],
+		bucket: apiItems[0],
+		name:   apiItems[1],
 		tarGz:  isTarGzRequest(r),
 	}
 

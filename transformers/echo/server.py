@@ -27,7 +27,7 @@ class S(BaseHTTPRequestHandler):
 
     def do_GET(self):
         global host_target
-        x = requests.get(host_target + self.path)
+        x = requests.get(host_target + "/v1/objects" + self.path)
         md5 = hashlib.md5()
         md5.update(x.content)
         self._set_headers({"Content-MD5":md5.hexdigest()})
