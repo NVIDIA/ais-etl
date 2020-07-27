@@ -2,8 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-from ais_tar2tf import AisDataset
-from ais_tar2tf.ops import Decode, Convert, Resize
+from client.ais_tar2tf import AisDataset
+from client.ais_tar2tf.ops import Decode, Convert, Resize
 
 EPOCHS = 5
 BATCH_SIZE = 20

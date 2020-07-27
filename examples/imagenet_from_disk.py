@@ -2,8 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-from ais_tar2tf import AisDataset, default_record_parser
-from ais_tar2tf.ops import Select, Decode, Convert, Resize
+from client.ais_tar2tf import AisDataset, default_record_parser
+from client.ais_tar2tf.ops import Select, Decode, Convert, Resize
 
 
 def path_generator():

@@ -1,4 +1,4 @@
-from ais_tar2tf import AisClient
+from client.ais_tar2tf import AisClient
 
 client = AisClient(url="http://localhost:31337", bucket="shards")
 

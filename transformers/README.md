@@ -35,7 +35,7 @@ Each of sample transfomers contains two main files:
 **Steps:**
 
 1. We **must** set the `${DOCKER_REGISTRY_URL}` and `${COMMUNICATION_TYPE}` environment variables first with appropriate values.
-2. `eval echo "$(cat pod.yaml)" > pod_config.yaml # Substitutes the environment variables used`
+2. `eval "echo \"$(cat pod.yaml)\"" > pod_config.yaml # Substitutes the environment variables used`
 3. `./build.sh # This builds the docker image`
 4. `docker push <IMAGE_URL> # <IMAGE_URL> can be obtained post the build step`
 5. `ais transform init pod_config.yaml`

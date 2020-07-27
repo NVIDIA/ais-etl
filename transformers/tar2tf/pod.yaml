@@ -9,6 +9,9 @@ metadata:
 spec:
   containers:
     - name: server
-      image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/tar2tf:latest
+      image: aistore/tar2tf:latest
+
+      # To enable conversion e.g.
+      command: ['./tar2tf', '-l', '0.0.0.0', '-p', 80, '${OPTION_KEY}', '${OPTION_VALUE}']
       ports:
         - containerPort: 80

@@ -1,3 +1,7 @@
+// Package main is an entry point to Tar2Tf transformation
+/*
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
+ */
 package main
 
 import (
@@ -11,12 +15,15 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src/cmn"
+	"github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src/transforms"
 )
 
 func init() {
 	var err error
 	tmpDir, err = ioutil.TempDir("", "tar2tf-transformer")
-	assert(err == nil, fmt.Sprintf("%v", err))
+	cmn.Assert(err == nil, fmt.Sprintf("%v", err))
 
 	go gc()
 }
@@ -124,11 +131,11 @@ func gc() {
 func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err error) {
 	var (
 		previousSize int64
-		counter      = &writeCounter{}
+		counter      = &cmn.WriteCounter{}
 	)
 
 	f, err = os.Open(o.FQN())
-	if err != nil && !errFileNotExists(err) {
+	if err != nil && !cmn.ErrFileNotExists(err) {
 		return nil, "", err
 	}
 
@@ -150,7 +157,7 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		previousSize = fi.Size()
 	}
 
-	resp, err := wrapHttpError(client.Get(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
+	resp, err := cmn.WrapHttpError(client.Get(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
 	if err != nil {
 		return nil, "", err
 	}
@@ -172,35 +179,35 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		return nil, "", err
 	}
 
-	if err := defaultPipeline(resp.Body, io.MultiWriter(f, counter), o.tarGz).Do(); err != nil {
+	if err := transforms.CreatePipeline(resp.Body, io.MultiWriter(f, counter), o.tarGz, transformJob).Do(); err != nil {
 		return nil, "", err
 	}
 
-	updateVersion(o, resp.Header.Get(HeaderVersion))
+	updateVersion(o, resp.Header.Get(cmn.HeaderVersion))
 	updateTotalSize(counter.Size(), previousSize)
 	_, err = f.Seek(0, io.SeekStart)
-	return f, resp.Header.Get(HeaderVersion), err
+	return f, resp.Header.Get(cmn.HeaderVersion), err
 }
 
 func versionFromRemote(o *tarObject) (string, error) {
-	resp, err := wrapHttpError(client.Head(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
+	resp, err := cmn.WrapHttpError(client.Head(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
 	if err != nil {
 		return "", err
 	}
 
-	return resp.Header.Get(HeaderVersion), nil
+	return resp.Header.Get(cmn.HeaderVersion), nil
 }
 
 func fsTFRecordSize(f *os.File) int64 {
 	fi, err := f.Stat()
-	assert(err == nil, "file has to be present")
-	assert(fi != nil, "file has to be non nil")
+	cmn.Assert(err == nil, "file has to be present")
+	cmn.Assert(fi != nil, "file has to be non nil")
 	return fi.Size()
 }
 
 func tfRecordChunkReader(f *os.File, start, length int64) (io.Reader, error) {
-	return &onCloseReader{
-		r:  io.NewSectionReader(f, start, length),
-		cb: func() { f.Close() },
+	return &cmn.OnCloseReader{
+		R:  io.NewSectionReader(f, start, length),
+		Cb: func() { f.Close() },
 	}, nil
 }

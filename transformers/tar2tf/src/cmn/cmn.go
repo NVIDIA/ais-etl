@@ -1,9 +1,12 @@
-package main
+// Package cmn common low-level types and utilities
+/*
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
+ */
+package cmn
 
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,8 +14,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-
-	"github.com/NVIDIA/go-tfdata/tfdata/pipeline"
 )
 
 const (
@@ -31,37 +32,21 @@ type (
 	}
 )
 
-func assert(cond bool, msg string) {
-	if !cond {
-		panic(msg)
-	}
-}
-
-func invalidMsgHandler(w http.ResponseWriter, errCode int, format string, a ...interface{}) {
+func InvalidMsgHandler(w http.ResponseWriter, errCode int, format string, a ...interface{}) {
 	log.Printf(string(debug.Stack())+" :"+format, a...)
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(errCode)
 	w.Write([]byte(fmt.Sprintf(format, a...)))
 }
 
-func defaultPipeline(r io.Reader, w io.Writer, isTarGz bool) *pipeline.DefaultPipeline {
-	p := pipeline.NewPipeline()
-	if isTarGz {
-		p.FromTarGz(r)
-	} else {
-		p.FromTar(r)
-	}
-	return p.SampleToTFExample().ToTFRecord(w, 8)
-}
-
-func setResponseHeaders(header http.Header, size int64, version string) {
+func SetResponseHeaders(header http.Header, size int64, version string) {
 	header.Set(HeaderContentLength, strconv.FormatInt(size, 10))
 	header.Set(HeaderContentType, GetContentType)
 	header.Set(AwsHeaderVersion, version)
 }
 
 // Returns an error with message if status code was > 200
-func wrapHttpError(resp *http.Response, err error) (*http.Response, error) {
+func WrapHttpError(resp *http.Response, err error) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
@@ -80,7 +65,7 @@ func wrapHttpError(resp *http.Response, err error) (*http.Response, error) {
 	return resp, nil
 }
 
-func errFileNotExists(err error) bool {
+func ErrFileNotExists(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -90,7 +75,7 @@ func errFileNotExists(err error) bool {
 
 // HTTP RANGE HEADER
 
-func objectRange(rangeStr string, size int64) (rng *httpRange, err error) {
+func ObjectRange(rangeStr string, size int64) (rng *httpRange, err error) {
 	if rangeStr != "" {
 		rs, err := ParseMultiRange(rangeStr, size)
 		if err != nil {
