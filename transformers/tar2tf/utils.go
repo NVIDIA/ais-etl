@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -57,6 +58,26 @@ func setResponseHeaders(header http.Header, size int64, version string) {
 	header.Set(HeaderContentLength, strconv.FormatInt(size, 10))
 	header.Set(HeaderContentType, GetContentType)
 	header.Set(AwsHeaderVersion, version)
+}
+
+// Returns an error with message if status code was > 200
+func wrapHttpError(resp *http.Response, err error) (*http.Response, error) {
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode > http.StatusOK {
+		if resp.Body == nil {
+			return resp, errors.New(resp.Status)
+		}
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return resp, err
+		}
+		return resp, fmt.Errorf("%s %s", resp.Status, string(b))
+	}
+
+	return resp, nil
 }
 
 func errFileNotExists(err error) bool {
