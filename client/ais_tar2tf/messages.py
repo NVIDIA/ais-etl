@@ -5,11 +5,9 @@
 
 # pylint: disable=unused-variable
 class TargetMsg:
-    def __init__(self, conversions, selections, template, shuffle):
+    def __init__(self, conversions, selections):
         self.conversions = conversions
         self.selections = selections
-        self.template = template
-        self.shuffle = shuffle
         # shuffle etc in the future
 
     def __iter__(self):
@@ -21,5 +19,3 @@ class TargetMsg:
             d_selections.append(dict(s))
         yield "conversions", d_conv
         yield "selections", d_selections
-        yield "template", self.template
-        yield "shuffle_tar", self.shuffle

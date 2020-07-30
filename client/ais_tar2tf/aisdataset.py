@@ -2,29 +2,44 @@
 # Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
 #
 
-import os, io, tarfile
+import os, io, tarfile, json
 
 import tensorflow as tf
+
 from humanfriendly import parse_size
-
-from queue import Queue
 from inspect import isgeneratorfunction
+from queue import Queue
 
-from .aisapi import AisClient
-from .downloadworker import TarDownloadWorker, SampleDownloadWorker
 from .messages import TargetMsg
+from .aisapi import AisClient
 from .tarutils import tar_records
-from .ops import Select, Decode, Resize, Convert, CONVERSIONS, SELECTIONS
+from .ops import Select, CONVERSIONS, SELECTIONS
+from .downloadworker import TarsDownloadWorker
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 OUTPUT_SHAPES = "output_shapes"
 OUTPUT_TYPES = "output_types"
 MAX_SHARD_SIZE = "max_shard_size"
-REMOTE_EXEC = "remote_exec"
 PATH = "path"
-SHUFFLE_TAR = "shuffle_tar"
 NUM_WORKERS = "num_workers"
+
+tar2tfSpecTemplate = '''
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tar2tf
+  annotations:
+    communication_type: "hrev://"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistore/tar2tf:latest
+      command: ['/go/tar2tf/tar2tf', '-l', '0.0.0.0', '-p', '80', '-spec', '{}']
+      ports:
+        - containerPort: 80
+'''
 
 
 def __bytes_feature(value):
@@ -53,6 +68,16 @@ def default_record_parser(record):
     return img, label
 
 
+def simple_record_parser(record):
+    keys_to_features = __simple_image_desc("img", "cls")
+    parsed = tf.io.parse_single_example(record, keys_to_features)
+
+    img = tf.image.decode_jpeg(parsed["img"])
+    label = tf.cast(parsed["cls"], tf.int32)
+
+    return img, label
+
+
 def __default_image_desc():
     return {
         "height": tf.io.FixedLenFeature([], tf.int64),
@@ -63,8 +88,16 @@ def __default_image_desc():
     }
 
 
+def __simple_image_desc(img_key, cls_key):
+    return {
+        cls_key: tf.io.FixedLenFeature([], tf.int64),
+        img_key: tf.io.FixedLenFeature([], tf.string),
+    }
+
+
 def default_record_to_pair(record):
-    img = tf.image.convert_image_dtype(tf.io.decode_jpeg(record["jpg"]), tf.float32)
+    img = tf.image.convert_image_dtype(tf.io.decode_jpeg(record["jpg"]),
+                                       tf.float32)
     img = tf.image.resize(img, (224, 224))
     return img, record["cls"]
 
@@ -99,7 +132,8 @@ def validate_conversions(convs):
 
 
 def validate_conversion(conv):
-    unknown_type_ex = Exception("unknown conversion type. Expected one of {}".format(CONVERSIONS))
+    unknown_type_ex = Exception(
+        "unknown conversion type. Expected one of {}".format(CONVERSIONS))
 
     if type(conv) not in CONVERSIONS:
         raise unknown_type_ex
@@ -118,7 +152,8 @@ def validate_selections(selections):
 
 
 def validate_selection(selection):
-    unknown_type_ex = Exception("unknown selection type. Expected one of {}".format(SELECTIONS))
+    unknown_type_ex = Exception(
+        "unknown selection type. Expected one of {}".format(SELECTIONS))
 
     if type(selection) == str:
         return Select(selection)
@@ -135,98 +170,125 @@ class AisDataset:
     def __init__(
         self,
         bucket,
-        proxy_url="localhost:8080",
-        conversions=[Decode("jpg"), Convert("jpg", tf.float32), Resize("jpg", (224, 224))],
-        selections=["jpg", "cls"],
+        proxy_url="http://localhost:8080",
+        conversions=[],
+        selections=[],
+        remote_exec=None,
     ):
         self.proxy_url = proxy_url
         self.proxy_client = AisClient(self.proxy_url, bucket)
         self.bucket = bucket
         self.conversions = validate_conversions(conversions)
         self.selections = validate_selections(selections)
+        self.transform_id = ""
 
-        self.exec_on_target = all([c.on_target_allowed() for c in self.conversions])
+        conv_remote_supported = all(
+            [c.on_target_allowed() for c in self.conversions])
+        sel_remote_supported = all(
+            [c.on_target_allowed() for c in self.selections])
+        remote_supported = conv_remote_supported and sel_remote_supported
+
+        if remote_exec is None:
+            #  User didn't specify remote_exec, use it when possible.
+            self.exec_on_target = remote_supported
+        elif remote_exec is False:
+            self.exec_on_target = False
+        else:
+            if not conv_remote_supported:
+                raise Exception(
+                    "given conversions don't support remote execution")
+            if not sel_remote_supported:
+                raise Exception(
+                    "givens selections don't support remote execution")
+            self.exec_on_target = True
+
+        if self.exec_on_target:
+            msg = TargetMsg(self.conversions, self.selections)
+            self.transform_id = self.proxy_client.transform_init(
+                tar2tfSpecTemplate.format(json.dumps(dict(msg))))
+            print("REMOTE EXECUTION ENABLED, uuid {}".format(
+                str(self.transform_id, 'utf-8')))
+        else:
+            print("REMOTE EXECUTION DISABLED")
 
     def __get_object_names(self, template):
         smap = self.proxy_client.get_cluster_info()
 
-        for k in smap["tmap"]:
-            for o in self.proxy_client.get_objects_names(smap["tmap"][k]["intra_data_net"]["direct_url"], template).json():
+        # TODO: get all of them directly from proxy
+        for t in smap["tmap"]:
+            url = smap["tmap"][t]["intra_data_net"]["direct_url"]
+            for o in self.proxy_client.get_objects_names(url, template):
                 yield o
-
-    def __default_path_generator(self, path):
-        path_template = current_path = ""
-        if "{}" in path:
-            path_template = path
-            yield path_template.format(0)
-        else:
-            path_template = "{}" + path
-            yield path
-
-        i = 1
-        while True:
-            yield path_template.format(i)
-            i += 1
 
     # args:
     # record_to_pair - specify how to translate tar record to pair
     # path - place to save TFRecord file. If None, everything done on the fly
     def load(self, template, **kwargs):
-        accepted_args = [OUTPUT_TYPES, OUTPUT_SHAPES, PATH, MAX_SHARD_SIZE, REMOTE_EXEC, SHUFFLE_TAR, NUM_WORKERS]
+        accepted_args = [
+            OUTPUT_TYPES, OUTPUT_SHAPES, PATH, MAX_SHARD_SIZE, NUM_WORKERS
+        ]
 
         for key in kwargs:
             if key not in accepted_args:
                 raise Exception("invalid argument name {}".format(key))
 
         output_types = kwargs.get(OUTPUT_TYPES, (tf.float32, tf.int32))
-        output_shapes = kwargs.get(OUTPUT_SHAPES, (tf.TensorShape([224, 224, 3]), tf.TensorShape([])))
-        remote_exec = kwargs.get(REMOTE_EXEC, None)
+        output_shapes = kwargs.get(
+            OUTPUT_SHAPES, (tf.TensorShape([224, 224, 3]), tf.TensorShape([])))
         max_shard_size = kwargs.get(MAX_SHARD_SIZE, 0)
         path = kwargs.get(PATH, None)
-        shuffle_tar = kwargs.get(SHUFFLE_TAR, False)
         num_workers = kwargs.get(NUM_WORKERS, 4)
+
+        # max_shard_size validation
+        if type(max_shard_size) == str:
+            max_shard_size = parse_size(max_shard_size)
+        elif type(max_shard_size) != int:
+            raise Exception(
+                "{} can be either string or int".format(MAX_SHARD_SIZE))
+        if max_shard_size != 0 and path is None:
+            raise Exception("{} not supported without {} argument".format(
+                MAX_SHARD_SIZE, PATH))
 
         # path validation
         if path is not None:
             path_gen = path
             # allow path generators so user can put some more logic to path selection
             if not isgeneratorfunction(path) and type(path) != str:
-                raise Exception("path argument has to be either string or generator")
+                raise Exception(
+                    "path argument has to be either string or generator")
             if type(path) == str:
                 path_gen = lambda: self.__default_path_generator(path)
 
-        # max_shard_size validation
-        if type(max_shard_size) == str:
-            max_shard_size = parse_size(max_shard_size)
-        elif type(max_shard_size) != int:
-            raise Exception("{} can be either string or int".format(MAX_SHARD_SIZE))
-        if max_shard_size != 0 and path is None:
-            raise Exception("{} not supported without {} argument".format(MAX_SHARD_SIZE, PATH))
+            return self.__record_dataset_from_tar(template, path_gen,
+                                                  default_record_to_example,
+                                                  max_shard_size, num_workers)
 
-        # Remote execution validation
-        if remote_exec and not self.exec_on_target:
-            raise Exception("Can't execute remote request. Func conversion not supported remotely")
-        # user didn't tell where execution should be done, do on target if possible
-        if remote_exec == None:
-            remote_exec = self.exec_on_target
-        if remote_exec and path is not None:
-            raise Exception("path argument is not supported for remote execution")
+        if self.exec_on_target:
+            return self.__dataset_from_transformer(template)
 
-        samples_generator = lambda: self.__samples_local_generator(template, num_workers)
-        if remote_exec:
-            samples_generator = lambda: self.__samples_target_generator(template, num_workers, shuffle_tar, output_types, output_shapes)
-            print("REMOTE EXECUTION ENABLED ({})".format(template))
-        else:
-            print("REMOTE EXECUTION DISABLED ({})".format(template))
+        return tf.data.Dataset.from_generator(
+            lambda: self.__samples_local_generator_from_tar(
+                template, num_workers),
+            output_types,
+            output_shapes=output_shapes)
 
-        # Execute
-        if path is not None:
-            return self.__record_dataset_from_tar(template, path_gen, default_record_to_example, max_shard_size, num_workers)
+    def stop(self):
+        if self.transform_id != "":
+            self.proxy_client.transform_stop(self.transform_id)
 
-        return tf.data.Dataset.from_generator(samples_generator, output_types, output_shapes=output_shapes)
+    def __dataset_from_transformer(self, template):
+        self.__set_s3_os_vars()
+        obj_names = []
+        for o in self.__get_object_names(template):
+            obj_names.append("s3://{}/{}?uuid={}".format(
+                self.bucket, o, self.transform_id))
+
+        return tf.data.TFRecordDataset(filenames=obj_names)
 
     # path - path where to save record dataset
-    def __record_dataset_from_tar(self, template, get_path_gen, record_to_example, max_shard_size, num_workers):
+    def __record_dataset_from_tar(self, template, get_path_gen,
+                                  record_to_example, max_shard_size,
+                                  num_workers):
         path_gen = get_path_gen()
         paths = [next(path_gen)]
         writer = tf.io.TFRecordWriter(paths[0])
@@ -255,42 +317,18 @@ class AisDataset:
         writer.close()
         return paths
 
-    # SAMPLES GENERATORS
+    def __samples_local_generator_from_tar(self, template, num_workers):
+        for obj in self.__objects_local_generator(template, num_workers):
+            tar_bytes = io.BytesIO(obj)
+            tar = tarfile.open(mode="r", fileobj=tar_bytes)
+            records = tar_records(tar)
+            for k in records:
+                yield self.__select_from_record(
+                    self.__convert_record(records[k]))
 
-    def __samples_target_generator(self, template, num_workers, shuffle_tar, output_types, output_shapes):
-        smap = self.proxy_client.get_cluster_info()
-        if len(smap["tmap"]) == 0:
-            yield from ()
-            return
+            tar.close()
 
-        target_msg = TargetMsg(self.conversions, self.selections, template, shuffle_tar)
-
-        targets_queue = Queue()
-        results_queue = Queue(100)  # question: how much tars do we want to prefetch?
-        # each worker will fetch tars from one target
-        for k in smap["tmap"]:
-            targets_queue.put(smap["tmap"][k])
-
-        for i in range(num_workers):
-            worker = SampleDownloadWorker(
-                self.proxy_url, self.bucket, target_msg, targets_queue, results_queue, self.conversions, self.selections, output_types, output_shapes
-            )
-            worker.daemon = True  # detach from main process
-            worker.start()
-
-        done_cnt = 0
-        while True:
-            sample = results_queue.get()
-            if sample is None:
-                done_cnt += 1
-                if done_cnt == num_workers:
-                    # all workers have finished and all messages have been read
-                    break
-            else:
-                yield sample[0], sample[1]
-
-        targets_queue.join()  # should be immediate as we know that workers have finished
-
+    # yields uncompressbytes for each TAR file from template
     def __objects_local_generator(self, template, num_workers):
         smap = self.proxy_client.get_cluster_info()
         if len(smap["tmap"]) == 0:
@@ -298,13 +336,15 @@ class AisDataset:
             return
 
         targets_queue = Queue()
-        results_queue = Queue(num_workers + 1)  # question: how much tars do we want to prefetch?
+        results_queue = Queue(
+            num_workers + 1)  # question: how much tars do we want to prefetch?
         # each worker will fetch tars from one target
         for k in smap["tmap"]:
             targets_queue.put(smap["tmap"][k])
 
         for i in range(num_workers):
-            worker = TarDownloadWorker(self.proxy_url, self.bucket, template, targets_queue, results_queue)
+            worker = TarsDownloadWorker(self.proxy_url, self.bucket, template,
+                                        targets_queue, results_queue)
             worker.daemon = True  # detach from main process
             worker.start()
 
@@ -319,23 +359,36 @@ class AisDataset:
             else:
                 yield tar_bytes
 
-        targets_queue.join()  # should be immediate as we know that workers have finished
+        targets_queue.join(
+        )  # should be immediate as we know that workers have finished
 
-    def __samples_local_generator(self, template, num_workers):
-        for obj in self.__objects_local_generator(template, num_workers):
-            tar_bytes = io.BytesIO(obj)
-            tar = tarfile.open(mode="r", fileobj=tar_bytes)
-            records = tar_records(tar)
-            for k in records:
-                yield self.select_from_record(self.convert_record(records[k]))
-
-            tar.close()
-
-    def convert_record(self, record):
+    def __convert_record(self, record):
         for c in self.conversions:
             record = c.do(record)
 
         return record
 
-    def select_from_record(self, record):
-        return self.selections[0].select(record), self.selections[1].select(record)
+    def __select_from_record(self, record):
+        return self.selections[0].select(record), self.selections[1].select(
+            record)
+
+    def __set_s3_os_vars(self):
+        os.environ["AWS_ACCESS_KEY_ID"] = "key-id"
+        os.environ["AWS_SECRET_ACCESS_KEY"] = "access-key"
+        os.environ["AWS_REGION"] = "us-west-2"
+        os.environ["S3_ENDPOINT"] = "{}/s3/".format(self.proxy_url)
+        os.environ["S3_USE_HTTPS"] = "0"
+        os.environ["S3_VERIFY_SSL"] = "0"
+
+    def __default_path_generator(self, path):
+        if "{}" in path:
+            path_template = path
+            yield path_template.format(0)
+        else:
+            path_template = "{}" + path
+            yield path
+
+        i = 1
+        while True:
+            yield path_template.format(i)
+            i += 1

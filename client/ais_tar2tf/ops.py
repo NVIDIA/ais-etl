@@ -59,7 +59,8 @@ class Convert:
             yield "dst_type", "float"
 
     def do(self, record):
-        record[self.ext_name] = tf.image.convert_image_dtype(record[self.ext_name], self.dst_type)
+        record[self.ext_name] = tf.image.convert_image_dtype(
+            record[self.ext_name], self.dst_type)
         return record
 
     def on_target_allowed(self):
@@ -82,7 +83,8 @@ class Resize:
         yield "dst_size", self.dst_size
 
     def do(self, record):
-        record[self.ext_name] = tf.image.resize(record[self.ext_name], self.dst_size)
+        record[self.ext_name] = tf.image.resize(record[self.ext_name],
+                                                self.dst_size)
         return record
 
     def on_target_allowed(self):
@@ -121,7 +123,9 @@ class Rename:
                 src_type = types.get(src_name, None)
 
                 if dst_type not in [None, src_type]:
-                    raise Exception("Rename operation: can't merge entries of different type")
+                    raise Exception(
+                        "Rename operation: can't merge entries of different type"
+                    )
                 if src_name in types:
                     types[dst_name] = src_type
         return types
@@ -191,6 +195,9 @@ class Select:
     def select(self, record):
         return record[self.ext_name]
 
+    def on_target_allowed(self):
+        return True
+
 
 # pylint: disable=unused-variable
 class SelectJSON:
@@ -214,16 +221,20 @@ class SelectJSON:
             val = val[field]
         return val
 
+    def on_target_allowed(self):
+        return False
+
 
 class SelectList:
     def __init__(self, *args):
-        self.args = copy(args)
+        self.args = list(copy(args))
 
         for i in range(len(self.args)):
             if type(self.args[i]) == str:
                 self.args[i] = Select(self.args[i])
             elif type(args[i]) not in SELECTIONS:
-                raise Exception("invalid type of {}: {}".format(args[i], type(args[i])))
+                raise Exception("invalid type of {}: {}".format(
+                    args[i], type(args[i])))
 
     def __iter__(self):
         d_args = []
@@ -239,6 +250,9 @@ class SelectList:
 
         return r
 
+    def on_target_allowed(self):
+        return False
+
 
 class SelectDict:
     def __init__(self, **kwargs):
@@ -248,7 +262,8 @@ class SelectDict:
             if type(self.args[i]) == str:
                 self.args[i] = Select(self.args[i])
             elif type(self.args[i]) not in SELECTIONS:
-                raise Exception("invalid type of {}: {}".format(self.args[i], type(self.args[i])))
+                raise Exception("invalid type of {}: {}".format(
+                    self.args[i], type(self.args[i])))
 
     def __iter__(self):
         d_args = {}
@@ -264,6 +279,9 @@ class SelectDict:
             r[a] = self.args[a].do(record)
 
         return r
+
+    def on_target_allowed(self):
+        return False
 
 
 SELECTIONS = [Select, SelectJSON, SelectDict, SelectList]
