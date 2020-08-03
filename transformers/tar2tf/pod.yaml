@@ -5,13 +5,13 @@ metadata:
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hrev://\""}
-    wait_timeout: 60s
+    wait_timeout: 2m
 spec:
   containers:
     - name: server
       image: aistore/tar2tf:latest
 
       # To enable conversion e.g.
-      command: ['./tar2tf', '-l', '0.0.0.0', '-p', 80, '${OPTION_KEY}', '${OPTION_VALUE}']
+      command: ['./tar2tf', '-l', '0.0.0.0', '-p', '80', '${OPTION_KEY}', '${OPTION_VALUE}']
       ports:
         - containerPort: 80
