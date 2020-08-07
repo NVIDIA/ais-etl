@@ -1,6 +1,6 @@
-FROM golang:1.13-alpine
+FROM golang:1.13-buster
 
-RUN apk add git
+RUN apt-get install git
 
 RUN mkdir $GOPATH/tar2tf
 WORKDIR $GOPATH/tar2tf

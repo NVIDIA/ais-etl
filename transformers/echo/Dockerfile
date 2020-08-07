@@ -1,10 +1,8 @@
-FROM python:3.8.3-alpine3.11
+FROM python:3.8.5-buster
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 RUN mkdir /code
 WORKDIR /code
 COPY server.py server.py
-
+ENV PYTHONUNBUFFERED True
 EXPOSE 80
-
-ENTRYPOINT [ "/code/server.py", "--listen", "0.0.0.0", "--port", "80" ]

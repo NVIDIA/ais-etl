@@ -17,7 +17,7 @@ class S(BaseHTTPRequestHandler):
             self.send_header(k, headers[k])
         self.end_headers()
 
-    def do_POST(self):
+    def do_PUT(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         md5 = hashlib.md5()

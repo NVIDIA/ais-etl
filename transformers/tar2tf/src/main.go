@@ -83,8 +83,8 @@ func main() {
 
 func tar2tfHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-	case http.MethodPost:
-		tar2tfPostHandler(w, r)
+	case http.MethodPut:
+		tar2tfPutHandler(w, r)
 	case http.MethodGet:
 		tar2tfGetHandler(w, r)
 	default:
@@ -92,8 +92,8 @@ func tar2tfHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /
-func tar2tfPostHandler(w http.ResponseWriter, r *http.Request) {
+// PUT /
+func tar2tfPutHandler(w http.ResponseWriter, r *http.Request) {
 	if err := onTheFlyTransform(r, w); err != nil {
 		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "failed transforming TAR: %s", err.Error())
 	}
