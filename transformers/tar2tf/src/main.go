@@ -76,9 +76,21 @@ func main() {
 	initVars(*ipAddressArg, *portArg, filterSpec)
 
 	http.HandleFunc("/", tar2tfHandler)
+	http.HandleFunc("/health", healthHandler)
 
 	log.Printf("Starting tar2tf transformer at %s", endpoint)
 	log.Fatal(http.ListenAndServe(endpoint, nil))
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	default:
+		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "invalid http method %s", r.Method)
+	}
+
 }
 
 func tar2tfHandler(w http.ResponseWriter, r *http.Request) {

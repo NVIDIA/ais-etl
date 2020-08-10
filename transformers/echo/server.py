@@ -26,6 +26,10 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write(post_data)
 
     def do_GET(self):
+        if self.path=="/health":
+            self._set_headers({})
+            self.wfile.write(b"OK")
+            return
         global host_target
         x = requests.get(host_target + "/v1/objects" + self.path)
         md5 = hashlib.md5()

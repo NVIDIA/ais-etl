@@ -14,4 +14,9 @@ spec:
       # To enable conversion e.g.
       command: ['./tar2tf', '-l', '0.0.0.0', '-p', '80', '${OPTION_KEY}', '${OPTION_VALUE}']
       ports:
-        - containerPort: 80
+        - name: default
+          containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default

@@ -12,5 +12,10 @@ spec:
       image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/transformer_echo:latest
       imagePullPolicy: Always
       ports:
-        - containerPort: 80
+        - name: default
+          containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
       command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
