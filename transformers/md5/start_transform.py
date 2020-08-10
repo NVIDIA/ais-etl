@@ -5,7 +5,7 @@ client = AisClient(url="http://localhost:31337", bucket="shards")
 # Initialize transform
 f = open('md5_pod.yaml', 'r')
 spec = f.read()
-transform_id = client.transform_init(spec=spec)
+transform_id = client.etl_init(spec=spec)
 
 # Transform objects
 for i in range(0, 10):

@@ -204,7 +204,7 @@ class AisDataset:
 
         if self.exec_on_target:
             msg = TargetMsg(self.conversions, self.selections)
-            self.transform_id = self.proxy_client.transform_init(
+            self.transform_id = self.proxy_client.etl_init(
                 tar2tfSpecTemplate.format(json.dumps(dict(msg))))
             print("REMOTE EXECUTION ENABLED, uuid {}".format(
                 str(self.transform_id, 'utf-8')))
@@ -274,7 +274,7 @@ class AisDataset:
 
     def stop(self):
         if self.transform_id != "":
-            self.proxy_client.transform_stop(self.transform_id)
+            self.proxy_client.etl_stop(self.transform_id)
 
     def __dataset_from_transformer(self, template):
         self.__set_s3_os_vars()

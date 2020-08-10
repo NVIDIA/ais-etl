@@ -71,12 +71,12 @@ class AisClient:
                             data=json.dumps(dict(target_msg)),
                             stream=True)
 
-    def transform_init(self, spec):
-        url = "{}/transform/init".format(self.__get_base_url())
+    def etl_init(self, spec):
+        url = "{}/etl/init".format(self.__get_base_url())
         return requests.post(url=url, data=spec).content
 
-    def transform_stop(self, uuid):
-        url = "{}/transform/stop/{}".format(self.__get_base_url(), uuid)
+    def etl_stop(self, uuid):
+        url = "{}/etl/stop/{}".format(self.__get_base_url(), uuid)
         return requests.delete(url=url)
 
     def transform_object(self, transform_id, object_name):
