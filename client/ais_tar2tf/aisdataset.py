@@ -23,6 +23,7 @@ OUTPUT_TYPES = "output_types"
 MAX_SHARD_SIZE = "max_shard_size"
 PATH = "path"
 NUM_WORKERS = "num_workers"
+RECORD_TO_EXAMPLE = "record_to_example"
 
 tar2tfSpecTemplate = '''
 apiVersion: v1
@@ -30,15 +31,21 @@ kind: Pod
 metadata:
   name: tar2tf
   annotations:
-    communication_type: "hrev://"
+    communication_type: "hpull://"
     wait_timeout: 5m
 spec:
   containers:
     - name: server
       image: aistore/tar2tf:latest
+      imagePullPolicy: Always
       command: ['/go/tar2tf/tar2tf', '-l', '0.0.0.0', '-p', '80', '-spec', '{}']
       ports:
-        - containerPort: 80
+        - name: default
+          containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
 '''
 
 
@@ -68,16 +75,6 @@ def default_record_parser(record):
     return img, label
 
 
-def simple_record_parser(record):
-    keys_to_features = __simple_image_desc("img", "cls")
-    parsed = tf.io.parse_single_example(record, keys_to_features)
-
-    img = tf.image.decode_jpeg(parsed["img"])
-    label = tf.cast(parsed["cls"], tf.int32)
-
-    return img, label
-
-
 def __default_image_desc():
     return {
         "height": tf.io.FixedLenFeature([], tf.int64),
@@ -85,13 +82,6 @@ def __default_image_desc():
         "depth": tf.io.FixedLenFeature([], tf.int64),
         "label": tf.io.FixedLenFeature([], tf.int64),
         "image_raw": tf.io.FixedLenFeature([], tf.string),
-    }
-
-
-def __simple_image_desc(img_key, cls_key):
-    return {
-        cls_key: tf.io.FixedLenFeature([], tf.int64),
-        img_key: tf.io.FixedLenFeature([], tf.string),
     }
 
 
@@ -206,8 +196,7 @@ class AisDataset:
             msg = TargetMsg(self.conversions, self.selections)
             self.transform_id = self.proxy_client.etl_init(
                 tar2tfSpecTemplate.format(json.dumps(dict(msg))))
-            print("REMOTE EXECUTION ENABLED, uuid {}".format(
-                str(self.transform_id, 'utf-8')))
+            print("REMOTE EXECUTION ENABLED, uuid {}".format(self.transform_id))
         else:
             print("REMOTE EXECUTION DISABLED")
 
@@ -238,6 +227,7 @@ class AisDataset:
         max_shard_size = kwargs.get(MAX_SHARD_SIZE, 0)
         path = kwargs.get(PATH, None)
         num_workers = kwargs.get(NUM_WORKERS, 4)
+        record_parser = kwargs.get(RECORD_TO_EXAMPLE, default_record_to_example)
 
         # max_shard_size validation
         if type(max_shard_size) == str:
@@ -260,11 +250,11 @@ class AisDataset:
                 path_gen = lambda: self.__default_path_generator(path)
 
             return self.__record_dataset_from_tar(template, path_gen,
-                                                  default_record_to_example,
+                                                  record_parser,
                                                   max_shard_size, num_workers)
 
         if self.exec_on_target:
-            return self.__dataset_from_transformer(template)
+            return self.__dataset_from_transformer(template, record_parser)
 
         return tf.data.Dataset.from_generator(
             lambda: self.__samples_local_generator_from_tar(
@@ -276,14 +266,14 @@ class AisDataset:
         if self.transform_id != "":
             self.proxy_client.etl_stop(self.transform_id)
 
-    def __dataset_from_transformer(self, template):
+    def __dataset_from_transformer(self, template, record_parser):
         self.__set_s3_os_vars()
         obj_names = []
         for o in self.__get_object_names(template):
             obj_names.append("s3://{}/{}?uuid={}".format(
                 self.bucket, o, self.transform_id))
 
-        return tf.data.TFRecordDataset(filenames=obj_names)
+        return tf.data.TFRecordDataset(filenames=obj_names).map(record_parser)
 
     # path - path where to save record dataset
     def __record_dataset_from_tar(self, template, get_path_gen,
@@ -328,7 +318,7 @@ class AisDataset:
 
             tar.close()
 
-    # yields uncompressbytes for each TAR file from template
+    # yields uncompressed bytes for each TAR file from template
     def __objects_local_generator(self, template, num_workers):
         smap = self.proxy_client.get_cluster_info()
         if len(smap["tmap"]) == 0:

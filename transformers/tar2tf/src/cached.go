@@ -29,8 +29,8 @@ func init() {
 }
 
 const (
-	totalSizeAllowedHW = 1024 * 1024 * 1024 * 2 // 2 GiB
-	totalSizeAllowedLW = 1024 * 1024 * 1024     // 1 GiB
+	totalSizeAllowedHW = 1024 * 1024 * 1024 * 8 // 8 GiB
+	totalSizeAllowedLW = 1024 * 1024 * 1024 * 4 // 4 GiB
 )
 
 var (
@@ -38,6 +38,8 @@ var (
 	trashDir  string
 	cache     = &versionCache{m: make(map[string]string)}
 	totalSize = int64(0)
+
+	mtx = sync.Mutex{}
 )
 
 type (
@@ -129,21 +131,32 @@ func gc() {
 }
 
 func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err error) {
+	// NOTE: this synchronize all transformations. However, if transformed file is already cached,
+	// lock will be released fast.
+	// This synchronization is required for instance for TF S3 client - it makes multiple concurrent
+	// request for different bytes ranges. If not for this lock. we would be starting multiple
+	// transformations from scratch, as first one wouldn't finish before the next one starts.
+	// TODO: to speed up the transformations of different objects, lock should be per filename.
+	mtx.Lock()
+	defer mtx.Unlock()
+
 	var (
-		previousSize int64
-		counter      = &cmn.WriteCounter{}
+		previousSize  int64
+		counter       = &cmn.WriteCounter{}
+		remoteVersion string
 	)
 
-	f, err = os.Open(o.FQN())
-	if err != nil && !cmn.ErrFileNotExists(err) {
+	if remoteVersion, err = versionFromRemote(o); err != nil {
 		return nil, "", err
 	}
 
+	f, err = os.OpenFile(o.FQN(), os.O_APPEND|os.O_RDWR, 0666)
+	if err != nil && !cmn.ErrFileNotExists(err) {
+		return nil, "", fmt.Errorf("unknown error opening file %q: %v", o.FQN(), err)
+	}
+
 	if err == nil {
-		remoteVersion, err := versionFromRemote(o)
-		if err != nil {
-			return nil, "", err
-		}
+		cmn.Assert(f != nil, o.FQN())
 		if cmpCacheVersion(o, remoteVersion) {
 			return f, remoteVersion, nil
 		}
@@ -151,10 +164,11 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		// If versions are different, fetch and transform the object again.
 		fi, err := f.Stat()
 		if err != nil {
-			return nil, "", err
+			return nil, "", fmt.Errorf("failed to Stat() file %q: %v", o.FQN(), err)
 		}
 
 		previousSize = fi.Size()
+		cmn.AssertNoErr(f.Close())
 	}
 
 	resp, err := cmn.WrapHttpError(client.Get(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
@@ -171,11 +185,10 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		return nil, "", fmt.Errorf("%d error: %v", resp.StatusCode, string(b.Bytes()))
 	}
 
-	if err := os.MkdirAll(o.DirFQN(), 0755); err != nil {
+	if err := os.MkdirAll(o.DirFQN(), 0666); err != nil {
 		return nil, "", err
 	}
-	f, err = os.Create(o.FQN())
-	if err != nil {
+	if f, err = os.Create(o.FQN()); err != nil {
 		return nil, "", err
 	}
 
@@ -183,10 +196,12 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		return nil, "", err
 	}
 
-	updateVersion(o, resp.Header.Get(cmn.HeaderVersion))
+	updateVersion(o, remoteVersion)
 	updateTotalSize(counter.Size(), previousSize)
 	_, err = f.Seek(0, io.SeekStart)
-	return f, resp.Header.Get(cmn.HeaderVersion), err
+	cmn.AssertNoErr(err)
+
+	return f, remoteVersion, nil
 }
 
 func versionFromRemote(o *tarObject) (string, error) {

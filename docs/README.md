@@ -19,20 +19,22 @@ $ python examples/imagenet_in_memory.py
 
 ### Functions
 ```python
-def AisDataset(bucket_name, proxy_url, val_op, label_op)
+def AisDataset(bucket_name, proxy_url, conversions, selections, remote_exec)
 ```
 
 Create AisDataset object
 
-`bucket_name` - name of an AIS bucket
+`bucket_name` - `string` - name of an AIS bucket
 
-`proxy_url` - url of AIS cluster proxy
+`proxy_url` - `string` - url of AIS cluster proxy
 
-`conversions` - list of Conversions from `tar2tf.ops`. Describes transformations made on tar-record. See tar2tf.ops section for more.
+`conversions` - (optional) list of Conversions from `tar2tf.ops`. Describes transformations made on tar-record. See tar2tf.ops section for more.
 
-`selections` - list of length 2 of Selections from `tar2tf.ops`. Describes how to transform tar-record entry into datapoint. See tar2tf.ops section for more.
+`selections` - (optional) list of length 2 of Selections from `tar2tf.ops`. Describes how to transform tar-record entry into datapoint. See tar2tf.ops section for more.
 
-
+`remote_exec` - (optional) - `bool` -  specify is conversions and selections should be executed in the cluster.  
+If `remote_exec == True`, but remote execution of one of conversions is not supported, `remote_exec` becomes disabled.
+If `remote_exec` not provided, it will be automatically detected if remote execution is possible.
 ```python
 def load(template, **kwargs)
 ```
@@ -41,15 +43,9 @@ Transform tars of images from AIS into TensorFlow compatible format.
 
 `template` - `string` - object names of tars. Bash range syntax like `{0..10}` is supported. 
 
-`remote_exec` - `bool` - specify is conversions and selections should be executed in the cluster.  
-If `remote_exec == True`, but remote execution of one of conversions is not supported, `remote_exec` becomes disabled.
-If `remote_exec` not provided, it will be automatically detected if remote execution is possible.
-
 `output_shapes` - `list of tf.TensorShape` - resulting objects' shapes
 
 `output_types` - `list of tf.DType` - resulting objects' types
-
-`shuffle_tar` - `bool` - shuffle records within tar file. Supported only when remote execution is enabled.
 
 `num_workers` - `number` - number of workers concurrently downloading objects from AIS cluster
 
@@ -160,7 +156,6 @@ Returns an object which is a dict of provided Selections
 ais = AisDataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
 train_dataset = ais.load(
     "train-{0..3}.tar.gz",
-    num_workers=4,
     remote_exec=True,
 ).shuffle().batch(BATCH_SIZE)
 test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
@@ -173,7 +168,6 @@ model.fit(train_dataset, epochs=EPOCHS)
 ais = AisDataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
 train_dataset = ais.load(
     "train-{0..3}.tar.gz",
-    num_workers=4,
 ).shuffle().batch(BATCH_SIZE)
 test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...

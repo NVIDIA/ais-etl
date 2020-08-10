@@ -73,7 +73,7 @@ class AisClient:
 
     def etl_init(self, spec):
         url = "{}/etl/init".format(self.__get_base_url())
-        return requests.post(url=url, data=spec).content
+        return str(requests.post(url=url, data=spec).content, "utf-8")
 
     def etl_stop(self, uuid):
         url = "{}/etl/stop/{}".format(self.__get_base_url(), uuid)

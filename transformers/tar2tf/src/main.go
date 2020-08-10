@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src/cmn"
@@ -70,7 +71,7 @@ func main() {
 		fh, err := os.Open(*specFileArg)
 		cmn.Exit(err)
 		filterSpec, err = ioutil.ReadAll(fh)
-		fh.Close()
+		cmn.AssertNoErr(fh.Close())
 	}
 
 	initVars(*ipAddressArg, *portArg, filterSpec)
@@ -99,6 +100,8 @@ func tar2tfHandler(w http.ResponseWriter, r *http.Request) {
 		tar2tfPutHandler(w, r)
 	case http.MethodGet:
 		tar2tfGetHandler(w, r)
+	case http.MethodHead: // HACK: to support TF S3, we need to support HEAD request.
+		tar2tfGetHandler(w, r)
 	default:
 		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "invalid http method %s", r.Method)
 	}
@@ -121,9 +124,13 @@ func tar2tfGetHandler(w http.ResponseWriter, r *http.Request) {
 	escaped := html.EscapeString(r.URL.Path)
 	escaped = strings.TrimPrefix(escaped, "/")
 
+	if escaped == "health" {
+		return
+	}
+
 	apiItems := strings.SplitN(escaped, "/", 2)
 	if len(apiItems) < 2 {
-		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "expected 2 path elements")
+		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "expected 2 path elements, got %q", escaped)
 		return
 	}
 
@@ -142,11 +149,17 @@ func tar2tfGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract the requested bytes range from a header.
-	rng, err := cmn.ObjectRange(r.Header.Get(cmn.HeaderRange), fsTFRecordSize(tfRecord))
+	size := fsTFRecordSize(tfRecord)
+	rng, err := cmn.ObjectRange(r.Header.Get(cmn.HeaderRange), size)
 	if err != nil {
-		cmn.InvalidMsgHandler(w, http.StatusBadRequest, err.Error())
+		if err == cmn.OverlapError {
+			w.Header().Set(cmn.HeaderContentRange, fmt.Sprintf("bytes */%d", size))
+		}
+		w.Header().Set(cmn.HeaderContentLength, strconv.FormatInt(size, 10))
+		w.WriteHeader(http.StatusRequestedRangeNotSatisfiable)
 		return
 	}
+
 	cmn.SetResponseHeaders(w.Header(), rng.Length, version)
 
 	// Read only selected range from a TFRecord file
@@ -156,9 +169,14 @@ func tar2tfGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = io.Copy(w, reader)
+	if r.Method == http.MethodHead {
+		// Discard on HEAD
+		_, err = io.Copy(ioutil.Discard, reader)
+	} else {
+		_, err = io.Copy(w, reader)
+	}
 	if err != nil {
-		cmn.InvalidMsgHandler(w, http.StatusBadRequest, err.Error())
+		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "error copying TFRecord to response writer: %v", err)
 		return
 	}
 }

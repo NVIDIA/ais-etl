@@ -20,8 +20,10 @@ const (
 	HeaderRange         = "Range" // Ref: https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
 	HeaderContentLength = "Content-Length"
 	HeaderContentType   = "Content-Type"
-	HeaderVersion       = "version"
-	AwsHeaderVersion    = "x-amz-version-id"
+	HeaderContentRange  = "Content-Range"
+
+	HeaderVersion    = "version"
+	AwsHeaderVersion = "x-amz-version-id"
 
 	GetContentType = "binary/octet-stream"
 )
@@ -30,6 +32,10 @@ type (
 	httpRange struct {
 		Start, Length int64
 	}
+)
+
+var (
+	OverlapError = errors.New("failed to overlap")
 )
 
 func InvalidMsgHandler(w http.ResponseWriter, errCode int, format string, a ...interface{}) {
@@ -157,7 +163,8 @@ func ParseMultiRange(s string, size int64) ([]httpRange, error) {
 	}
 	if noOverlap && len(ranges) == 0 {
 		// The specified ranges did not overlap with the content.
-		return nil, errors.New("failed to overlap")
+		log.Printf("failed to overlap. range string: %q, size %d", s, size)
+		return nil, OverlapError
 	}
 	return ranges, nil
 }
