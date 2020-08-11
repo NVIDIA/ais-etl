@@ -5,7 +5,7 @@ metadata:
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 15s
+    wait_timeout: 1m
 spec:
   containers:
     - name: server
