@@ -214,7 +214,7 @@ class AisDataset:
     # path - place to save TFRecord file. If None, everything done on the fly
     def load(self, template, **kwargs):
         accepted_args = [
-            OUTPUT_TYPES, OUTPUT_SHAPES, PATH, MAX_SHARD_SIZE, NUM_WORKERS
+            OUTPUT_TYPES, OUTPUT_SHAPES, PATH, MAX_SHARD_SIZE, NUM_WORKERS, RECORD_TO_EXAMPLE,
         ]
 
         for key in kwargs:
@@ -369,6 +369,11 @@ class AisDataset:
         os.environ["S3_ENDPOINT"] = "{}/s3/".format(self.proxy_url)
         os.environ["S3_USE_HTTPS"] = "0"
         os.environ["S3_VERIFY_SSL"] = "0"
+
+        # If TF S3 client doesn't get Content-Length from HEAD request,
+        # it starts downloading TFRecords in 178 byte chunks (!!!).
+        # Here, just disable downloading in chunks and do everything in one shot.
+        os.environ["S3_DISABLE_MULTI_PART_DOWNLOAD"] = '1'
 
     def __default_path_generator(self, path):
         if "{}" in path:

@@ -100,8 +100,6 @@ func tar2tfHandler(w http.ResponseWriter, r *http.Request) {
 		tar2tfPutHandler(w, r)
 	case http.MethodGet:
 		tar2tfGetHandler(w, r)
-	case http.MethodHead: // HACK: to support TF S3, we need to support HEAD request.
-		tar2tfGetHandler(w, r)
 	default:
 		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "invalid http method %s", r.Method)
 	}
@@ -169,12 +167,7 @@ func tar2tfGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodHead {
-		// Discard on HEAD
-		_, err = io.Copy(ioutil.Discard, reader)
-	} else {
-		_, err = io.Copy(w, reader)
-	}
+	_, err = io.Copy(w, reader)
 	if err != nil {
 		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "error copying TFRecord to response writer: %v", err)
 		return
