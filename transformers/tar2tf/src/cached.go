@@ -171,7 +171,7 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		cmn.AssertNoErr(f.Close())
 	}
 
-	resp, err := cmn.WrapHttpError(client.Get(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
+	resp, err := cmn.WrapHttpError(client.Get(fmt.Sprintf("%s/%s/%s", aisTargetUrl, o.bucket, o.name)))
 	if err != nil {
 		return nil, "", err
 	}
@@ -205,7 +205,7 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 }
 
 func versionFromRemote(o *tarObject) (string, error) {
-	resp, err := cmn.WrapHttpError(client.Head(fmt.Sprintf("%s/v1/objects/%s/%s", aisTargetUrl, o.bucket, o.name)))
+	resp, err := cmn.WrapHttpError(client.Head(fmt.Sprintf("%s/%s/%s", aisTargetUrl, o.bucket, o.name)))
 	if err != nil {
 		return "", err
 	}

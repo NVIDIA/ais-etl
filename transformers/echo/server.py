@@ -10,7 +10,7 @@ import os
 host_target = os.environ['AIS_TARGET_URL']
 
 class S(BaseHTTPRequestHandler):
-    def _set_headers(self,headers={}):
+    def _set_headers(self, headers={}):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         for k in headers:
@@ -22,19 +22,19 @@ class S(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         md5 = hashlib.md5()
         md5.update(post_data)
-        self._set_headers({"Content-MD5":md5.hexdigest()})
+        self._set_headers({"Content-MD5": md5.hexdigest()})
         self.wfile.write(post_data)
 
     def do_GET(self):
-        if self.path=="/health":
-            self._set_headers({})
+        if self.path == "/health":
+            self._set_headers()
             self.wfile.write(b"OK")
             return
-        global host_target
-        x = requests.get(host_target + "/v1/objects" + self.path)
+
+        x = requests.get(host_target + self.path)
         md5 = hashlib.md5()
         md5.update(x.content)
-        self._set_headers({"Content-MD5":md5.hexdigest()})
+        self._set_headers({"Content-MD5": md5.hexdigest()})
         self.wfile.write(x.content)
 
 

@@ -14,7 +14,7 @@ transform = getattr(mod, os.getenv("FUNC_HANDLER"))
 class S(BaseHTTPRequestHandler):
     def _set_headers(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/plain")
+        self.send_header("Content-Type", "application/octet-stream")
         self.end_headers()
 
     def do_PUT(self):
@@ -31,9 +31,7 @@ class S(BaseHTTPRequestHandler):
             self.wfile.write(b"OK")
             return
 
-        global host_target
-
-        input_bytes = requests.get(host_target + "/v1/objects" + self.path)
+        input_bytes = requests.get(host_target + self.path)
         result = transform(input_bytes)
         self._set_headers()
         self.wfile.write(result)
