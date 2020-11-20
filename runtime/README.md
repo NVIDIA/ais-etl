@@ -3,5 +3,5 @@ In each runtime package there is `Makefile` that should be used to build and pus
 
 Current list of runtimes:
 * Python:
-  * `python:2` -> `python2.7.18` is used.
-  * `python:3` -> `python3.8.5` is used.
+  * `runtime_python:2` -> `python2.7.18` is used.
+  * `runtime_python:3` -> `python3.8.5` is used.
