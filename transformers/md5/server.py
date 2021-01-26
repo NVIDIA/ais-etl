@@ -2,14 +2,15 @@
 
 import argparse
 import hashlib
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 import os
-
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 
 host_target = os.environ['AIS_TARGET_URL']
 
-class S(BaseHTTPRequestHandler):
+
+class Handler(BaseHTTPRequestHandler):
     def _set_headers(self):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
@@ -36,12 +37,14 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write(md5.hexdigest().encode())
 
 
-def run(server_class=HTTPServer, handler_class=S, addr="localhost", port=8000):
-    server_address = (addr, port)
-    httpd = server_class(server_address, handler_class)
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
 
-    print(f"Starting httpd server on {addr}:{port}")
-    httpd.serve_forever()
+
+def run(addr="localhost", port=8000):
+    server = ThreadedHTTPServer((addr, port), Handler)
+    print(f"Starting HTTP server on {addr}:{port}")
+    server.serve_forever()
 
 
 if __name__ == "__main__":

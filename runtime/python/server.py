@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import imp
 import requests
-from http.server import HTTPServer, BaseHTTPRequestHandler
+if sys.version_info[0] < 3:
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+    from SocketServer import ThreadingMixIn
+else:
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    from socketserver import ThreadingMixIn
 
 host_target = os.environ["AIS_TARGET_URL"]
 
@@ -11,7 +17,7 @@ mod = imp.load_source("function", "/code/%s.py" % os.getenv("MOD_NAME"))
 transform = getattr(mod, os.getenv("FUNC_HANDLER"))
 
 
-class S(BaseHTTPRequestHandler):
+class Handler(BaseHTTPRequestHandler):
     def _set_headers(self):
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
@@ -37,12 +43,14 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write(result)
 
 
-def run(server_class=HTTPServer, handler_class=S, addr="0.0.0.0", port=80):
-    server_address = (addr, port)
-    httpd = server_class(server_address, handler_class)
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
 
-    print(f"Starting httpd server on {addr}:{port}")
-    httpd.serve_forever()
+
+def run(addr="0.0.0.0", port=80):
+    server = ThreadedHTTPServer((addr, port), Handler)
+    print("Starting HTTP server on {}:{}".format(addr, port))
+    server.serve_forever()
 
 
 if __name__ == "__main__":
