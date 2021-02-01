@@ -5,19 +5,19 @@ metadata:
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 1m
+    wait_timeout: 5m
 spec:
   containers:
     - name: server
-      image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/transformer_hello_world:latest
+      image: aistore/transformer_hello_world:latest
       imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80
+      command: ['/code/server.py']
       # This is a health check endpoint which one should specify
       # for aistore to determine the health of the ETL container.
       readinessProbe:
         httpGet:
           path: /health
           port: default
-      command: ['/code/server.py']

@@ -5,17 +5,17 @@ metadata:
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 1m
+    wait_timeout: 5m
 spec:
   containers:
     - name: server
-      image: ${DOCKER_REGISTRY_URL:-"localhost:5000"}/transformer_md5:latest
+      image: aistore/transformer_md5:latest
       imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
       readinessProbe:
         httpGet:
           path: /health
           port: default
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']

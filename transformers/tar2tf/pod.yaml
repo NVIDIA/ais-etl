@@ -5,17 +5,17 @@ metadata:
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hrev://\""}
-    wait_timeout: 2m
+    wait_timeout: 5m
 spec:
   containers:
     - name: server
       image: aistore/tar2tf:latest
-
-      # To enable conversion e.g.
-      command: ['./tar2tf', '-l', '0.0.0.0', '-p', '80', '${OPTION_KEY}', '${OPTION_VALUE}']
+      imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80
+      # To enable conversion e.g.
+      command: ['./tar2tf', '-l', '0.0.0.0', '-p', '80', '${OPTION_KEY}', '${OPTION_VALUE}']
       readinessProbe:
         httpGet:
           path: /health

@@ -3,16 +3,18 @@ kind: Pod
 metadata:
   name: echo-go
   annotations:
+    # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 2m
+    wait_timeout: 5m
 spec:
   containers:
     - name: server
       image: aistore/transformer_echo_go:latest
-      command: ['./echo', '-l', '0.0.0.0', '-p', '80']
+      imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80
+      command: ['./echo', '-l', '0.0.0.0', '-p', '80']
       readinessProbe:
         httpGet:
           path: /health
