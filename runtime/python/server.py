@@ -18,6 +18,10 @@ transform = getattr(mod, os.getenv("FUNC_HANDLER"))
 
 
 class Handler(BaseHTTPRequestHandler):
+    def log_request(self, code='-', size='-'):
+        # Don't log successful requests info. Unsuccessful logged by log_error().
+        pass
+
     def _set_headers(self):
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
