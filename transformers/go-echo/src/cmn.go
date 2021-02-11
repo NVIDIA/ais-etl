@@ -22,7 +22,7 @@ const (
 )
 
 func invalidMsgHandler(w http.ResponseWriter, errCode int, format string, a ...interface{}) {
-	log.Printf(string(debug.Stack())+" :"+format, a...)
+	logErrorf(format, a...)
 	w.Header().Set("Content-type", "text/plain")
 	w.WriteHeader(errCode)
 	w.Write([]byte(fmt.Sprintf(format, a...)))
@@ -51,4 +51,8 @@ func wrapHttpError(resp *http.Response, err error) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+func logErrorf(format string, a ...interface{}) {
+	log.Printf(string(debug.Stack())+" : "+format, a...)
 }

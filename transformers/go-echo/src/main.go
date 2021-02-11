@@ -70,9 +70,8 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 // PUT /
 func echoPutHandler(w http.ResponseWriter, r *http.Request) {
 	setResponseHeaders(w.Header(), r.ContentLength)
-	_, err := io.Copy(w, r.Body)
-	if err != nil {
-		invalidMsgHandler(w, http.StatusInternalServerError, err.Error())
+	if _, err := io.Copy(w, r.Body); err != nil {
+		logErrorf("%v", err)
 	}
 }
 
@@ -99,11 +98,12 @@ func echoGetHandler(w http.ResponseWriter, r *http.Request) {
 	bucket, objName := apiItems[0], apiItems[1]
 
 	resp, err := wrapHttpError(client.Get(fmt.Sprintf("%s/%s/%s", aisTargetURL, bucket, objName)))
-	if err == nil {
-		_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		invalidMsgHandler(w, http.StatusBadRequest, "GET to AIStore failed; err %v", err)
+		return
 	}
 
-	if err != nil {
-		invalidMsgHandler(w, http.StatusBadRequest, "err: %v", err)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		logErrorf("%v", err)
 	}
 }
