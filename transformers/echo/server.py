@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import hashlib
 import requests
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -15,19 +14,15 @@ class Handler(BaseHTTPRequestHandler):
         # Don't log successful requests info. Unsuccessful logged by log_error().
         pass
 
-    def _set_headers(self, headers={}):
+    def _set_headers(self):
         self.send_response(200)
-        self.send_header("Content-Type", "text/plain")
-        for k in headers:
-            self.send_header(k, headers[k])
+        self.send_header("Content-Type", "application/octet-stream")
         self.end_headers()
 
     def do_PUT(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
-        md5 = hashlib.md5()
-        md5.update(post_data)
-        self._set_headers({"Content-MD5": md5.hexdigest()})
+        self._set_headers()
         self.wfile.write(post_data)
 
     def do_GET(self):
@@ -36,10 +31,8 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(b"OK")
             return
 
+        self._set_headers()
         x = requests.get(host_target + self.path)
-        md5 = hashlib.md5()
-        md5.update(x.content)
-        self._set_headers({"Content-MD5": md5.hexdigest()})
         self.wfile.write(x.content)
 
 
