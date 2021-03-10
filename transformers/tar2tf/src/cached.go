@@ -35,7 +35,6 @@ const (
 
 var (
 	tmpDir    string
-	trashDir  string
 	cache     = &versionCache{m: make(map[string]string)}
 	totalSize = int64(0)
 
@@ -44,8 +43,8 @@ var (
 
 type (
 	tarObject struct {
-		bucket, name string
-		tarGz        bool
+		path  string
+		tarGz bool
 	}
 
 	versionCache struct {
@@ -54,22 +53,12 @@ type (
 	}
 )
 
-func (o *tarObject) Name() string {
-	return fmt.Sprintf("%s/%s", o.bucket, o.name)
-}
-
-func (o *tarObject) FQN() string {
-	return filepath.Join(tmpDir, o.bucket, o.name)
-}
-
-func (o *tarObject) DirFQN() string {
-	return filepath.Join(tmpDir, o.bucket)
-}
+func (o *tarObject) fqn() string { return filepath.Join(tmpDir, o.path) }
 
 func cmpCacheVersion(o *tarObject, version string) bool {
 	cache.mtx.RLock()
 	defer cache.mtx.RUnlock()
-	v, ok := cache.m[o.FQN()]
+	v, ok := cache.m[o.fqn()]
 	if !ok {
 		return false
 	}
@@ -78,7 +67,7 @@ func cmpCacheVersion(o *tarObject, version string) bool {
 
 func updateVersion(o *tarObject, version string) {
 	cache.mtx.Lock()
-	cache.m[o.FQN()] = version
+	cache.m[o.fqn()] = version
 	cache.mtx.Unlock()
 }
 
@@ -142,21 +131,22 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 
 	var (
 		previousSize  int64
-		counter       = &cmn.WriteCounter{}
 		remoteVersion string
+		counter       = &cmn.WriteCounter{}
+		fqn           = o.fqn()
 	)
 
 	if remoteVersion, err = versionFromRemote(o); err != nil {
 		return nil, "", err
 	}
 
-	f, err = os.OpenFile(o.FQN(), os.O_APPEND|os.O_RDWR, 0666)
+	f, err = os.OpenFile(fqn, os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil && !cmn.ErrFileNotExists(err) {
-		return nil, "", fmt.Errorf("unknown error opening file %q: %v", o.FQN(), err)
+		return nil, "", fmt.Errorf("unknown error opening file %q: %v", o.fqn(), err)
 	}
 
 	if err == nil {
-		cmn.Assert(f != nil, o.FQN())
+		cmn.Assert(f != nil, fqn)
 		if cmpCacheVersion(o, remoteVersion) {
 			return f, remoteVersion, nil
 		}
@@ -164,14 +154,14 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		// If versions are different, fetch and transform the object again.
 		fi, err := f.Stat()
 		if err != nil {
-			return nil, "", fmt.Errorf("failed to Stat() file %q: %v", o.FQN(), err)
+			return nil, "", fmt.Errorf("failed to Stat() file %q: %v", fqn, err)
 		}
 
 		previousSize = fi.Size()
 		cmn.AssertNoErr(f.Close())
 	}
 
-	resp, err := cmn.WrapHttpError(client.Get(fmt.Sprintf("%s/%s/%s", aisTargetUrl, o.bucket, o.name)))
+	resp, err := cmn.WrapHttpError(client.Get(fmt.Sprintf("%s/%s", aisTargetUrl, o.path)))
 	if err != nil {
 		return nil, "", err
 	}
@@ -185,10 +175,10 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 		return nil, "", fmt.Errorf("%d error: %v", resp.StatusCode, string(b.Bytes()))
 	}
 
-	if err := os.MkdirAll(o.DirFQN(), 0666); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fqn), 0666); err != nil {
 		return nil, "", err
 	}
-	if f, err = os.Create(o.FQN()); err != nil {
+	if f, err = os.Create(fqn); err != nil {
 		return nil, "", err
 	}
 
@@ -205,7 +195,7 @@ func transformFromRemoteOrPass(o *tarObject) (f *os.File, version string, err er
 }
 
 func versionFromRemote(o *tarObject) (string, error) {
-	resp, err := cmn.WrapHttpError(client.Head(fmt.Sprintf("%s/%s/%s", aisTargetUrl, o.bucket, o.name)))
+	resp, err := cmn.WrapHttpError(client.Head(fmt.Sprintf("%s/%s", aisTargetUrl, o.path)))
 	if err != nil {
 		return "", err
 	}

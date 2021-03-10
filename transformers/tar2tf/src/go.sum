@@ -1,5 +1,3 @@
-github.com/NVIDIA/go-tfdata v0.3.1 h1:Y+XIaSJO26Xh9ZjRrB+DdwC2O9OuPVpg/od4mT05his=
-github.com/NVIDIA/go-tfdata v0.3.1/go.mod h1:ZvMINggjz/OZ2wpkT8rFCDcdw1zDYdC3CVJSa4zGEXc=
 github.com/NVIDIA/go-tfdata v0.3.2-0.20200714114828-1432f6c70e3a h1:qBZ0FDu5Dl1sc+sY+noivBCD5jNSduShFgJDfV46Z4U=
 github.com/NVIDIA/go-tfdata v0.3.2-0.20200714114828-1432f6c70e3a/go.mod h1:ZvMINggjz/OZ2wpkT8rFCDcdw1zDYdC3CVJSa4zGEXc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

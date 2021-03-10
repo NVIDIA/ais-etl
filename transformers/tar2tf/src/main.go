@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"html"
 	"io"
 	"io/ioutil"
 	"log"
@@ -112,30 +111,21 @@ func tar2tfPutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GET /bucket/object
+// GET /
 func tar2tfGetHandler(w http.ResponseWriter, r *http.Request) {
 	if aisTargetUrl == "" {
 		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "missing env variable AIS_TARGET_URL")
 		return
 	}
 
-	escaped := html.EscapeString(r.URL.Path)
-	escaped = strings.TrimPrefix(escaped, "/")
-
-	if escaped == "health" {
-		return
-	}
-
-	apiItems := strings.SplitN(escaped, "/", 2)
-	if len(apiItems) < 2 {
-		cmn.InvalidMsgHandler(w, http.StatusBadRequest, "expected 2 path elements, got %q", escaped)
+	path := strings.TrimPrefix(r.URL.EscapedPath(), "/")
+	if path == "health" {
 		return
 	}
 
 	obj := &tarObject{
-		bucket: apiItems[0],
-		name:   apiItems[1],
-		tarGz:  isTarGzRequest(r),
+		path:  path,
+		tarGz: isTarGzRequest(r),
 	}
 
 	// Make sure that transformed TFRecord exists - if it doesn't, get TAR from a target

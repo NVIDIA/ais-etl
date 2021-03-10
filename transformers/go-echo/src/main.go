@@ -7,7 +7,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"html"
 	"io"
 	"log"
 	"net/http"
@@ -75,29 +74,19 @@ func echoPutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GET /bucket/object
+// GET /
 func echoGetHandler(w http.ResponseWriter, r *http.Request) {
 	if aisTargetURL == "" {
 		invalidMsgHandler(w, http.StatusBadRequest, "missing env variable AIS_TARGET_URL")
 		return
 	}
 
-	escaped := html.EscapeString(r.URL.Path)
-	escaped = strings.TrimPrefix(escaped, "/")
-
-	if escaped == "health" {
+	path := strings.TrimPrefix(r.URL.EscapedPath(), "/")
+	if path == "health" {
 		return
 	}
 
-	apiItems := strings.SplitN(escaped, "/", 2)
-	if len(apiItems) < 2 {
-		invalidMsgHandler(w, http.StatusBadRequest, "expected 2 path elements, got %q", escaped)
-		return
-	}
-
-	bucket, objName := apiItems[0], apiItems[1]
-
-	resp, err := wrapHttpError(client.Get(fmt.Sprintf("%s/%s/%s", aisTargetURL, bucket, objName)))
+	resp, err := wrapHttpError(client.Get(fmt.Sprintf("%s/%s", aisTargetURL, path)))
 	if err != nil {
 		invalidMsgHandler(w, http.StatusBadRequest, "GET to AIStore failed; err %v", err)
 		return
