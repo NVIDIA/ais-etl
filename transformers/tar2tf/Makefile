@@ -1,7 +1,7 @@
 all: build push
 
 build:
-	docker build -t aistore/tar2tf:latest .
+	docker build -t aistore/transformer_tar2tf:latest .
 
 push:
-	docker push aistore/tar2tf:latest
+	docker push aistore/transformer_tar2tf:latest
