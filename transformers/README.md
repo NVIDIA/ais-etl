@@ -5,10 +5,10 @@ We have sample transformers `echo`, `md5` and `tar2tf`.
 | Transformer | Language | Description |
 | ---------- | -------- | ----------- |
 | `echo` | `python:3.8.5` | This returns the original data, with an md5 sum in the response headers. |
-| `go-echo` | `golang:1.15` | This returns the original data, with an md5 sum in the response headers. |
+| `go-echo` | `golang:1.16` | This returns the original data, with an md5 sum in the response headers. |
 | `hello_world` | `python:3.8.5` | This always returns `Hello World!` string on any request. |
 | `md5` | `python:3.8.5` | This returns the md5 sum of the original data as the response. |
-| `tar2tf` | `golang:1.13` | This returns the transformed TensorFlow compatible data for the input tar files. |
+| `tar2tf` | `golang:1.16` | This returns the transformed TensorFlow compatible data for the input tar files. |
 
 Each of sample transformers contains three main files:
 - `Dockerfile` - contains description of Docker image.
