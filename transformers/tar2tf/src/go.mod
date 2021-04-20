@@ -1,4 +1,4 @@
-module github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src
+module github.com/NVIDIA/ais-etl/transformers/tar2tf/src
 
 go 1.16
 

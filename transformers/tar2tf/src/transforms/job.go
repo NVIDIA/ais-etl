@@ -12,7 +12,7 @@ import (
 	_ "image/png"
 	"math/rand"
 
-	"github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src/cmn"
+	"github.com/NVIDIA/ais-etl/transformers/tar2tf/src/cmn"
 	"github.com/NVIDIA/go-tfdata/tfdata/core"
 	"github.com/NVIDIA/go-tfdata/tfdata/transform"
 	"github.com/NVIDIA/go-tfdata/tfdata/transform/selection"

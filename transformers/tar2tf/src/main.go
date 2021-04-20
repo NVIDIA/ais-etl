@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src/cmn"
-	"github.com/NVIDIA/ais-tar2tf/transformers/tar2tf/src/transforms"
+	"github.com/NVIDIA/ais-etl/transformers/tar2tf/src/cmn"
+	"github.com/NVIDIA/ais-etl/transformers/tar2tf/src/transforms"
 )
 
 var (
