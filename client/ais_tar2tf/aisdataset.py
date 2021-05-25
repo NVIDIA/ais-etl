@@ -37,7 +37,7 @@ spec:
   containers:
     - name: server
       image: aistore/tar2tf:latest
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ['/go/tar2tf/tar2tf', '-l', '0.0.0.0', '-p', '80', '-spec', '{}']
       ports:
         - name: default

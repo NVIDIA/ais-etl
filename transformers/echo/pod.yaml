@@ -10,7 +10,7 @@ spec:
   containers:
     - name: server
       image: aistore/transformer_echo:latest
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       ports:
         - name: default
           containerPort: 80
