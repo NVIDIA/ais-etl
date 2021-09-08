@@ -1,7 +1,9 @@
+REGISTRY_URL ?= docker.io
+
 all: build push
 
 build:
-	docker build -t aistore/transformer_echo:latest .
+	docker build -t $(REGISTRY_URL)/aistore/transformer_echo:latest .
 
 push:
-	docker push aistore/transformer_echo:latest
+	docker push $(REGISTRY_URL)/aistore/transformer_echo:latest
