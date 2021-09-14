@@ -11,7 +11,7 @@ from inspect import isgeneratorfunction
 from queue import Queue
 
 from .messages import TargetMsg
-from .aisapi import AisClient
+from ais.client.api import Client
 from .tarutils import tar_records
 from .ops import Select, CONVERSIONS, SELECTIONS
 from .downloadworker import TarsDownloadWorker
@@ -155,7 +155,7 @@ def validate_selection(selection):
 
 
 # pylint: disable=unused-variable
-class AisDataset:
+class Dataset:
     # pylint: disable=dangerous-default-value
     def __init__(
         self,
@@ -166,7 +166,7 @@ class AisDataset:
         remote_exec=None,
     ):
         self.proxy_url = proxy_url
-        self.proxy_client = AisClient(self.proxy_url, bucket)
+        self.proxy_client = Client(self.proxy_url, bucket)
         self.bucket = bucket
         self.conversions = validate_conversions(conversions)
         self.selections = validate_selections(selections)

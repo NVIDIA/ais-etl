@@ -2,7 +2,7 @@
 # Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
 #
 
-from .aisapi import AisClient
+from ais.client.api import Client
 
 from queue import Empty
 from threading import Thread
@@ -18,7 +18,7 @@ class TarsDownloadWorker(Thread):
         self.proxy_url = proxy_url
         self.bucket = bucket
         self.template = template
-        self.client = AisClient(self.proxy_url, bucket)
+        self.client = Client(self.proxy_url, bucket)
 
         self.targets_queue = targets_queue
         self.results_queue = results_queue

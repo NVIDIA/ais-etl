@@ -1,11 +1,11 @@
-from client.ais_tar2tf import AisClient
+from ais.client import Client
 
-client = AisClient(url="http://localhost:31337", bucket="shards")
+client = Client(url="http://localhost:31337", bucket="shards")
 
 # Initialize transform
-f = open('md5_pod.yaml', 'r')
-spec = f.read()
-transform_id = client.etl_init(spec=spec)
+with open('md5_pod.yaml', 'r') as f:
+    spec = f.read()
+    transform_id = client.etl_init(spec=spec)
 
 # Transform objects
 for i in range(0, 10):

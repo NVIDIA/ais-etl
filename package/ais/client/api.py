@@ -11,13 +11,29 @@ START = "start"
 
 
 # pylint: disable=unused-variable
-class AisClient:
+class Client:
     def __init__(self, url, bucket):
         self.url = url
         self.bucket = bucket
 
     def __get_base_url(self):
         return "{}/{}".format(self.url, "v1")
+
+    def list_objects(self, prefix="", sort=False):
+        url = "{}/buckets/{}".format(self.__get_base_url(), self.bucket)
+
+        params = {"action": "list", "value": {}}
+        if prefix != "":
+            params["value"]["prefix"] = prefix
+
+        resp = requests.get(
+            url=url, json=params, headers={'Accept': 'application/json'},
+        )
+        if resp.status_code == 200:
+            entries = resp.json()['entries']
+            return entries
+
+        return resp.json()
 
     def get_object(self, object_name, transform_id=""):
         url = "{}/objects/{}/{}".format(self.__get_base_url(), self.bucket,

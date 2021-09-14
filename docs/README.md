@@ -19,10 +19,10 @@ $ python examples/imagenet_in_memory.py
 
 ### Functions
 ```python
-def AisDataset(bucket_name, proxy_url, conversions, selections, remote_exec)
+def Dataset(bucket_name, proxy_url, conversions, selections, remote_exec)
 ```
 
-Create AisDataset object
+Create Dataset object
 
 `bucket_name` - `string` - name of an AIS bucket
 
@@ -153,7 +153,7 @@ Returns an object which is a dict of provided Selections
 
 #### Create dataset with remote transformations
 ```python
-ais = AisDataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
+ais = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
 train_dataset = ais.load(
     "train-{0..3}.tar.gz",
     remote_exec=True,
@@ -165,7 +165,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 
 #### The same as above, but remote execution is automatically detected
 ```python
-ais = AisDataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
+ais = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
 train_dataset = ais.load(
     "train-{0..3}.tar.gz",
 ).shuffle().batch(BATCH_SIZE)
@@ -178,7 +178,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 #### Create in-memory dataset from tars with names `"train-{0..7}.tar.gz"` in bucket `BUCKET_NAME`.
 ```python
 # Create in-memory TensorFlow dataset
-ais = AisDataset(BUCKET_NAME, PROXY_URL)
+ais = Dataset(BUCKET_NAME, PROXY_URL)
 train_dataset = ais.load("train-{0..3}.tar.gz").shuffle().batch(BATCH_SIZE)
 test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...
@@ -188,7 +188,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 #### The same as above, but with 4 workers fetching dataset from the cluster.
 ```python
 # Create in-memory TensorFlow dataset
-ais = AisDataset(BUCKET_NAME, PROXY_URL)
+ais = Dataset(BUCKET_NAME, PROXY_URL)
 train_dataset = ais.load(
     "train-{0..3}.tar.gz",
     num_workers=4,
@@ -205,7 +205,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 
 #### Create TensorFlow dataset with intermediate storing `TFRecord` in filesystem.
 ```python
-ais = AisDataset(BUCKET_NAME, PROXY_URL)
+ais = Dataset(BUCKET_NAME, PROXY_URL)
 
 records = ais.load(
     "train-{0..3}.tar.gz",
@@ -221,7 +221,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 
 #### Create TensorFlow dataset with intermediate storing `TFRecord` in filesystem with limited TFRecord size.
 ```python
-ais = AisDataset(BUCKET_NAME, PROXY_URL)
+ais = Dataset(BUCKET_NAME, PROXY_URL)
 
 filenames = ais.load(
     "train-{0..3}.tar.gz",
@@ -241,7 +241,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 # Create in-memory TensorFlow dataset
 # decoded and resized "jpg", applies function f
 # datapoint value from "jpg", label from "cls"
-ais = AisDataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32)), Func(f)], ["jpg", "cls"])
+ais = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32)), Func(f)], ["jpg", "cls"])
 train_dataset = ais.load("train-{0..3}.tar.gz"
 ).shuffle().batch(BATCH_SIZE)
 test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
@@ -253,7 +253,7 @@ model.fit(train_dataset, epochs=EPOCHS)
 ```python
 
 # Create in-memory TensorFlow dataset
-ais = AisDataset(
+ais = Dataset(
     BUCKET_NAME,
     PROXY_URL,
     [Decode("jpg"), Resize("jpg", (32,32)), Func(f)],
