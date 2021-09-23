@@ -1,15 +1,25 @@
+#!/usr/bin/env python3
+
 import os
+import sys
+
 from setuptools import setup, find_packages
 
-NAME = "aistore"
-VERSION = "0.0.3"
+REQUIRED_MAJOR = 3
+REQUIRED_MINOR = 6
 
-# To install the library, run the following
-#
-# python setup.py install
-#
-# prerequisite: setuptools
-# http://pypi.python.org/pypi/setuptools
+# Check for python version
+if sys.version_info < (REQUIRED_MAJOR, REQUIRED_MINOR):
+    error = (
+        "Your version of python ({major}.{minor}) is too old. You need "
+        "python >= {required_major}.{required_minor}."
+    ).format(
+        major=sys.version_info.major,
+        minor=sys.version_info.minor,
+        required_minor=REQUIRED_MINOR,
+        required_major=REQUIRED_MAJOR,
+    )
+    sys.exit(error)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 # Read in README.md for our long_description
@@ -17,8 +27,8 @@ with open(os.path.join(cwd, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name=NAME,
-    version=VERSION,
+    name="aistore",
+    version="0.0.4",
     description="Client and convenient connectors for PyTorch and TensorFlow to AIStore cluster",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -27,7 +37,7 @@ setup(
     author_email='aistore@exchange.nvidia.com',
     keywords=[
         "AIStore",
-        "Artificial Inteligence",
+        "Artificial Intelligence",
         "Object Storage",
     ],
     classifiers=[
@@ -40,7 +50,7 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     license="MIT",
-    python_requires='>=3.6.0',
+    python_requires='>=3.6',
     packages=find_packages(exclude=("tests", "tests.*")),
     install_requires=['requests'],
     extras_require={
