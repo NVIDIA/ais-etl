@@ -28,7 +28,7 @@ with open(os.path.join(cwd, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="aistore",
-    version="0.0.4",
+    version="0.0.5",
     description="Client and convenient connectors for PyTorch and TensorFlow to AIStore cluster",
     long_description=long_description,
     long_description_content_type="text/markdown",
