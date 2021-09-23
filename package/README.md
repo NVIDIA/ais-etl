@@ -7,10 +7,10 @@ to access cluster. The objective is two-fold:
 
   * for PyTorch:
     ```python
-    import ais
+    import aistore
     
     train_loader = torch.utils.data.DataLoader( 
-        ais.pytorch.Dataset("http://ais-gateway-url:8080", "lpr-imagenet", prefix="train"),
+        aistore.pytorch.Dataset("http://ais-gateway-url:8080", "lpr-imagenet", prefix="train"),
         batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True,
     )
@@ -18,13 +18,13 @@ to access cluster. The objective is two-fold:
     
   * or for TensorFlow:
       ```python
-      import ais
-      from ais.tf import Rename, Decode, Rotate, Resize, Select
+      import aistore
+      from aistore.tf import Rename, Decode, Rotate, Resize, Select
 
       conversions = [Rename(img="jpeg;png"), Decode("img"), Rotate("img"), Resize("img", (224, 244))]
       selections = [Select("img"), Select("cls")]
     
-      dataset = ais.tf.Dataset("http://ais-gateway-url:8080", "lpr-imagenet", conversions, selections)
+      dataset = aistore.tf.Dataset("http://ais-gateway-url:8080", "lpr-imagenet", conversions, selections)
       train_dataset = dataset.load("train-{0..9999}.tar", num_workers=64)
       ```
 

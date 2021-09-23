@@ -1,5 +1,5 @@
 import unittest
-from ais.client.api import Client
+from aistore.client.api import Client
 
 
 class TestStringMethods(unittest.TestCase):

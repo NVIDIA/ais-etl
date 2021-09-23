@@ -1,8 +1,8 @@
 import os
 from setuptools import setup, find_packages
 
-NAME = "ais"
-VERSION = "0.0.1"
+NAME = "aistore"
+VERSION = "0.0.3"
 
 # To install the library, run the following
 #
@@ -24,11 +24,24 @@ setup(
     long_description_content_type="text/markdown",
     url='https://aiatscale.org',
     author='AIStore Team',
-    author_email='ais@exchange.nvidia.com',
-    keywords=["aistore", "ai", "object storage", "NVIDIA"],
+    author_email='aistore@exchange.nvidia.com',
+    keywords=[
+        "AIStore",
+        "Artificial Inteligence",
+        "Object Storage",
+    ],
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Scientific/Engineering",
+    ],
     license="MIT",
     python_requires='>=3.6.0',
-    packages=find_packages(exclude=["ais.tests"]),
+    packages=find_packages(exclude=("tests", "tests.*")),
     install_requires=['requests'],
     extras_require={
         'pytorch': ['torch', 'torchvision'],
