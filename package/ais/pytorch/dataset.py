@@ -1,17 +1,19 @@
 from ais.client import Client
 
-import os
 from collections import defaultdict
+import io
+import os
 
 import torch.utils.data
+from torchvision import transforms
 from PIL import Image
 
 
 def default_loader(object_name, data):
     ext = os.path.splitext(object_name)[1]
     if ext == '.jpg':
-        img = Image.open(data)
-        return img.convert('RGB')
+        img = Image.open(io.BytesIO(data))
+        return transforms.ToTensor()(img.convert('RGB'))
     elif ext == '.cls':
         return int(data)
     else:

@@ -31,7 +31,7 @@ setup(
     packages=find_packages(exclude=["ais.tests"]),
     install_requires=['requests'],
     extras_require={
-        'pytorch': ['torch'],
+        'pytorch': ['torch', 'torchvision'],
         'tf': ['braceexpand', 'humanfriendly', 'tensorflow', 'tensorflow_addons'],
     },
 )
