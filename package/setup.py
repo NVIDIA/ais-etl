@@ -56,5 +56,6 @@ setup(
     extras_require={
         'pytorch': ['torch', 'torchvision'],
         'tf': ['braceexpand', 'humanfriendly', 'tensorflow', 'tensorflow_addons'],
+        'cloudpickle': ['cloudpickle==2.0.0'],
     },
 )

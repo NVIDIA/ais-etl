@@ -11,7 +11,8 @@ from inspect import isgeneratorfunction
 from queue import Queue
 
 from .messages import TargetMsg
-from ais.client.api import Client
+from aistore.client.api import Client
+from aistore.client import Bck
 from .tarutils import tar_records
 from .ops import Select, CONVERSIONS, SELECTIONS
 from .downloadworker import TarsDownloadWorker
@@ -25,7 +26,7 @@ PATH = "path"
 NUM_WORKERS = "num_workers"
 RECORD_TO_EXAMPLE = "record_to_example"
 
-tar2tfSpecTemplate = '''
+tar2tfSpecTemplate = """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -46,7 +47,7 @@ spec:
         httpGet:
           path: /health
           port: default
-'''
+"""
 
 
 def __bytes_feature(value):
@@ -86,8 +87,9 @@ def __default_image_desc():
 
 
 def default_record_to_pair(record):
-    img = tf.image.convert_image_dtype(tf.io.decode_jpeg(record["jpg"]),
-                                       tf.float32)
+    img = tf.image.convert_image_dtype(
+        tf.io.decode_jpeg(record["jpg"]), tf.float32
+    )
     img = tf.image.resize(img, (224, 224))
     return img, record["cls"]
 
@@ -123,7 +125,8 @@ def validate_conversions(convs):
 
 def validate_conversion(conv):
     unknown_type_ex = Exception(
-        "unknown conversion type. Expected one of {}".format(CONVERSIONS))
+        "unknown conversion type. Expected one of {}".format(CONVERSIONS)
+    )
 
     if type(conv) not in CONVERSIONS:
         raise unknown_type_ex
@@ -143,7 +146,8 @@ def validate_selections(selections):
 
 def validate_selection(selection):
     unknown_type_ex = Exception(
-        "unknown selection type. Expected one of {}".format(SELECTIONS))
+        "unknown selection type. Expected one of {}".format(SELECTIONS)
+    )
 
     if type(selection) == str:
         return Select(selection)
@@ -159,23 +163,25 @@ class Dataset:
     # pylint: disable=dangerous-default-value
     def __init__(
         self,
-        bucket,
+        bck: Bck,
         proxy_url="http://localhost:8080",
         conversions=[],
         selections=[],
         remote_exec=None,
     ):
         self.proxy_url = proxy_url
-        self.proxy_client = Client(self.proxy_url, bucket)
-        self.bucket = bucket
+        self.proxy_client = Client(self.proxy_url)
+        self.bucket = bck
         self.conversions = validate_conversions(conversions)
         self.selections = validate_selections(selections)
         self.transform_id = ""
 
         conv_remote_supported = all(
-            [c.on_target_allowed() for c in self.conversions])
+            [c.on_target_allowed() for c in self.conversions]
+        )
         sel_remote_supported = all(
-            [c.on_target_allowed() for c in self.selections])
+            [c.on_target_allowed() for c in self.selections]
+        )
         remote_supported = conv_remote_supported and sel_remote_supported
 
         if remote_exec is None:
@@ -186,17 +192,22 @@ class Dataset:
         else:
             if not conv_remote_supported:
                 raise Exception(
-                    "given conversions don't support remote execution")
+                    "given conversions don't support remote execution"
+                )
             if not sel_remote_supported:
                 raise Exception(
-                    "givens selections don't support remote execution")
+                    "givens selections don't support remote execution"
+                )
             self.exec_on_target = True
 
         if self.exec_on_target:
             msg = TargetMsg(self.conversions, self.selections)
             self.transform_id = self.proxy_client.etl_init(
-                tar2tfSpecTemplate.format(json.dumps(dict(msg))))
-            print("REMOTE EXECUTION ENABLED, uuid {}".format(self.transform_id))
+                tar2tfSpecTemplate.format(json.dumps(dict(msg)))
+            )
+            print(
+                "REMOTE EXECUTION ENABLED, uuid {}".format(self.transform_id)
+            )
         else:
             print("REMOTE EXECUTION DISABLED")
 
@@ -206,7 +217,9 @@ class Dataset:
         # TODO: get all of them directly from proxy
         for t in smap["tmap"]:
             url = smap["tmap"][t]["intra_data_net"]["direct_url"]
-            for o in self.proxy_client.get_objects_names(url, template):
+            for o in self.proxy_client.get_objects_names(
+                self.bucket, url, template
+            ):
                 yield o
 
     # args:
@@ -214,7 +227,12 @@ class Dataset:
     # path - place to save TFRecord file. If None, everything done on the fly
     def load(self, template, **kwargs):
         accepted_args = [
-            OUTPUT_TYPES, OUTPUT_SHAPES, PATH, MAX_SHARD_SIZE, NUM_WORKERS, RECORD_TO_EXAMPLE,
+            OUTPUT_TYPES,
+            OUTPUT_SHAPES,
+            PATH,
+            MAX_SHARD_SIZE,
+            NUM_WORKERS,
+            RECORD_TO_EXAMPLE,
         ]
 
         for key in kwargs:
@@ -223,21 +241,28 @@ class Dataset:
 
         output_types = kwargs.get(OUTPUT_TYPES, (tf.float32, tf.int32))
         output_shapes = kwargs.get(
-            OUTPUT_SHAPES, (tf.TensorShape([224, 224, 3]), tf.TensorShape([])))
+            OUTPUT_SHAPES, (tf.TensorShape([224, 224, 3]), tf.TensorShape([]))
+        )
         max_shard_size = kwargs.get(MAX_SHARD_SIZE, 0)
         path = kwargs.get(PATH, None)
         num_workers = kwargs.get(NUM_WORKERS, 4)
-        record_parser = kwargs.get(RECORD_TO_EXAMPLE, default_record_to_example)
+        record_parser = kwargs.get(
+            RECORD_TO_EXAMPLE, default_record_to_example
+        )
 
         # max_shard_size validation
         if type(max_shard_size) == str:
             max_shard_size = parse_size(max_shard_size)
         elif type(max_shard_size) != int:
             raise Exception(
-                "{} can be either string or int".format(MAX_SHARD_SIZE))
+                "{} can be either string or int".format(MAX_SHARD_SIZE)
+            )
         if max_shard_size != 0 and path is None:
-            raise Exception("{} not supported without {} argument".format(
-                MAX_SHARD_SIZE, PATH))
+            raise Exception(
+                "{} not supported without {} argument".format(
+                    MAX_SHARD_SIZE, PATH
+                )
+            )
 
         # path validation
         if path is not None:
@@ -245,22 +270,25 @@ class Dataset:
             # allow path generators so user can put some more logic to path selection
             if not isgeneratorfunction(path) and type(path) != str:
                 raise Exception(
-                    "path argument has to be either string or generator")
+                    "path argument has to be either string or generator"
+                )
             if type(path) == str:
                 path_gen = lambda: self.__default_path_generator(path)
 
-            return self.__record_dataset_from_tar(template, path_gen,
-                                                  record_parser,
-                                                  max_shard_size, num_workers)
+            return self.__record_dataset_from_tar(
+                template, path_gen, record_parser, max_shard_size, num_workers
+            )
 
         if self.exec_on_target:
             return self.__dataset_from_transformer(template, record_parser)
 
         return tf.data.Dataset.from_generator(
             lambda: self.__samples_local_generator_from_tar(
-                template, num_workers),
+                template, num_workers
+            ),
             output_types,
-            output_shapes=output_shapes)
+            output_shapes=output_shapes,
+        )
 
     def stop(self):
         if self.transform_id != "":
@@ -270,15 +298,21 @@ class Dataset:
         self.__set_s3_os_vars()
         obj_names = []
         for o in self.__get_object_names(template):
-            obj_names.append("s3://{}/{}?uuid={}".format(
-                self.bucket, o, self.transform_id))
+            obj_names.append(
+                "s3://{}/{}?uuid={}".format(self.bucket, o, self.transform_id)
+            )
 
         return tf.data.TFRecordDataset(filenames=obj_names).map(record_parser)
 
     # path - path where to save record dataset
-    def __record_dataset_from_tar(self, template, get_path_gen,
-                                  record_to_example, max_shard_size,
-                                  num_workers):
+    def __record_dataset_from_tar(
+        self,
+        template,
+        get_path_gen,
+        record_to_example,
+        max_shard_size,
+        num_workers,
+    ):
         path_gen = get_path_gen()
         paths = [next(path_gen)]
         writer = tf.io.TFRecordWriter(paths[0])
@@ -314,7 +348,8 @@ class Dataset:
             records = tar_records(tar)
             for k in records:
                 yield self.__select_from_record(
-                    self.__convert_record(records[k]))
+                    self.__convert_record(records[k])
+                )
 
             tar.close()
 
@@ -327,14 +362,20 @@ class Dataset:
 
         targets_queue = Queue()
         results_queue = Queue(
-            num_workers + 1)  # question: how much tars do we want to prefetch?
+            num_workers + 1
+        )  # question: how much tars do we want to prefetch?
         # each worker will fetch tars from one target
         for k in smap["tmap"]:
             targets_queue.put(smap["tmap"][k])
 
         for i in range(num_workers):
-            worker = TarsDownloadWorker(self.proxy_url, self.bucket, template,
-                                        targets_queue, results_queue)
+            worker = TarsDownloadWorker(
+                self.proxy_url,
+                self.bucket,
+                template,
+                targets_queue,
+                results_queue,
+            )
             worker.daemon = True  # detach from main process
             worker.start()
 
@@ -349,8 +390,7 @@ class Dataset:
             else:
                 yield tar_bytes
 
-        targets_queue.join(
-        )  # should be immediate as we know that workers have finished
+        targets_queue.join()  # should be immediate as we know that workers have finished
 
     def __convert_record(self, record):
         for c in self.conversions:
@@ -360,7 +400,8 @@ class Dataset:
 
     def __select_from_record(self, record):
         return self.selections[0].select(record), self.selections[1].select(
-            record)
+            record
+        )
 
     def __set_s3_os_vars(self):
         os.environ["AWS_ACCESS_KEY_ID"] = "key-id"
@@ -373,7 +414,7 @@ class Dataset:
         # If TF S3 client doesn't get Content-Length from HEAD request,
         # it starts downloading TFRecords in 178 byte chunks (!!!).
         # Here, just disable downloading in chunks and do everything in one shot.
-        os.environ["S3_DISABLE_MULTI_PART_DOWNLOAD"] = '1'
+        os.environ["S3_DISABLE_MULTI_PART_DOWNLOAD"] = "1"
 
     def __default_path_generator(self, path):
         if "{}" in path:

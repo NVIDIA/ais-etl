@@ -4,3 +4,4 @@ requests >= 2.20
 humanfriendly
 braceexpand
 tensorflow-addons
+cloudpickle >= 2.0.0

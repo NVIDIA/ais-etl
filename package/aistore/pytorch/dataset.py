@@ -1,4 +1,4 @@
-from ais.client import Client
+from aistore.client import Bck, Client
 
 from collections import defaultdict
 import io
@@ -11,10 +11,10 @@ from PIL import Image
 
 def default_loader(object_name, data):
     ext = os.path.splitext(object_name)[1]
-    if ext == '.jpg':
+    if ext == ".jpg":
         img = Image.open(io.BytesIO(data))
-        return transforms.ToTensor()(img.convert('RGB'))
-    elif ext == '.cls':
+        return transforms.ToTensor()(img.convert("RGB"))
+    elif ext == ".cls":
         return int(data)
     else:
         return data
@@ -22,13 +22,13 @@ def default_loader(object_name, data):
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(
-            self,
-            url,
-            bucket,
-            prefix="",
-            loader=None,
-            transform_id=None,
-            transform_filter=None,
+        self,
+        url: str,
+        bck: Bck,
+        prefix="",
+        loader=None,
+        transform_id=None,
+        transform_filter=None,
     ):
         self.loader = loader
         if self.loader is None:
@@ -36,12 +36,13 @@ class Dataset(torch.utils.data.Dataset):
         self.transform_id = transform_id
         self.transform_filter = transform_filter
 
-        self.client = Client(url, bucket)
-        objects = self.client.list_objects(prefix=prefix, sort=True)
+        self.bck = bck
+        self.client = Client(url)
+        objects = self.client.list_objects(self.bck, prefix=prefix, sort=True)
         records = defaultdict(list)
         for obj_info in objects:
-            base_name = os.path.splitext(obj_info['name'])[0]
-            records[base_name].append(obj_info['name'])
+            base_name = os.path.splitext(obj_info["name"])[0]
+            records[base_name].append(obj_info["name"])
 
         self.samples = list(records.values())
 
@@ -61,9 +62,13 @@ class Dataset(torch.utils.data.Dataset):
                 else:
                     transform_id = self.transform_id
 
-            sample.append(self.loader(
-                object_name,
-                self.client.get_object(object_name, transform_id=transform_id),
-            ))
+            sample.append(
+                self.loader(
+                    object_name,
+                    self.client.get_object(
+                        self.bck, object_name, transform_id=transform_id
+                    ),
+                )
+            )
 
         return tuple(sample)

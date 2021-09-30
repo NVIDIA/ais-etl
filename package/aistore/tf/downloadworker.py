@@ -2,7 +2,7 @@
 # Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
 #
 
-from ais.client.api import Client
+from aistore.client import Client
 
 from queue import Empty
 from threading import Thread
@@ -12,20 +12,22 @@ from threading import Thread
 # threads aren't under global lock when waiting for I/O
 # pylint: disable=unused-variable
 class TarsDownloadWorker(Thread):
-    def __init__(self, proxy_url, bucket, template, targets_queue,
-                 results_queue):
+    def __init__(
+        self, proxy_url, bck, template, targets_queue, results_queue
+    ):
         Thread.__init__(self)
         self.proxy_url = proxy_url
-        self.bucket = bucket
+        self.bck = bck
         self.template = template
-        self.client = Client(self.proxy_url, bucket)
+        self.client = Client(self.proxy_url)
 
         self.targets_queue = targets_queue
         self.results_queue = results_queue
 
     def get_object_names(self, target_meta, template):
         for o in self.client.get_objects_names(
-                target_meta["intra_data_net"]["direct_url"], template).json():
+            self.bck, target_meta["intra_data_net"]["direct_url"], template
+        ).json():
             yield o
 
     def run(self):
@@ -33,9 +35,9 @@ class TarsDownloadWorker(Thread):
             try:
                 # no wait - all targets are put into the queue before starting workers
                 target_meta = self.targets_queue.get_nowait()
-                for obj_name in self.get_object_names(target_meta,
-                                                      self.template):
-                    result = self.client.get_object(obj_name)
+                objects = self.get_object_names(target_meta, self.template)
+                for obj_name in objects:
+                    result = self.client.get_object(self.bck, obj_name)
                     self.results_queue.put(result)  # waits if queue is full
                 self.targets_queue.task_done()
             except Empty:
