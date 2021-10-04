@@ -1,9 +1,22 @@
+FROM golang:1.17 AS builder
+
+ENV GOPATH="/go"
+ENV PATH="${GOPATH}/bin:${PATH}"
+
+WORKDIR /code
+
+COPY ./io-comm/ /code
+
+RUN make build
+
 FROM python:3.8.5
 
 WORKDIR /
 
 RUN pip --disable-pip-version-check install requests
 COPY server.py /server.py
+
+COPY --from=builder /code/server /server
 
 EXPOSE 80
 
