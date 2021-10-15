@@ -1,3 +1,5 @@
+ARG PYTHON_VERSION
+
 FROM golang:1.17 AS builder
 
 ENV GOPATH="/go"
@@ -9,7 +11,7 @@ COPY ./io-comm/ /code
 
 RUN make build
 
-FROM python:3.8.5
+FROM python:${PYTHON_VERSION}
 
 WORKDIR /
 
