@@ -52,10 +52,9 @@ setup(
     license="MIT",
     python_requires='>=3.6',
     packages=find_packages(exclude=("tests", "tests.*")),
-    install_requires=['requests'],
+    install_requires=['requests', 'cloudpickle==2.0.0'],
     extras_require={
         'pytorch': ['torch', 'torchvision'],
         'tf': ['braceexpand', 'humanfriendly', 'tensorflow', 'tensorflow_addons'],
-        'cloudpickle': ['cloudpickle==2.0.0'],
     },
 )
