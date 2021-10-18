@@ -47,7 +47,8 @@ extraction, transformation, and loading in parallel, on the fly and/or offline, 
 ### Installation Requirements
 
 * Python >= 3.6
-* Requests >= 2.0.0
+* `requests` >= 2.0.0
+* `cloudpickle` >= 2.0.0
 
 #### Installing the latest release
 
