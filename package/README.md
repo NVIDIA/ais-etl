@@ -73,8 +73,8 @@ $ pip install -e .
 ```
 To customize the installation, you can also run the following variants of the above:
 
-* `pip install -e .[pytorch]`: Also installs PyTorch dependencies required to use `ais.pytorch` package.
-* `pip install -e .[tf]`: Also installs TensorFlow dependencies required to use `ais.tf` package.
+* `pip install -e .[pytorch]`: Also installs PyTorch dependencies required to use `aistore.pytorch` package.
+* `pip install -e .[tf]`: Also installs TensorFlow dependencies required to use `aistore.tf` package.
 
 ## References
 

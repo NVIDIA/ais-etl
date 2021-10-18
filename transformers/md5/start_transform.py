@@ -1,6 +1,6 @@
-from ais.client import Client
+from aistore.client import Client, Bck
 
-client = Client(url="http://localhost:31337", bucket="shards")
+client = Client("http://localhost:31337")
 
 # Initialize transform
 with open('md5_pod.yaml', 'r') as f:
@@ -13,5 +13,6 @@ for i in range(0, 10):
     output = client.transform_object(
         transform_id=transform_id,
         object_name=object_name,
+        bck=Bck("shards"),
     )
     print(f"{object_name} -> {output}")

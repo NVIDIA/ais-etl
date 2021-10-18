@@ -153,23 +153,23 @@ Returns an object which is a dict of provided Selections
 
 #### Create dataset with remote transformations
 ```python
-ais = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
-train_dataset = ais.load(
+dataset = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
+train_dataset = dataset.load(
     "train-{0..3}.tar.gz",
     remote_exec=True,
 ).shuffle().batch(BATCH_SIZE)
-test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
+test_dataset = dataset.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...
 model.fit(train_dataset, epochs=EPOCHS)
 ```
 
 #### The same as above, but remote execution is automatically detected
 ```python
-ais = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
-train_dataset = ais.load(
+dataset = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32))], ["jpg", "cls"])
+train_dataset = dataset.load(
     "train-{0..3}.tar.gz",
 ).shuffle().batch(BATCH_SIZE)
-test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
+test_dataset = dataset.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...
 model.fit(train_dataset, epochs=EPOCHS)
 ```
@@ -178,9 +178,9 @@ model.fit(train_dataset, epochs=EPOCHS)
 #### Create in-memory dataset from tars with names `"train-{0..7}.tar.gz"` in bucket `BUCKET_NAME`.
 ```python
 # Create in-memory TensorFlow dataset
-ais = Dataset(BUCKET_NAME, PROXY_URL)
-train_dataset = ais.load("train-{0..3}.tar.gz").shuffle().batch(BATCH_SIZE)
-test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
+dataset = Dataset(BUCKET_NAME, PROXY_URL)
+train_dataset = dataset.load("train-{0..3}.tar.gz").shuffle().batch(BATCH_SIZE)
+test_dataset = dataset.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...
 model.fit(train_dataset, epochs=EPOCHS)
 ```
@@ -188,13 +188,13 @@ model.fit(train_dataset, epochs=EPOCHS)
 #### The same as above, but with 4 workers fetching dataset from the cluster.
 ```python
 # Create in-memory TensorFlow dataset
-ais = Dataset(BUCKET_NAME, PROXY_URL)
-train_dataset = ais.load(
+dataset = Dataset(BUCKET_NAME, PROXY_URL)
+train_dataset = dataset.load(
     "train-{0..3}.tar.gz",
     num_workers=4,
     remote_exec=False,
 ).shuffle().batch(BATCH_SIZE)
-test_dataset = ais.load(
+test_dataset = dataset.load(
     "train-{4..7}.tar.gz",
     num_workers=4,
     remote_exec=False,
@@ -205,9 +205,9 @@ model.fit(train_dataset, epochs=EPOCHS)
 
 #### Create TensorFlow dataset with intermediate storing `TFRecord` in filesystem.
 ```python
-ais = Dataset(BUCKET_NAME, PROXY_URL)
+dataset = Dataset(BUCKET_NAME, PROXY_URL)
 
-records = ais.load(
+records = dataset.load(
     "train-{0..3}.tar.gz",
     path="train.record",
 )
@@ -221,9 +221,9 @@ model.fit(train_dataset, epochs=EPOCHS)
 
 #### Create TensorFlow dataset with intermediate storing `TFRecord` in filesystem with limited TFRecord size.
 ```python
-ais = Dataset(BUCKET_NAME, PROXY_URL)
+dataset = Dataset(BUCKET_NAME, PROXY_URL)
 
-filenames = ais.load(
+filenames = dataset.load(
     "train-{0..3}.tar.gz",
     path="train-{}.record",
     max_shard_size="100MB",
@@ -241,10 +241,10 @@ model.fit(train_dataset, epochs=EPOCHS)
 # Create in-memory TensorFlow dataset
 # decoded and resized "jpg", applies function f
 # datapoint value from "jpg", label from "cls"
-ais = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32)), Func(f)], ["jpg", "cls"])
-train_dataset = ais.load("train-{0..3}.tar.gz"
+dataset = Dataset(BUCKET_NAME, PROXY_URL, [Decode("jpg"), Resize("jpg", (32,32)), Func(f)], ["jpg", "cls"])
+train_dataset = dataset.load("train-{0..3}.tar.gz"
 ).shuffle().batch(BATCH_SIZE)
-test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
+test_dataset = dataset.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...
 model.fit(train_dataset, epochs=EPOCHS)
 ```
@@ -253,15 +253,15 @@ model.fit(train_dataset, epochs=EPOCHS)
 ```python
 
 # Create in-memory TensorFlow dataset
-ais = Dataset(
+dataset = Dataset(
     BUCKET_NAME,
     PROXY_URL,
     [Decode("jpg"), Resize("jpg", (32,32)), Func(f)],
     ["jpg", "cls"]
 )
-train_dataset = ais.load("train-{0..3}.tar.gz").shuffle().batch(BATCH_SIZE)
-test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
-test_dataset = ais.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
+train_dataset = dataset.load("train-{0..3}.tar.gz").shuffle().batch(BATCH_SIZE)
+test_dataset = dataset.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
+test_dataset = dataset.load("train-{4..7}.tar.gz").batch(BATCH_SIZE)
 # ...
 model.fit(train_dataset, epochs=EPOCHS)
 ```
