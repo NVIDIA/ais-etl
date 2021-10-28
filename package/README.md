@@ -1,4 +1,4 @@
-# AIStore Python Client
+# AIS Python Client
 
 Experimental project to provide Client and PyTorch as well as TensorFlow connectors to access cluster.
 The objective is two-fold:
