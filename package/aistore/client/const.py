@@ -16,3 +16,10 @@ URL_PARAM_PROVIDER = "provider"
 # ETL Communicator types
 ETL_IO_COMM_TYPE = "io://"
 ETL_PUSH_COMM_TYPE = "hpush://"
+
+PROVIDER_AIS = "ais"
+PROVIDER_AMAZON = "aws"
+PROVIDER_GOOGLE = "gcp"
+PROVIDER_HTTP = "ht"
+PROVIDER_AZURE = "azure"
+PROVIDER_HDFS = "hdfs"

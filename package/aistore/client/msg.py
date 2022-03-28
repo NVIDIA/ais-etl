@@ -31,7 +31,7 @@ class Bck2BckMsg:
 
 
 class ActionMsg:
-    def __init__(self, action, name, value) -> None:
+    def __init__(self, action, name="", value=None) -> None:
         self.action = action
         self.name = name
         self.value = value
