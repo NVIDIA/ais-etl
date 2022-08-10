@@ -11,14 +11,23 @@ else:
     from http.server import HTTPServer, BaseHTTPRequestHandler
     from socketserver import ThreadingMixIn
 
+DEFAULT_CHUNK_SIZE = 32768
+
 host_target = os.environ["AIS_TARGET_URL"]
 
-mod = imp.load_source("function", "/code/%s.py" % os.getenv("MOD_NAME"))
-transform = getattr(mod, os.getenv("FUNC_HANDLER"))
+mod = imp.load_source("function", "./code/%s.py" % os.getenv("MOD_NAME"))
+try:
+    before = getattr(mod, os.getenv("FUNC_BEFORE"))
+except AttributeError:
+    def before():
+        pass
+
+transform = getattr(mod, os.getenv("FUNC_TRANSFORM"))
+after = getattr(mod, os.getenv("FUNC_AFTER"))
 
 
 class Handler(BaseHTTPRequestHandler):
-    def log_request(self, code='-', size='-'):
+    def log_request(self, *args):
         # Don't log successful requests info. Unsuccessful logged by log_error().
         pass
 
@@ -29,9 +38,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         content_length = int(self.headers["Content-Length"])
+        
+        arg = before()
 
-        input_bytes = self.rfile.read(content_length)
-        result = transform(input_bytes)
+        while (content_length > 0):
+            read_buffer = DEFAULT_CHUNK_SIZE if content_length > DEFAULT_CHUNK_SIZE else content_length
+            transform(self.rfile.read(read_buffer), arg)
+            content_length -= read_buffer
+
+        result = after(arg)
         self._set_headers()
         self.wfile.write(result)
 

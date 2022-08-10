@@ -4,9 +4,6 @@ set -e
 
 # Defines mapping: "runtime name" -> "python version".
 declare -A python_versions=(
-  [2]="2.7.18"
-  [3]="3.8.5"
-  [3.6]="3.6"
   [3.8]="3.8"
   [3.10]="3.10"
 )
