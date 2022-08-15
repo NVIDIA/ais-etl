@@ -4,6 +4,8 @@ import os
 import sys
 import imp
 import requests
+from inspect import signature
+
 if sys.version_info[0] < 3:
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
     from SocketServer import ThreadingMixIn
@@ -11,19 +13,47 @@ else:
     from http.server import HTTPServer, BaseHTTPRequestHandler
     from socketserver import ThreadingMixIn
 
-DEFAULT_CHUNK_SIZE = 32768
-
 host_target = os.environ["AIS_TARGET_URL"]
+code_file = os.getenv("MOD_NAME")
+mod = imp.load_source("function", f"./code/{code_file}.py")
 
-mod = imp.load_source("function", "./code/%s.py" % os.getenv("MOD_NAME"))
+try:
+    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE"))
+except Exception:
+    CHUNK_SIZE = 0
+
 try:
     before = getattr(mod, os.getenv("FUNC_BEFORE"))
-except AttributeError:
-    def before():
-        pass
+    BEFORE_EXISTS = True
+except Exception:
+    BEFORE_EXISTS = False
+
+try:
+    after = getattr(mod, os.getenv("FUNC_AFTER"))
+    AFTER_EXISTS = True
+except Exception:
+    AFTER_EXISTS = False
+
+try:
+    filter = getattr(mod, os.getenv("FUNC_FILTER"))
+    FILTER_EXISTS = True
+except Exception:
+    FILTER_EXISTS = False
 
 transform = getattr(mod, os.getenv("FUNC_TRANSFORM"))
-after = getattr(mod, os.getenv("FUNC_AFTER"))
+
+
+def _assert_validations():
+    transform_params = len(signature(transform).parameters)
+    if CHUNK_SIZE > 0 and transform_params < 2:
+        raise ValueError(
+            "Required to pass context as a parameter to transform if CHUNK_SIZE > 0"
+        )
+
+    if (BEFORE_EXISTS or AFTER_EXISTS) and transform_params < 2:
+        raise ValueError(
+            "Required to pass context as a parameter to transform if before() or after() exists"
+        )
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -37,18 +67,44 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_PUT(self):
+
         content_length = int(self.headers["Content-Length"])
-        
-        arg = before()
 
-        while (content_length > 0):
-            read_buffer = DEFAULT_CHUNK_SIZE if content_length > DEFAULT_CHUNK_SIZE else content_length
-            transform(self.rfile.read(read_buffer), arg)
-            content_length -= read_buffer
+        # TODO: handle filters
+        # if FILTER_EXISTS and not filter(self.headers["Name"], content_length):
+        # self._set_headers()
 
-        result = after(arg)
+        # populate context
+        context = {}
+
+        if BEFORE_EXISTS:
+            before(context)
+
+        if CHUNK_SIZE == 0:
+            params = len(signature(transform).parameters)
+            context["result"] = (
+                transform(self.rfile.read(content_length), context)
+                if params > 1
+                else transform(self.rfile.read(content_length))
+            )
+        else:
+            context["transformed-length"] = 0
+            context["remaining-length"] = content_length
+            while context["remaining-length"] > 0:
+                read_buffer = (
+                    CHUNK_SIZE
+                    if context["remaining-length"] >= CHUNK_SIZE
+                    else context["remaining-length"]
+                )
+                # user expected to store partial result in context
+                transform(self.rfile.read(read_buffer), context)
+                context["transformed-length"] += read_buffer
+                context["remaining-length"] -= read_buffer
+
+        if AFTER_EXISTS:
+            context["result"] = after(context)
         self._set_headers()
-        self.wfile.write(result)
+        self.wfile.write(context["result"])
 
     def do_GET(self):
         if self.path == "/health":
@@ -68,9 +124,10 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 def run(addr="0.0.0.0", port=80):
     server = ThreadedHTTPServer((addr, port), Handler)
-    print("Starting HTTP server on {}:{}".format(addr, port))
+    print(f"Starting HTTP server on {addr}:{port}")
+    _assert_validations()
     server.serve_forever()
 
 
 if __name__ == "__main__":
-    run(addr="0.0.0.0", port=80)
+    run(addr="0.0.0.0", port=50051)
