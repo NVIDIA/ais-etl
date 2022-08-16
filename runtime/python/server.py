@@ -130,4 +130,4 @@ def run(addr="0.0.0.0", port=80):
 
 
 if __name__ == "__main__":
-    run(addr="0.0.0.0", port=50051)
+    run(addr="0.0.0.0", port=80)
