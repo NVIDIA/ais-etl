@@ -3,6 +3,7 @@
 import os
 import sys
 import imp
+from typing import Iterator
 import requests
 from inspect import signature
 
@@ -18,27 +19,9 @@ code_file = os.getenv("MOD_NAME")
 mod = imp.load_source("function", f"./code/{code_file}.py")
 
 try:
-    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE"))
+    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 0))
 except Exception:
     CHUNK_SIZE = 0
-
-try:
-    before = getattr(mod, os.getenv("FUNC_BEFORE"))
-    BEFORE_EXISTS = True
-except Exception:
-    BEFORE_EXISTS = False
-
-try:
-    after = getattr(mod, os.getenv("FUNC_AFTER"))
-    AFTER_EXISTS = True
-except Exception:
-    AFTER_EXISTS = False
-
-try:
-    filter = getattr(mod, os.getenv("FUNC_FILTER"))
-    FILTER_EXISTS = True
-except Exception:
-    FILTER_EXISTS = False
 
 transform = getattr(mod, os.getenv("FUNC_TRANSFORM"))
 
@@ -50,10 +33,28 @@ def _assert_validations():
             "Required to pass context as a parameter to transform if CHUNK_SIZE > 0"
         )
 
-    if (BEFORE_EXISTS or AFTER_EXISTS) and transform_params < 2:
-        raise ValueError(
-            "Required to pass context as a parameter to transform if before() or after() exists"
-        )
+class StreamWrapper:
+    def __init__(self, rfile, content_length, chunk_size):
+        self._rfile = rfile
+        self._content_length = content_length
+        self._chunk_size = chunk_size
+        self._remaining_length = content_length
+
+    def read(self) -> bytes:
+        return next(self)
+
+    def read_all(self) -> bytes:
+        return self._rfile.read(self._remaining_length)
+
+    def __iter__(self) -> Iterator[bytes]:
+        while self._remaining_length > 0:
+            read_buffer = (
+                self._chunk_size
+                if self._remaining_length >= self._chunk_size
+                else self._remaining_length
+            )
+            self._remaining_length -= read_buffer
+            yield self._rfile.read(read_buffer)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -67,44 +68,18 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_PUT(self):
-
         content_length = int(self.headers["Content-Length"])
-
-        # TODO: handle filters
-        # if FILTER_EXISTS and not filter(self.headers["Name"], content_length):
-        # self._set_headers()
-
-        # populate context
-        context = {}
-
-        if BEFORE_EXISTS:
-            before(context)
-
+        reader = StreamWrapper(self.rfile, content_length, CHUNK_SIZE)
         if CHUNK_SIZE == 0:
-            params = len(signature(transform).parameters)
-            context["result"] = (
-                transform(self.rfile.read(content_length), context)
-                if params > 1
-                else transform(self.rfile.read(content_length))
-            )
-        else:
-            context["transformed-length"] = 0
-            context["remaining-length"] = content_length
-            while context["remaining-length"] > 0:
-                read_buffer = (
-                    CHUNK_SIZE
-                    if context["remaining-length"] >= CHUNK_SIZE
-                    else context["remaining-length"]
-                )
-                # user expected to store partial result in context
-                transform(self.rfile.read(read_buffer), context)
-                context["transformed-length"] += read_buffer
-                context["remaining-length"] -= read_buffer
+            result = transform(reader.read_all())
+            self._set_headers()
+            self.wfile.write(result)
+            return
 
-        if AFTER_EXISTS:
-            context["result"] = after(context)
+        # TODO: validate if transform takes writer as input
+        # NOTE: for streaming transforms the writer is expected to write bytes into response as stream.
         self._set_headers()
-        self.wfile.write(context["result"])
+        transform(reader, self.wfile)
 
     def do_GET(self):
         if self.path == "/health":
