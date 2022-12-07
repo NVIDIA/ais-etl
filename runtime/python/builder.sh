@@ -9,11 +9,11 @@ declare -A python_versions=(
 )
 
 for runtime_name in "${!python_versions[@]}"; do
-  echo "BUILDING AND PUSHING ${REGISTRY_URL}/aistore/runtime_python:${runtime_name}${RUNTIME_TAG_MODIFIER}"
+  echo "BUILDING AND PUSHING ${REGISTRY_URL}/runtime_python:${runtime_name}${RUNTIME_TAG_MODIFIER}"
   echo "PYTHON_VERSION=${python_versions[${runtime_name}]}"
 	docker build --pull --no-cache \
-	  -t "${REGISTRY_URL}/aistore/runtime_python:${runtime_name}${RUNTIME_TAG_MODIFIER}" \
+	  -t "${REGISTRY_URL}/runtime_python:${runtime_name}${RUNTIME_TAG_MODIFIER}" \
 	  --build-arg PYTHON_VERSION="${python_versions[${runtime_name}]}" \
 	  .
-	docker push "${REGISTRY_URL}/aistore/runtime_python:${runtime_name}${RUNTIME_TAG_MODIFIER}"
+	docker push "${REGISTRY_URL}/runtime_python:${runtime_name}${RUNTIME_TAG_MODIFIER}"
 done

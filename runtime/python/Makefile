@@ -1,5 +1,3 @@
-REGISTRY_URL ?= docker.io
-
 .PHONY: all
 all:
 	@REGISTRY_URL=$(REGISTRY_URL) RUNTIME_TAG_MODIFIER=$(RUNTIME_TAG_MODIFIER) bash builder.sh
