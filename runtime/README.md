@@ -8,3 +8,4 @@ Current list of runtimes:
   * `runtime_python:3.6` -> `python3.6` is used.
   * `runtime_python:3.8` -> `python3.8` is used.
   * `runtime_python:3.10` -> `python3.10` is used.
+  * `runtime_python:3.11` -> `python3.11` is used.
