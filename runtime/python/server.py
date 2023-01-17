@@ -1,22 +1,28 @@
 #!/usr/bin/env python
-
+import inspect
 import os
 import sys
 import imp
+import importlib.util
 from typing import Iterator
 import requests
 from inspect import signature
 
-if sys.version_info[0] < 3:
-    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-    from SocketServer import ThreadingMixIn
-else:
-    from http.server import HTTPServer, BaseHTTPRequestHandler
-    from socketserver import ThreadingMixIn
 
 host_target = os.environ["AIS_TARGET_URL"]
 code_file = os.getenv("MOD_NAME")
-mod = imp.load_source("function", f"./code/{code_file}.py")
+
+if sys.version_info[0] < 3:
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+    from SocketServer import ThreadingMixIn
+    mod = imp.load_source("function", f"./code/{code_file}.py")
+
+else:
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    from socketserver import ThreadingMixIn
+    spec = importlib.util.spec_from_file_location(name="function", location=f"./code/{code_file}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
 
 try:
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 0))
