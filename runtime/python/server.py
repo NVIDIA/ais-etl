@@ -1,28 +1,20 @@
 #!/usr/bin/env python
-import inspect
 import os
-import sys
-import imp
 import importlib.util
 from typing import Iterator
-import requests
 from inspect import signature
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 
+import requests
 
 host_target = os.environ["AIS_TARGET_URL"]
 code_file = os.getenv("MOD_NAME")
+arg_type = os.getenv("ARG_TYPE", "bytes")
 
-if sys.version_info[0] < 3:
-    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-    from SocketServer import ThreadingMixIn
-    mod = imp.load_source("function", f"./code/{code_file}.py")
-
-else:
-    from http.server import HTTPServer, BaseHTTPRequestHandler
-    from socketserver import ThreadingMixIn
-    spec = importlib.util.spec_from_file_location(name="function", location=f"./code/{code_file}.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+spec = importlib.util.spec_from_file_location(name="function", location=f"./code/{code_file}.py")
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
 
 try:
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 0))
@@ -38,6 +30,7 @@ def _assert_validations():
         raise ValueError(
             "Required to pass context as a parameter to transform if CHUNK_SIZE > 0"
         )
+
 
 class StreamWrapper:
     def __init__(self, rfile, content_length, chunk_size):
@@ -92,9 +85,15 @@ class Handler(BaseHTTPRequestHandler):
             self._set_headers()
             self.wfile.write(b"OK")
             return
+        
+        query_path = host_target + self.path
 
-        input_bytes = requests.get(host_target + self.path)
-        result = transform(input_bytes)
+        if arg_type == "url":
+            result = transform(query_path)
+        else:
+            input_bytes = requests.get(query_path).content
+            result = transform(input_bytes)
+
         self._set_headers()
         self.wfile.write(result)
 
