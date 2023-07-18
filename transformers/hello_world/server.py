@@ -40,7 +40,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def run(addr="0.0.0.0", port=80):
+def run(addr="localhost", port=8000):
     server = ThreadedHTTPServer((addr, port), Handler)
     print(f"Starting HTTP server on {addr}:{port}")
     server.serve_forever()

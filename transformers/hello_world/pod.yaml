@@ -14,7 +14,7 @@ spec:
       ports:
         - name: default
           containerPort: 80
-      command: ['/code/server.py']
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
       # This is a health check endpoint which one should specify
       # for aistore to determine the health of the ETL container.
       readinessProbe:
