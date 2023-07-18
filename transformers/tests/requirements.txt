@@ -1,0 +1,5 @@
+numpy
+tensorflow
+pillow
+scikit-image
+aistore

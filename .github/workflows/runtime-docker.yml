@@ -2,12 +2,9 @@ name: Python Runtime Docker Images
 
 on:
   workflow_dispatch:
-    inputs:
-      build_runtime_images:
-        description: 'Build Python ETL Runtime Images (runtime/python)'
-        required: true
-        type: boolean
-        default: true
+  push:
+    paths:
+      - 'runtime/python/**'
 
 env:
   RUNTIME_IMAGE: 'aistorage/runtime_python'

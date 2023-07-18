@@ -1,0 +1,42 @@
+name: Transformer Tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'transformers/**/*'
+  workflow_run:
+    workflows: ["Transformer Docker Images"]
+    types: 
+      - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup-minikube
+        uses: medyagh/setup-minikube@v0.0.13
+        with:
+          driver: docker
+          container-runtime: docker
+          cpus: max
+          memory: max
+
+      - name: Run AIStore in Minikube
+        run: |
+          git clone https://github.com/NVIDIA/aistore.git
+          cd aistore/deploy/dev/k8s/
+          ./minimal.sh
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+
+      - name: Test Transformers
+        run: |
+          cd $GITHUB_WORKSPACE/transformers/
+          export AIS_ENDPOINT="http://$(minikube ip):8080"
+          make test

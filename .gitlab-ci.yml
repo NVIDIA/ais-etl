@@ -1,0 +1,28 @@
+image: aistorage/ci:latest
+
+stages:
+    - build
+    - test
+
+build:linux:
+    stage: build
+    tags: 
+        - ais-k8s
+    script:
+        - git clone https://github.com/NVIDIA/aistore.git
+        - cd aistore && make all
+    artifacts:
+        paths:
+        - aistore
+    
+test:transformers:
+    stage: test
+    tags: 
+        - ais-k8s
+    before_script:
+        - export AIS_ENDPOINT="http://192.168.49.2:8080"
+        - aistore/deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
+    script:
+        - cd transformers
+        - make test
+        

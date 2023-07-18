@@ -2,12 +2,9 @@ name: Transformer Docker Images
 
 on:
   workflow_dispatch:
-    inputs:
-      build_runtime_images:
-        description: 'Build ETL Transformer Images'
-        required: true
-        type: boolean
-        default: true
+  push:
+    paths:
+      - 'transformers/**/*'
 
 jobs:
   docker:
