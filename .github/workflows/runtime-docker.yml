@@ -1,10 +1,10 @@
-name: Docker Images
+name: Python Runtime Docker Images
 
 on:
   workflow_dispatch:
     inputs:
       build_runtime_images:
-        description: 'Build python etl runtime images (runtime/python)'
+        description: 'Build Python ETL Runtime Images (runtime/python)'
         required: true
         type: boolean
         default: true
@@ -26,7 +26,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: python runtime images
+    - name: Python Runtime Images
       run: |
         pushd $GITHUB_WORKSPACE/runtime
         make all
