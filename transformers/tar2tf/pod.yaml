@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: aistore/transformer_tar2tf:latest
+      image: aistorage/transformer_tar2tf:latest
       imagePullPolicy: IfNotPresent
       ports:
         - name: default

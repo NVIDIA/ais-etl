@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: aistore/transformer_echo_go:latest
+      image: aistorage/transformer_echo_go:latest
       imagePullPolicy: IfNotPresent
       ports:
         - name: default

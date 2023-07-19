@@ -1,9 +1,9 @@
-REGISTRY_URL ?= docker.io
+REGISTRY_URL ?= docker.io/aistorage
 
 all: build push
 
 build:
-	docker build -t $(REGISTRY_URL)/aistore/transformer_echo:latest .
+	docker build -t $(REGISTRY_URL)/transformer_echo:latest .
 
 push:
-	docker push $(REGISTRY_URL)/aistore/transformer_echo:latest
+	docker push $(REGISTRY_URL)/transformer_echo:latest
