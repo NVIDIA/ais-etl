@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-compress
+  annotations:
+    # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
+    # Visit https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms 
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_compress:latest
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: default
+          containerPort: 80
+      # For more information on additional arguments, please refer to
+      # https://github.com/NVIDIA/ais-etl/blob/master/transformers/compress/README.md
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80', '${ARG1}', '${VAL1}', '${ARG2}', '${VAL2}']
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default

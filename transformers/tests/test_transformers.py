@@ -2,6 +2,8 @@
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 #
 
+import bz2
+import gzip
 import hashlib
 import json
 import os
@@ -9,7 +11,6 @@ import random
 import shutil
 import string
 import tarfile
-import time
 import unittest
 
 import numpy as np
@@ -20,14 +21,14 @@ from skimage.metrics import structural_similarity as ssim
 
 from aistore import Client
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HREV
-from aistore.sdk.etl_templates import GO_ECHO, ECHO, HELLO_WORLD, MD5, TAR2TF
+from aistore.sdk.etl_templates import GO_ECHO, ECHO, HELLO_WORLD, MD5, TAR2TF # TODO: Add COMPRESS once PyPI images are updated
 
 class TestTransformers(unittest.TestCase):
     def setUp(self):
         self.endpoint = os.environ.get("AIS_ENDPOINT", "http://192.168.49.2:8080")
         self.client = Client(self.endpoint)
-        self.src_bck = self.client.bucket("src").create()
-        self.dest_bck = self.client.bucket("dest").create()
+        self.src_bck = self.client.bucket("src").create(exist_ok=True)
+        self.dest_bck = self.client.bucket("dest").create(exist_ok=True)
 
         self.test_image_filename = "test-image.jpg"
         self.test_image_source = "./resources/test-image.jpg"
@@ -36,10 +37,17 @@ class TestTransformers(unittest.TestCase):
         self.test_tar_filename = "test-tar-single.tar"
         self.test_tar_source = "./resources/test-tar-single.tar"
         self.test_tfrecord_filename = "test-tar-single.tfrecord"
+        self.test_image_gz_filename = "test-image.jpg.gz"
+        self.test_image_gz_source = "./resources/test-image.jpg.gz"
+        self.test_text_gz_filename = "test-text.txt.gz"
+        self.test_text_gz_source = "./resources/test-text.txt.gz"
+        self.test_image_bz2_filename = "test-image.jpg.bz2"
+        self.test_image_bz2_source = "./resources/test-image.jpg.bz2"
+        self.test_text_bz2_filename = "test-text.txt.bz2"
+        self.test_text_bz2_source = "./resources/test-text.txt.bz2"
 
         self.num_etls = len(self.client.cluster().list_running_etls())
-
-        self.test_etl = self.client.etl("test-etl-" + self.generate_random_str()) # TODO: Check stop/delete (start)
+        self.test_etl = self.client.etl("test-etl-" + self.generate_random_str()) 
 
     def tearDown(self):
         self.src_bck.delete()
@@ -139,10 +147,11 @@ class TestTransformers(unittest.TestCase):
         hash = md5.hexdigest()
         self.assertEqual(self.dest_bck.object(self.test_text_filename).get().read_all().decode('utf-8'), hash)
 
+    @unittest.skip("Skipping until PyPI images are updated")
     def test_tar2tf_simple(self):
         self.src_bck.object(self.test_tar_filename).put_file(self.test_tar_source)
 
-        template = TAR2TF.format(communication_type=ETL_COMM_HREV, key="", value="")
+        template = TAR2TF.format(communication_type=ETL_COMM_HREV, arg="", val="")
         self.test_etl.init_spec(communication_type=ETL_COMM_HREV, template=template)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, ext={'tar':'tfrecord'}, to_bck=self.dest_bck)
@@ -178,6 +187,7 @@ class TestTransformers(unittest.TestCase):
 
         self.tar2tf_tear_down()
 
+    @unittest.skip("Skipping until PyPI images are updated")
     def test_tar2tf_rotation(self):
         self.src_bck.object(self.test_tar_filename).put_file(self.test_tar_source)
 
@@ -192,7 +202,7 @@ class TestTransformers(unittest.TestCase):
             ]
         }
         spec = json.dumps(spec)
-        template = TAR2TF.format(communication_type=ETL_COMM_HREV, key="-spec", value=spec)
+        template = TAR2TF.format(communication_type=ETL_COMM_HREV, arg="-spec", val=spec)
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HREV)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, ext={'tar': 'tfrecord'}, to_bck=self.dest_bck)
@@ -235,6 +245,154 @@ class TestTransformers(unittest.TestCase):
         self.assertEqual(cls, original_cls)
 
         self.tar2tf_tear_down()
+
+    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    def test_compress_gzip(self):
+        self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
+        self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
+
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1="--mode", val1="compress", arg2="--compression", val2="gzip")
+        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
+        transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
+        # Wait for the job to finish
+        self.client.job(job_id=transform_job_id).wait(verbose=False)
+
+        compressed_image = self.dest_bck.object(self.test_image_filename).get().read_all()
+        compressed_text = self.dest_bck.object(self.test_text_filename).get().read_all()
+
+        self.assertNotEqual(compressed_image, b"Data processing failed")
+        self.assertNotEqual(compressed_text, b"Data processing failed")
+        
+        # Decompress the files
+        decompressed_image = gzip.decompress(compressed_image)
+        decompressed_text = gzip.decompress(compressed_text)
+
+        with open(self.test_image_source, 'rb') as file:
+            original_image_content = file.read()
+        with open(self.test_text_source, 'r') as file:
+            original_text_content = file.read()
+
+        self.assertEqual(decompressed_image, original_image_content)
+        self.assertEqual(decompressed_text.decode('utf-8'), original_text_content)
+
+        # Calculate the checksums
+        original_image_checksum = hashlib.md5(original_image_content).hexdigest()
+        decompressed_image_checksum = hashlib.md5(decompressed_image).hexdigest()
+        original_text_checksum = hashlib.md5(original_text_content.encode('utf-8')).hexdigest()
+        decompressed_text_checksum = hashlib.md5(decompressed_text).hexdigest()
+
+        # Validate the checksums
+        self.assertEqual(original_image_checksum, decompressed_image_checksum)
+        self.assertEqual(original_text_checksum, decompressed_text_checksum)
+
+    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    def test_compress_bz2(self):
+        self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
+        self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
+
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1='--mode', val1='compress', arg2='--compression', val2='bz2')
+        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
+        transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
+        # Wait for the job to finish
+        self.client.job(job_id=transform_job_id).wait(verbose=False)
+
+        compressed_image = self.dest_bck.object(self.test_image_filename).get().read_all()
+        compressed_text = self.dest_bck.object(self.test_text_filename).get().read_all()
+
+        self.assertNotEqual(compressed_image, b"Data processing failed")
+        self.assertNotEqual(compressed_text, b"Data processing failed")
+
+        # Decompress the files
+        decompressed_image = bz2.decompress(compressed_image)
+        decompressed_text = bz2.decompress(compressed_text)
+
+        with open(self.test_image_source, 'rb') as file:
+            original_image_content = file.read()
+        with open(self.test_text_source, 'r') as file:
+            original_text_content = file.read()
+        
+        self.assertEqual(decompressed_image, original_image_content)
+        self.assertEqual(decompressed_text.decode('utf-8'), original_text_content)
+
+        # Calculate the checksums
+        original_image_checksum = hashlib.md5(original_image_content).hexdigest()
+        decompressed_image_checksum = hashlib.md5(decompressed_image).hexdigest()
+        original_text_checksum = hashlib.md5(original_text_content.encode('utf-8')).hexdigest()
+        decompressed_text_checksum = hashlib.md5(decompressed_text).hexdigest()
+
+        # Validate the checksums
+        self.assertEqual(original_image_checksum, decompressed_image_checksum)
+        self.assertEqual(original_text_checksum, decompressed_text_checksum)
+
+    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    def test_decompress_gzip(self):
+        self.src_bck.object(self.test_image_gz_filename).put_file(self.test_image_gz_source)
+        self.src_bck.object(self.test_text_gz_filename).put_file(self.test_text_gz_source)
+
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1='--mode', val1='decompress', arg2='--compression', val2='gzip')
+        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
+        transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
+        # Wait for the job to finish
+        self.client.job(job_id=transform_job_id).wait(verbose=False)
+
+        decompressed_image = self.dest_bck.object(self.test_image_gz_filename).get().read_all()
+        decompressed_text = self.dest_bck.object(self.test_text_gz_filename).get().read_all()
+
+        self.assertNotEqual(decompressed_image, b"Data processing failed")
+        self.assertNotEqual(decompressed_image, b"Data processing failed")
+
+        with open(self.test_image_source, 'rb') as file:
+            original_image_content = file.read()
+        with open(self.test_text_source, 'r') as file:
+            original_text_content = file.read()
+
+        self.assertEqual(decompressed_image, original_image_content)
+        self.assertEqual(decompressed_text.decode('utf-8'), original_text_content)
+
+        # Calculate the checksums
+        original_image_checksum = hashlib.md5(original_image_content).hexdigest()
+        decompressed_image_checksum = hashlib.md5(decompressed_image).hexdigest()
+        original_text_checksum = hashlib.md5(original_text_content.encode('utf-8')).hexdigest()
+        decompressed_text_checksum = hashlib.md5(decompressed_text).hexdigest()
+
+        # Validate the checksums
+        self.assertEqual(original_image_checksum, decompressed_image_checksum)
+        self.assertEqual(original_text_checksum, decompressed_text_checksum)
+
+    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    def test_decompress_bz2(self):
+        self.src_bck.object(self.test_image_bz2_filename).put_file(self.test_image_bz2_source)
+        self.src_bck.object(self.test_text_bz2_filename).put_file(self.test_text_bz2_source)
+
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1='--mode', val1='decompress', arg2='--compression', val2='bz2')
+        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
+        transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
+        # Wait for the job to finish
+        self.client.job(job_id=transform_job_id).wait(verbose=False)
+
+        decompressed_image = self.dest_bck.object(self.test_image_bz2_filename).get().read_all()
+        decompressed_text = self.dest_bck.object(self.test_text_bz2_filename).get().read_all()
+
+        self.assertNotEqual(decompressed_image, b"Data processing failed")
+        self.assertNotEqual(decompressed_image, b"Data processing failed")
+
+        with open(self.test_image_source, 'rb') as file:
+            original_image_content = file.read()
+        with open(self.test_text_source, 'r') as file:
+            original_text_content = file.read()
+
+        self.assertEqual(decompressed_image, original_image_content)
+        self.assertEqual(decompressed_text.decode('utf-8'), original_text_content)
+
+        # Calculate the checksums
+        original_image_checksum = hashlib.md5(original_image_content).hexdigest()
+        decompressed_image_checksum = hashlib.md5(decompressed_image).hexdigest()
+        original_text_checksum = hashlib.md5(original_text_content.encode('utf-8')).hexdigest()
+        decompressed_text_checksum = hashlib.md5(decompressed_text).hexdigest()
+
+        # Validate the checksums
+        self.assertEqual(original_image_checksum, decompressed_image_checksum)
+        self.assertEqual(original_text_checksum, decompressed_text_checksum)
 
 
 if __name__ == '__main__':
