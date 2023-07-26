@@ -6,12 +6,15 @@ import bz2
 import gzip
 import hashlib
 import json
+import time
 import os
 import random
 import shutil
 import string
 import tarfile
 import unittest
+
+import yaml
 
 import numpy as np
 import tensorflow as tf
@@ -21,11 +24,12 @@ from skimage.metrics import structural_similarity as ssim
 
 from aistore import Client
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HREV
-from aistore.sdk.etl_templates import GO_ECHO, ECHO, HELLO_WORLD, MD5, TAR2TF # TODO: Add COMPRESS once PyPI images are updated
+from aistore.sdk.etl_templates import GO_ECHO, ECHO, HELLO_WORLD, MD5, TAR2TF, COMPRESS  # TODO: Add COMPRESS once PyPI images are updated
 
 class TestTransformers(unittest.TestCase):
     def setUp(self):
         self.endpoint = os.environ.get("AIS_ENDPOINT", "http://192.168.49.2:8080")
+        self.git_test_mode = os.getenv('GIT_TEST', 'False')
         self.client = Client(self.endpoint)
         self.src_bck = self.client.bucket("src").create(exist_ok=True)
         self.dest_bck = self.client.bucket("dest").create(exist_ok=True)
@@ -46,7 +50,6 @@ class TestTransformers(unittest.TestCase):
         self.test_text_bz2_filename = "test-text.txt.bz2"
         self.test_text_bz2_source = "./resources/test-text.txt.bz2"
 
-        self.num_etls = len(self.client.cluster().list_running_etls())
         self.test_etl = self.client.etl("test-etl-" + self.generate_random_str()) 
 
     def tearDown(self):
@@ -61,14 +64,33 @@ class TestTransformers(unittest.TestCase):
         dir_path = "./tmp/"
         shutil.rmtree(dir_path)
 
+    # For Git testing purposes (if $GIT_TEST is True, tests will use image with test tag)
+    def __git_test_mode_format_image_tag_test(self, template, img):
+        template = yaml.safe_load(template)
+        template['spec']['containers'][0]['image'] = f"aistorage/transformer_{img}:test"
+        return yaml.dump(template)
+    
+    # TODO: Remove once etl_templates are updated (imagePullPolicy should be set to Always)
+    def __git_test_mode_format_image_pull_policy(self, template):
+        template = yaml.safe_load(template)
+        template['spec']['containers'][0]['imagePullPolicy'] = "Always"
+        return yaml.dump(template)
+
     def generate_random_str(self):
         return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-    
+
+    @unittest.skipIf(os.getenv('ECHO_ENABLE', 'true') == 'false', "ECHO is disabled")
     def test_echo(self):
         self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
         template = ECHO.format(communication_type=ETL_COMM_HPULL)
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "echo")
+        
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
@@ -84,12 +106,18 @@ class TestTransformers(unittest.TestCase):
             original_text_content = file.read()
         self.assertEqual(self.dest_bck.object(self.test_text_filename).get().read_all().decode('utf-8'), original_text_content)
 
-
+    @unittest.skipIf(os.getenv('GO_ECHO_ENABLE', 'true') == 'false', "GO_ECHO is disabled")
     def test_echo_go(self):
         self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
         template = GO_ECHO.format(communication_type=ETL_COMM_HPULL)
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "echo_go")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
 
         job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
@@ -107,11 +135,18 @@ class TestTransformers(unittest.TestCase):
             original_text_content = file.read()
         self.assertEqual(self.dest_bck.object(self.test_text_filename).get().read_all().decode('utf-8'), original_text_content)
 
+    @unittest.skipIf(os.getenv('HELLO_WORLD_ENABLE', 'true') == 'false', "HELLO_WORLD is disabled")
     def test_hello_world(self):
         self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
         template = HELLO_WORLD.format(communication_type=ETL_COMM_HPULL)
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "hello_world")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
@@ -121,11 +156,18 @@ class TestTransformers(unittest.TestCase):
         self.assertEqual(b"Hello World!", self.dest_bck.object(self.test_text_filename).get().read_all())
         self.assertEqual(b"Hello World!", self.dest_bck.object(self.test_image_filename).get().read_all())
 
+    @unittest.skipIf(os.getenv('MD5_ENABLE', 'true') == 'false', "MD5 is disabled")
     def test_md5(self):
         self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
         template = MD5.format(communication_type=ETL_COMM_HPULL)
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "md5")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
@@ -146,12 +188,17 @@ class TestTransformers(unittest.TestCase):
         md5.update(original_text_content.encode('utf-8'))
         hash = md5.hexdigest()
         self.assertEqual(self.dest_bck.object(self.test_text_filename).get().read_all().decode('utf-8'), hash)
-
-    @unittest.skip("Skipping until PyPI images are updated")
+    @unittest.skipIf(os.getenv('TAR2TF_ENABLE', 'true') == 'false', "TAR2TF is disabled")
     def test_tar2tf_simple(self):
         self.src_bck.object(self.test_tar_filename).put_file(self.test_tar_source)
 
         template = TAR2TF.format(communication_type=ETL_COMM_HREV, arg="", val="")
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "tar2tf")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(communication_type=ETL_COMM_HREV, template=template)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, ext={'tar':'tfrecord'}, to_bck=self.dest_bck)
@@ -186,8 +233,8 @@ class TestTransformers(unittest.TestCase):
         self.assertEqual(cls, original_cls)
 
         self.tar2tf_tear_down()
-
-    @unittest.skip("Skipping until PyPI images are updated")
+    
+    @unittest.skipIf(os.getenv('TAR2TF_ENABLE', 'true') == 'false', "TAR2TF is disabled")
     def test_tar2tf_rotation(self):
         self.src_bck.object(self.test_tar_filename).put_file(self.test_tar_source)
 
@@ -202,7 +249,14 @@ class TestTransformers(unittest.TestCase):
             ]
         }
         spec = json.dumps(spec)
+
         template = TAR2TF.format(communication_type=ETL_COMM_HREV, arg="-spec", val=spec)
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "tar2tf")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HREV)
 
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, ext={'tar': 'tfrecord'}, to_bck=self.dest_bck)
@@ -246,12 +300,18 @@ class TestTransformers(unittest.TestCase):
 
         self.tar2tf_tear_down()
 
-    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    @unittest.skipIf(os.getenv('COMPRESS_ENABLE', 'true') == 'false', "COMPRESS is disabled")
     def test_compress_gzip(self):
         self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
         template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1="--mode", val1="compress", arg2="--compression", val2="gzip")
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "compress")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
         # Wait for the job to finish
@@ -285,12 +345,18 @@ class TestTransformers(unittest.TestCase):
         self.assertEqual(original_image_checksum, decompressed_image_checksum)
         self.assertEqual(original_text_checksum, decompressed_text_checksum)
 
-    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    @unittest.skipIf(os.getenv('COMPRESS_ENABLE', 'true') == 'false', "COMPRESS is disabled")
     def test_compress_bz2(self):
         self.src_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.src_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
-        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1='--mode', val1='compress', arg2='--compression', val2='bz2')
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1="--mode", val1="compress", arg2="--compression", val2="bz2")
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "compress")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
         # Wait for the job to finish
@@ -324,12 +390,18 @@ class TestTransformers(unittest.TestCase):
         self.assertEqual(original_image_checksum, decompressed_image_checksum)
         self.assertEqual(original_text_checksum, decompressed_text_checksum)
 
-    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    @unittest.skipIf(os.getenv('COMPRESS_ENABLE', 'true') == 'false', "COMPRESS is disabled")
     def test_decompress_gzip(self):
         self.src_bck.object(self.test_image_gz_filename).put_file(self.test_image_gz_source)
         self.src_bck.object(self.test_text_gz_filename).put_file(self.test_text_gz_source)
 
-        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1='--mode', val1='decompress', arg2='--compression', val2='gzip')
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1="--mode", val1="decompress", arg2="--compression", val2="gzip")
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "compress")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
         # Wait for the job to finish
@@ -359,12 +431,18 @@ class TestTransformers(unittest.TestCase):
         self.assertEqual(original_image_checksum, decompressed_image_checksum)
         self.assertEqual(original_text_checksum, decompressed_text_checksum)
 
-    @unittest.skip("Skipping until PyPI and Docker images are updated")
+    @unittest.skipIf(os.getenv('COMPRESS_ENABLE', 'true') == 'false', "COMPRESS is disabled")
     def test_decompress_bz2(self):
         self.src_bck.object(self.test_image_bz2_filename).put_file(self.test_image_bz2_source)
         self.src_bck.object(self.test_text_bz2_filename).put_file(self.test_text_bz2_source)
 
-        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1='--mode', val1='decompress', arg2='--compression', val2='bz2')
+        template = COMPRESS.format(communication_type=ETL_COMM_HPULL, arg1="--mode", val1="decompress", arg2="--compression", val2="bz2")
+
+        if self.git_test_mode == 'true':
+            template = self.__git_test_mode_format_image_tag_test(template, "compress")
+
+        template = self.__git_test_mode_format_image_pull_policy(template)
+
         self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
         transform_job_id = self.src_bck.transform(etl_name=self.test_etl.name, to_bck=self.dest_bck)
         # Wait for the job to finish

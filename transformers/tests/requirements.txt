@@ -1,5 +1,6 @@
-numpy
-tensorflow
-pillow
-scikit-image
 aistore
+numpy
+pillow
+pyyaml
+scikit-image
+tensorflow

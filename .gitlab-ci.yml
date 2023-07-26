@@ -4,25 +4,33 @@ stages:
     - build
     - test
 
-build:linux:
+build:docker: # Build and push Docker images w/ `test` tag
     stage: build
+    services:
+        - docker:20.10.16-dind
     tags: 
-        - ais-k8s
-    script:
-        - git clone https://github.com/NVIDIA/aistore.git
-        - cd aistore && make all
-    artifacts:
-        paths:
-        - aistore
-    
-test:transformers:
-    stage: test
-    tags: 
-        - ais-k8s
+        - ais
+    variables:
+        GIT_TEST: "true"
     before_script:
-        - export AIS_ENDPOINT="http://192.168.49.2:8080"
-        - aistore/deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
+        - docker info
+        - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
     script:
-        - cd transformers
-        - make test
-        
+        - cd transformers && make -B all
+
+test:transformers: # Test transformers w/ `test` tag
+  stage: test
+  tags: 
+    - ais-k8s
+  variables:
+    AIS_ENDPOINT: "http://192.168.49.2:8080"
+    GIT_TEST: "true"
+  before_script:
+    - git clone https://github.com/NVIDIA/aistore.git
+    - cd aistore && make all
+    - ./deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
+    - cd ..
+  script:
+    - sleep 10
+    - cd transformers
+    - make test

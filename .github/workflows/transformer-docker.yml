@@ -2,25 +2,96 @@ name: Transformer Docker Images
 
 on:
   workflow_dispatch:
+    inputs:
+      build_echo_image:
+        description: 'Build ECHO Image (aistore/transformer_echo:latest)'
+        required: true
+        type: boolean
+        default: true
+      build_go_echo_image:
+        description: 'Build GO_ECHO Image (aistore/transformer_echo_go:latest)'
+        required: true
+        type: boolean
+        default: true
+      build_hello_world_image:
+        description: 'Build HELLO_WORLD Image (aistore/transformer_hello_world:latest)'
+        required: true
+        type: boolean
+        default: true
+      build_md5_image:
+        description: 'Build MD5 Image (aistore/transformer_md5:latest)'
+        required: true
+        type: boolean
+        default: true
+      build_tar2tf_image:
+        description: 'Build TAR2TF Image (aistore/transformer_tar2tf:latest)'
+        required: true
+        type: boolean
+        default: true
+      build_compress_image:
+        description: 'Build COMPRESS Image (aistore/transformer_compress:latest)'
+        required: true
+        type: boolean
+        default: true
   push:
     paths:
-      - 'transformers/**/*'
+      - 'transformers/**'
+
+env:
+  ECHO_ENABLE: ${{ github.event.inputs.build_echo_image }}
+  GO_ECHO_ENABLE: ${{ github.event.inputs.build_go_echo_image }}
+  HELLO_WORLD_ENABLE: ${{ github.event.inputs.build_hello_world_image }}
+  MD5_ENABLE: ${{ github.event.inputs.build_md5_image }}
+  TAR2TF_ENABLE: ${{ github.event.inputs.build_tar2tf_image }}
+  COMPRESS_ENABLE: ${{ github.event.inputs.build_compress_image }}
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-latest
     steps:
-
     - uses: actions/checkout@v3
-
-    - name: Login to DockerHub
+    - name: Docker Login
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Transformer Docker Images
+    - name: Setup Minikube
+      uses: medyagh/setup-minikube@v0.0.13
+      with:
+        driver: docker
+        container-runtime: docker
+        cpus: max
+        memory: max
+    - name: Run AIStore in Minikube
+      run: |
+        git clone https://github.com/NVIDIA/aistore.git
+        cd aistore/deploy/dev/k8s
+        ./minimal.sh
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.11
+    - name: Build & Push Transformer Docker Images w/ `test` Tag
       run: |
         pushd $GITHUB_WORKSPACE/transformers
-        make all
+        export GIT_TEST="true"
+        make -B all
         popd
+    - name: Test Transformer Docker Images w/ `test` Tag
+      run: |
+        cd $GITHUB_WORKSPACE/transformers/
+        export AIS_ENDPOINT="http://$(minikube ip):8080"
+        export GIT_TEST="true"
+        make test
+    - name: Build & Push Transformer Docker Images w/ `latest` Tag
+      run: |
+        pushd $GITHUB_WORKSPACE/transformers
+        export GIT_TEST="false"
+        make -B all
+        popd
+    - name: Test Transformer Docker Images w/ `latest` Tag
+      run: |
+        cd $GITHUB_WORKSPACE/transformers/
+        export AIS_ENDPOINT="http://$(minikube ip):8080"
+        export GIT_TEST="false"
+        make test

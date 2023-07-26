@@ -12,8 +12,6 @@ import bz2
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-from aistore.sdk.const import HEADER_CONTENT_TYPE, STATUS_OK
-
 host_target = os.environ['AIS_TARGET_URL']
 
 class Handler(BaseHTTPRequestHandler):
@@ -23,8 +21,8 @@ class Handler(BaseHTTPRequestHandler):
 
     # Set standard headers for responses
     def _set_headers(self):
-        self.send_response(STATUS_OK)
-        self.send_header(HEADER_CONTENT_TYPE, "application/octet-stream")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/octet-stream")
         self.end_headers()
 
     # Method to process incoming data, supporting both compression and decompression, and
