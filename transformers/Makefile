@@ -29,4 +29,4 @@ $(SUBDIRS):
 	$(MAKE) -C $@ all
 
 test:
-	cd tests && pip install -r "requirements.txt" && PYTHONWARNINGS="ignore" python3 -m unittest -v test_transformers.py
+	cd tests && pip install -r "requirements.txt" && python3 -m unittest -v
