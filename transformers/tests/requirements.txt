@@ -4,3 +4,7 @@ pillow
 pyyaml
 scikit-image
 tensorflow
+requests
+scipy
+keras
+pyyaml

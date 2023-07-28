@@ -33,6 +33,11 @@ on:
         required: true
         type: boolean
         default: true
+      build_keras_preprocess_image:
+        description: 'Build Keras Preprocess Image (aistore/transformer_keras:latest)'
+        required: true
+        type: boolean
+        default: true
   push:
     paths:
       - 'transformers/**'
@@ -44,6 +49,7 @@ env:
   MD5_ENABLE: ${{ github.event.inputs.build_md5_image }}
   TAR2TF_ENABLE: ${{ github.event.inputs.build_tar2tf_image }}
   COMPRESS_ENABLE: ${{ github.event.inputs.build_compress_image }}
+  KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
 
 jobs:
   build:

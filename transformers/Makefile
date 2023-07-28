@@ -1,4 +1,4 @@
-SUBDIRS := compress echo go_echo hello_world md5 tar2tf
+SUBDIRS := compress echo go_echo hello_world md5 tar2tf keras_preprocess
 
 ifeq ($(ECHO_ENABLE), false)
 SUBDIRS := $(filter-out echo,$(SUBDIRS))
@@ -21,6 +21,10 @@ SUBDIRS := $(filter-out tar2tf,$(SUBDIRS))
 endif
 
 ifeq ($(COMPRESS_ENABLE), false)
+SUBDIRS := $(filter-out compress,$(SUBDIRS))
+endif
+
+ifeq ($(KERAS_ENABLE), false)
 SUBDIRS := $(filter-out compress,$(SUBDIRS))
 endif
 

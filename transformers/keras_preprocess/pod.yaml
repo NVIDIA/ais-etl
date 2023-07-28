@@ -11,7 +11,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: gaikwadabhishek/transformer_keras:latest
+      image: aistorage/transformer_keras:latest
       imagePullPolicy: Always
       ports:
         - name: default
