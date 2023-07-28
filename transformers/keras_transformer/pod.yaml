@@ -1,0 +1,32 @@
+# https://github.com/NVIDIA/ais-etl/blob/master/transformers/keras_transformer/README.md
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-compress
+  annotations:
+    # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
+    # Visit https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms 
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: gaikwadabhishek/transformer_keras:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 80
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
+      env:
+        - name: FORMAT
+        # expected values - PNG, JPEG, etc
+          value: ${FORMAT:-"JPEG"}
+        - name: TRANSFORM
+        # MANDATORY: expected json string parameter-value paris. 
+        # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator#apply_transform
+        # e.g. '{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}'
+          value:  ${TRANSFORM}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
