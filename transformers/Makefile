@@ -25,7 +25,7 @@ SUBDIRS := $(filter-out compress,$(SUBDIRS))
 endif
 
 ifeq ($(KERAS_ENABLE), false)
-SUBDIRS := $(filter-out compress,$(SUBDIRS))
+SUBDIRS := $(filter-out keras_preprocess,$(SUBDIRS))
 endif
 
 all: $(SUBDIRS)
