@@ -32,5 +32,8 @@ all: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@ all
 
-test:
-	cd tests && pip install -r "requirements.txt" && python3 -m unittest -v
+common_deps:
+	pip install -r tests/requirements.txt --quiet
+
+test: common_deps
+	cd tests && pytest -v .

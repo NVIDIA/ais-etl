@@ -7,8 +7,6 @@
 import unittest
 import io
 import os
-from aistore.sdk.etl_const import ETL_COMM_HPULL
-from aistore.sdk.etl_templates import KERAS_TRANSFORMER
 
 from keras.preprocessing.image import (
     ImageDataGenerator,
@@ -16,8 +14,11 @@ from keras.preprocessing.image import (
     array_to_img,
     img_to_array,
 )
-from test_base import TestBase
 from utils import git_test_mode_format_image_tag_test
+from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl_templates import KERAS_TRANSFORMER
+from test_base import TestBase
+
 
 
 class TestTransformers(TestBase):
@@ -27,28 +28,7 @@ class TestTransformers(TestBase):
         self.test_image_source = "./resources/test-image.jpg"
         self.test_bck.object(self.test_image_filename).put_file(self.test_image_source)
 
-    @unittest.skipIf(
-        os.getenv("KERAS_ENABLE", "true") == "false",
-        "Keras image was not built, skipping keras test",
-    )
-    def test_keras_transformer(self):
-        template = KERAS_TRANSFORMER.format(
-            communication_type=ETL_COMM_HPULL,
-            format="JPEG",
-            transform='{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}',
-        )
-        if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "keras")
-
-        self.test_etl.init_spec(template=template)
-
-        # transformed image - etl
-        transformed_image_etl = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-
+    def get_transformed_image_local(self) -> bytes:
         # transformed image - local
         img = load_img(self.test_image_source)
         img = img_to_array(img)
@@ -60,6 +40,53 @@ class TestTransformers(TestBase):
         img = array_to_img(rotate)
         buf = io.BytesIO()
         img.save(buf, format="JPEG")
-        transformed_image_local = buf.getvalue()
+        return buf.getvalue()
 
-        self.assertEqual(transformed_image_local, transformed_image_etl)
+    def get_template(self, comm_type: str) -> str:
+        template = KERAS_TRANSFORMER.format(
+            communication_type=comm_type,
+            format="JPEG",
+            transform='{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}',
+        )
+        if self.git_test_mode == "true":
+            template = git_test_mode_format_image_tag_test(template, "keras")
+        return template
+
+    @unittest.skipIf(
+        os.getenv("KERAS_ENABLE", "true") == "false",
+        "Keras image was not built, skipping keras test",
+    )
+    def test_keras_transformer_hpull(self):
+        self.test_etl.init_spec(template=self.get_template(ETL_COMM_HPULL))
+        transformed_image_etl = (
+            self.test_bck.object(self.test_image_filename)
+            .get(etl_name=self.test_etl.name)
+            .read_all()
+        )
+        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
+
+    @unittest.skipIf(
+        os.getenv("KERAS_ENABLE", "true") == "false",
+        "Keras image was not built, skipping keras test",
+    )
+    def test_keras_transformer_hrev(self):
+        self.test_etl.init_spec(template=self.get_template(ETL_COMM_HREV))
+        transformed_image_etl = (
+            self.test_bck.object(self.test_image_filename)
+            .get(etl_name=self.test_etl.name)
+            .read_all()
+        )
+        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
+
+    @unittest.skipIf(
+        os.getenv("KERAS_ENABLE", "true") == "false",
+        "Keras image was not built, skipping keras test",
+    )
+    def test_keras_transformer_hpush(self):
+        self.test_etl.init_spec(template=self.get_template(ETL_COMM_HPUSH))
+        transformed_image_etl = (
+            self.test_bck.object(self.test_image_filename)
+            .get(etl_name=self.test_etl.name)
+            .read_all()
+        )
+        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
