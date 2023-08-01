@@ -7,11 +7,11 @@ import hashlib
 import os
 import unittest
 
+from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl_templates import MD5
+
 from tests.utils import git_test_mode_format_image_tag_test
 from tests.test_base import TestBase
-
-from aistore.sdk.etl_const import ETL_COMM_HPULL
-from aistore.sdk.etl_templates import MD5
 
 
 class TestMD5Transformer(TestBase):
@@ -24,40 +24,43 @@ class TestMD5Transformer(TestBase):
         self.test_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.test_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
-    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
-    def test_md5(self):
-        template = MD5.format(communication_type=ETL_COMM_HPULL)
+    def md5_hash_file(self, filepath):
+        with open(filepath, "rb") as file:
+            file_content = file.read()
+            return hashlib.md5(file_content).hexdigest()
+
+    def compare_transformed_data_with_md5_hash(self, filename, original_filepath):
+        transformed_data_bytes = (
+            self.test_bck.object(filename).get(etl_name=self.test_etl.name).read_all()
+        )
+        original_file_hash = self.md5_hash_file(original_filepath)
+        self.assertEqual(transformed_data_bytes.decode("utf-8"), original_file_hash)
+
+    def run_md5_test(self, communication_type):
+        template = MD5.format(communication_type=communication_type)
 
         if self.git_test_mode == "true":
             template = git_test_mode_format_image_tag_test(template, "md5")
 
-        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
-
-        transformed_image_bytes = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-        transformed_text_bytes = (
-            self.test_bck.object(self.test_text_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
+        self.test_etl.init_spec(
+            template=template, communication_type=communication_type
         )
 
-        # Compare image content
-        with open(self.test_image_source, "rb") as file:
-            original_image_content = file.read()
-            md5 = hashlib.md5()
-            md5.update(original_image_content)
-            hash_code = md5.hexdigest()
+        self.compare_transformed_data_with_md5_hash(
+            self.test_image_filename, self.test_image_source
+        )
+        self.compare_transformed_data_with_md5_hash(
+            self.test_text_filename, self.test_text_source
+        )
 
-        self.assertEqual(transformed_image_bytes.decode("utf-8"), hash_code)
+    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
+    def test_md5_hpull(self):
+        self.run_md5_test(ETL_COMM_HPULL)
 
-        # Compare text content
-        with open(self.test_text_source, "r", encoding="utf-8") as file:
-            original_text_content = file.read()
-            md5 = hashlib.md5()
-            md5.update(original_text_content.encode("utf-8"))
-            hashcode = md5.hexdigest()
+    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
+    def test_md5_hpush(self):
+        self.run_md5_test(ETL_COMM_HPUSH)
 
-        self.assertEqual(transformed_text_bytes.decode("utf-8"), hashcode)
+    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
+    def test_md5_hrev(self):
+        self.run_md5_test(ETL_COMM_HREV)
