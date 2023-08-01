@@ -17,7 +17,12 @@ spec:
           containerPort: 80
       # For more information on additional arguments, please refer to
       # https://github.com/NVIDIA/ais-etl/blob/master/transformers/compress/README.md
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80', '${ARG1}', '${VAL1}', '${ARG2}', '${VAL2}']
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
+      env:
+        # COMPRESS_OPTIONS is a dictionary of COMPRESS parameters, which includes `mode` and `compression`.
+        # For more information, refer to https://github.com/NVIDIA/ais-etl/blob/master/transformers/compress/README.md.
+        - name: COMPRESS_OPTIONS
+          value: ${COMPRESS_OPTIONS:-"{}"}
       readinessProbe:
         httpGet:
           path: /health

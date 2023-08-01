@@ -6,41 +6,62 @@ The transformer supports both `hpull` and `hpush` communication mechanisms.
 
 > For more information on communication mechanisms, refer [here](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms).
 
-## Available Parameters
+## Parameters
 
-The `Compress` transformer supports a range of arguments:
+| Parameter | Description |
+|---|---|
+| `COMPRESS_OPTIONS` | A JSON string (dictionary) that controls the operation mode and compression algorithm. |
 
-| Argument    | Description                                                           | Default Value |
-| ----------- | --------------------------------------------------------------------- | ------------- |
-| `--mode`      | Specify the data processing mode to use (e.g., `compress` or `decompress`) | `compress`     |
-| `--compression`| Specify the compression algorithm to use (e.g., `gzip` or `bz2`)           | `gzip`          |
+The default operation mode is `compress` and the default compression algorithm is `gzip`. To use these defaults, simply omit them from the input (e.g. `{}` for `gzip` compression).
 
-Remember to adjust these parameters according to your requirements.
+If you want to specify a different operation mode or compression algorithm, include the `mode` and `compression` keys in the dictionary (e.g.`{"mode": "decompress"}` for `gzip` decompression, `{"compression": "bz2"}` for `bz2` compression).
 
-## Basic Usage (w/ Defaults)
+Remember to adjust these parameters according to your requirements and refer to the following sections for more specific usage examples.
 
-By default, the `Compress` transformer compresses data using the `gzip` algorithm. The following sections demonstrate how to use the transformer with default options.
+## Usage
+
+The following sections demonstrate usage of the `Compress` transformer using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md) and [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md).
 
 ### Initialization w/ AIStore CLI
 
-The following demonstrates how to initialize the `Compress` transformer with its default settings using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md):
+The following demonstrates how to initialize the `Compress` transformer w/ default parameters using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md):
 
 ```bash
 cd ais-etl/transformers/compress
 
 # Export Communication Mechanism as Environment Variable
 export COMMUNICATION_TYPE = 'hpull://'
+# Export COMPRESS_OPTIONS as Environment Variable
+export COMPRESS_OPTIONS = '{}'
 # Substitute Environment Variables in Pod Spec
-eval "echo \"$(cat pod.yaml)\"" > compresssion_pod_config.yaml 
+eval "echo \"$(cat pod.yaml)\"" > gzip_compresssion_pod_config.yaml 
 # Initialize Default Compression ETL
-ais etl init spec --name 'compression-etl' --from-file './compression_pod_config.yaml'
+ais etl init spec --name 'gzip-compression-etl' --from-file './gzip_compression_pod_config.yaml'
+```
+
+The following demonstrates how to initialize the `Compress` transformer w/ parameter specifications using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md):
+
+```bash
+cd ais-etl/transformers/compress
+
+# Export Communication Mechanism as Environment Variable
+export COMMUNICATION_TYPE = 'hpull://'
+# Export COMPRESS_OPTIONS as Environment Variable
+export COMPRESS_OPTIONS = '{"mode": "decompress", "compression": "bz2"}'
+
+# Substitute Environment Variables in Pod Spec
+eval "echo \"$(cat pod.yaml)\"" > bz2_decompresssion_pod_config.yaml 
+# Initialize Decompression ETL
+ais etl init spec --name 'bz2-decompression-etl' --from-file './bz2_decompression_pod_config.yaml'
 ```
 
 ### Initialization w/ AIStore Python SDK
 
-The following demonstrates how to initialize the `Compress` transformer with its default settings using the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md):
+The following demonstrates how to initialize the `Compress` transformer with w/ default parameters using the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md):
 
 ```python
+import json
+
 from aistore.sdk.client import Client
 # Import Compress YAML Specification
 from aistore.sdk.etl_templates import COMPRESS
@@ -50,45 +71,20 @@ from aistore.sdk.etl_const import ETL_COMM_HPULL
 AIS_ENDPOINT = os.environ.get("AIS_ENDPOINT")
 client = Client(AIS_ENDPOINT)
 
+compress_options = json.dumps('{}')
+
 # Format Template w/ Communication Mechanism & Default Server Arguments
 compress_template = COMPRESS.format(
     communication_mechanism=ETL_COMM_PULL,
-    arg1='',
-    val1='',
-    arg2='',
-    val2='',
+    compress_options=compress_options
+    
 )
 
 # Initialize Default Compress ETL
 compress_template = client.etl("gzip-compression-etl").init_spec(template=compress_template, communication_type=ETL_COMM_HPULL)
 ```
 
-## Compression Options
-
-The `Compress` transformer can be used in different modes (compress or decompress) and with different compression algorithms (gzip or bz2). The following sections demonstrate how to use these options.
-
-### Initialization w/ AIStore CLI
-
-The following demonstrates how to initialize the `Compress` transformer with different settings via the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md):
-
-```bash
-cd ais-etl/transformers/compress
-
-# Export Communication Mechanism & Server Arguments as Environment Variables
-export COMMUNICATION_TYPE = 'hpull://'
-export ARG1 = '--mode'
-export VAL1 = 'decompress'
-export ARG2 = '--compression'
-export VAL2 = 'bz2'
-# Substitute Environment Variables in Pod Spec
-eval "echo \"$(cat pod.yaml)\"" > decompresssion_pod_config.yaml 
-# Initialize Decompression ETL
-ais etl init spec --name 'decompression-etl' --from-file './decompression_pod_config.yaml'
-```
-
-### Initialization w/ AIStore Python SDK
-
-The following demonstrates how to initialize the `Compress` transformer with different settings via the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md):
+The following demonstrates how to initialize the `Compress` transformer w/ parameter specifications via the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md):
 
 ```python
 from aistore.sdk.client import Client
@@ -100,13 +96,12 @@ from aistore.sdk.etl_const import ETL_COMM_HPULL
 AIS_ENDPOINT = os.environ.get("AIS_ENDPOINT")
 client = Client(AIS_ENDPOINT)
 
+compress_options = json.dumps({"mode": "decompress", "compression": "bz2"})
+
 # Format Template w/ Communication Mechanism & Additional Server Arguments
 decompress_template = COMPRESS.format(
     communication_mechanism=ETL_COMM_HPULL,
-    arg1='--mode',
-    val1='decompress',
-    arg2='--compression',
-    val2='bz2'   
+    compress_options = compress_options
 )
 
 # Initialize ETLs

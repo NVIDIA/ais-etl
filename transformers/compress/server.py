@@ -5,18 +5,34 @@
 #
 
 import argparse
-import requests
-import os
-import gzip
 import bz2
+import gzip
+import json
+import logging
+import os
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-host_target = os.environ['AIS_TARGET_URL']
+import requests
+
+host_target = os.environ["AIS_TARGET_URL"]
+compress_options = json.loads(os.environ["COMPRESS_OPTIONS"])
+
+if "mode" not in compress_options:
+    mode = "compress"
+else:
+    mode = compress_options["mode"]
+
+if "compression" not in compress_options:
+    compression = "gzip"
+else:
+    compression = compress_options["compression"]
+
 
 class Handler(BaseHTTPRequestHandler):
     # Overriding log_request to not log successful requests
-    def log_request(self, code='-', size='-'):
+    def log_request(self, code="-", size="-"):
         pass
 
     # Set standard headers for responses
@@ -25,59 +41,49 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/octet-stream")
         self.end_headers()
 
-    # Method to process incoming data, supporting both compression and decompression, and
-    # gzip and bz2 compression algorithms
     def process_data(self, data):
-        try:
-            if args.mode == 'compress':
-                if args.compression == 'gzip':
-                    return gzip.compress(data)
-                elif args.compression == 'bz2':
-                    return bz2.compress(data)
-                else:
-                    raise ValueError(f"Unsupported compression algorithm: {args.compression}")
-            elif args.mode == 'decompress':
-                if args.compression == 'gzip':
-                    return gzip.decompress(data)
-                elif args.compression == 'bz2':
-                    return bz2.decompress(data)
-                else:
-                    raise ValueError(f"Unsupported compression algorithm: {args.compression}")
-            else:
-                raise ValueError(f"Unsupported data processing mode: {args.mode}")
-        except Exception as e:
-            # Log the error for debugging
-            print(f"Error during data processing: {e}")
-            # Return None to indicate a failure
-            return None     
+        if mode == "compress" and compression == "gzip":
+            return gzip.compress(data)
+        if mode == "compress" and compression == "bz2":
+            return bz2.compress(data)
+        if mode == "decompress" and compression == "gzip":
+            return gzip.decompress(data)
+        if mode == "decompress" and compression == "bz2":
+            return bz2.decompress(data)
+        raise ValueError(
+            f"Unsupported data processing mode ({mode}) or compression algorithm ({compression})"
+        )
 
     # PUT handler supports `hpush` operation
     def do_PUT(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        processed_data = self.process_data(post_data)
-        if processed_data is not None:
+        try:
+            content_length = int(self.headers["Content-Length"])
+            post_data = self.rfile.read(content_length)
+            processed_data = self.process_data(post_data)
             self._set_headers()
             self.wfile.write(processed_data)
-        else:
+        except Exception as exception:
+            logging.error("Error processing PUT request: %s", str(exception))
             self.send_response(500)
             self.end_headers()
-            self.wfile.write(b"Data processing failed") 
+            self.wfile.write(b"Data processing failed")
 
     # GET handler supports `hpull` operation
     def do_GET(self):
-        if self.path == "/health":
-            self._set_headers()
-            self.wfile.write(b"OK")
-            return
+        try:
+            if self.path == "/health":
+                self._set_headers()
+                self.wfile.write(b"OK")
+                return
 
-        response = requests.get(host_target + self.path)
-        processed_data = self.process_data(response.content)
-        
-        if processed_data is not None:
+            response = requests.get(host_target + self.path)
+            processed_data = self.process_data(response.content)
+
             self._set_headers()
             self.wfile.write(processed_data)
-        else:
+
+        except Exception as exception:
+            logging.error("Error processing GET request: %s", str(exception))
             self.send_response(500)
             self.end_headers()
             self.wfile.write(b"Data processing failed")
@@ -96,23 +102,15 @@ def run(addr, port):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a simple HTTP server")
     parser.add_argument(
-        "-l", "--listen",
+        "-l",
+        "--listen",
         help="Specify the IP address on which the server listens",
     )
     parser.add_argument(
-        "-p", "--port",
+        "-p",
+        "--port",
         type=int,
         help="Specify the port on which the server listens",
-    )
-    parser.add_argument(
-        "--compression",
-        default="gzip",
-        help="Specify the compression algorithm to use (e.g. gzip, bz2)",
-    )
-    parser.add_argument(
-        "--mode",
-        default="compress",
-        help="Specify the data processing mode to use (e.g. 'compress' or 'decompress')",
     )
     args = parser.parse_args()
     run(addr=args.listen, port=args.port)
