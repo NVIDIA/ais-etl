@@ -1,19 +1,15 @@
+# Default image tag is 'latest'
+TAG := latest
+ifeq ($(GIT_TEST), true)
+	TAG := test
+endif
+
 REGISTRY_URL ?= docker.io/aistorage
 
 all: build push
 
-ifeq ($(GIT_TEST),true)
 build:
-	docker build -t $(REGISTRY_URL)/transformer_echo:test .
+	docker build -t $(REGISTRY_URL)/transformer_echo:$(TAG) .
 
 push:
-	docker push $(REGISTRY_URL)/transformer_echo:test
-
-else
-build:
-	docker build -t $(REGISTRY_URL)/transformer_echo:latest .
-
-push:
-	docker push $(REGISTRY_URL)/transformer_echo:latest
-
-endif
+	docker push $(REGISTRY_URL)/transformer_echo:$(TAG)

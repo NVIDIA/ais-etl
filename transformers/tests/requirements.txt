@@ -1,10 +1,13 @@
 aistore
+ffmpeg-python
+filetype
+keras
 numpy
 pillow
 pyyaml
-scikit-image
-tensorflow
 requests
+scikit-image
 scipy
 keras
 pytest
+tensorflow

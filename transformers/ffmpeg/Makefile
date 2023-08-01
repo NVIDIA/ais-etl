@@ -9,7 +9,7 @@ REGISTRY_URL ?= docker.io/aistorage
 all: build push
 
 build:
-	docker build -t $(REGISTRY_URL)/transformer_echo_go:$(TAG) .
+	docker build -t $(REGISTRY_URL)/transformer_ffmpeg:$(TAG) .
 
 push:
-	docker push $(REGISTRY_URL)/transformer_echo_go:$(TAG)
+	docker push $(REGISTRY_URL)/transformer_ffmpeg:$(TAG)
