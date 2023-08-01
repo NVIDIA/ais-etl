@@ -38,6 +38,11 @@ on:
         required: true
         type: boolean
         default: true
+      build_ffmpeg_image:
+        description: 'Build FFMPEG Image (aistore/transformer_ffmpeg:latest)'
+        required: true
+        type: boolean
+        default: true
   push:
     paths:
       - 'transformers/**'
@@ -50,6 +55,7 @@ env:
   TAR2TF_ENABLE: ${{ github.event.inputs.build_tar2tf_image }}
   COMPRESS_ENABLE: ${{ github.event.inputs.build_compress_image }}
   KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
+  FFMPEG_ENABLE: ${{ github.event.inputs.build_ffmpeg_image }}
 
 jobs:
   build:
@@ -77,6 +83,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.11
+    - name: Install FFMPEG
+      run: |
+        wget https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-4.3.1-amd64-static.tar.xz
+        tar -xf ffmpeg-4.3.1-amd64-static.tar.xz
+        cp ffmpeg-4.3.1-amd64-static/{ffmpeg,ffprobe} /usr/local/bin
+        rm -rf ffmpeg-4.3.1-amd64-static ffmpeg-4.3.1-amd64-static.tar.xz
+        ffmpeg -version
     - name: Build & Push Transformer Docker Images w/ `test` Tag
       run: |
         pushd $GITHUB_WORKSPACE/transformers
