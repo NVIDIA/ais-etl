@@ -19,6 +19,8 @@ The image format (JPEG, PNG, etc.) of the images to be processed or stored is sp
 
 The transformer supports both `hpull`, `hpush` and `hrev` communication mechanisms for seamless integration.
 
+> **Note:** This transformer is using [`Flask`](https://flask.palletsprojects.com/en/2.3.x/) and [`Gunicorn`](https://gunicorn.org/), multithreaded HTTP server for the same implmentation under [`http-multithreaded-server`](/ais-etl/transformers/keras_preprocess/http-multithreaded-server/) folder.
+
 > For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms).
 
 ## Parameters
