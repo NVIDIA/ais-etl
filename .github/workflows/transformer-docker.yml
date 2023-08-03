@@ -85,10 +85,12 @@ jobs:
         python-version: 3.11
     - name: Install FFMPEG
       run: |
-        wget https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-4.3.1-amd64-static.tar.xz
-        tar -xf ffmpeg-4.3.1-amd64-static.tar.xz
-        cp ffmpeg-4.3.1-amd64-static/{ffmpeg,ffprobe} /usr/local/bin
-        rm -rf ffmpeg-4.3.1-amd64-static ffmpeg-4.3.1-amd64-static.tar.xz
+        wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+        tar -xf ffmpeg-release-amd64-static.tar.xz
+        FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
+        cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
+        cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
+        rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
         ffmpeg -version
     - name: Build & Push Transformer Docker Images w/ `test` Tag
       run: |
