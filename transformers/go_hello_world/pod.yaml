@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: echo-go
+  annotations:
+    # Values it can take ["hpull://","hrev://","hpush://"]
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_echo_go:latest
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: default
+          containerPort: 80
+      command: ['./echo', '-l', '0.0.0.0', '-p', '80']
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
