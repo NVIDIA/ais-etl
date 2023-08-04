@@ -4,14 +4,14 @@ AIStore hosts a variety of sample transformers in the form of Docker images to b
 
 | Transformer | Language | Communication Mechanisms | Description |
 | ---------- | -------- | ------------------------ | ----------- |
-| [`echo`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/echo) | `python:3.8.5` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
-| [`go_echo`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/go_echo) | `golang:1.16` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
-| [`hello_world`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/hello_world) | `python:3.8.5` | `hpull`, `hpush`, `hrev` | Returns `Hello World!` string on any request. |
-| [`md5`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/md5) | `python:3.8.5` | `hpull`, `hpush`, `hrev` | Returns the `MD5` sum of the original data as the response. |
-| [`tar2tf`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/tar2tf) | `golang:1.16` | `hrev` | Returns the transformed TensorFlow compatible data for the input `TAR` files. |
-| [`compress`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/compress) | `python:3.8.5` | `hpull`, `hpush`, `hrev` | Returns the compressed or decompressed data using `gzip` or `bz2`. |
-| [`ffmpeg`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/ffmpeg) | `python:3.8.5` | `hpull`, `hpush`, `hrev` | Returns the `FFMPEG` decoded data. |
-| [`keras`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/keras_preprocess) | `python:3.8.5` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Keras` pre-processing. |
+| [`echo`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/echo) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
+| [`go_echo`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/go_echo) | `golang:1.20` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
+| [`hello_world`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/hello_world) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns `Hello World!` string on any request. |
+| [`md5`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/md5) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the `MD5` sum of the original data as the response. |
+| [`tar2tf`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/tar2tf) | `golang:1.20` | `hrev` | Returns the transformed TensorFlow compatible data for the input `TAR` files. |
+| [`compress`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/compress) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the compressed or decompressed data using `gzip` or `bz2`. |
+| [`ffmpeg`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/ffmpeg) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the `FFMPEG` decoded data. |
+| [`keras`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/keras_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Keras` pre-processing. |
 
 ## General Usage
 
