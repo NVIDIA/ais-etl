@@ -4,42 +4,47 @@ on:
   workflow_dispatch:
     inputs:
       build_echo_image:
-        description: 'Build ECHO Image (aistore/transformer_echo:latest)'
+        description: 'Build ECHO Image (aistorage/transformer_echo:latest)'
         required: true
         type: boolean
         default: true
       build_go_echo_image:
-        description: 'Build GO_ECHO Image (aistore/transformer_echo_go:latest)'
+        description: 'Build GO_ECHO Image (aistorage/transformer_echo_go:latest)'
         required: true
         type: boolean
         default: true
       build_hello_world_image:
-        description: 'Build HELLO_WORLD Image (aistore/transformer_hello_world:latest)'
+        description: 'Build HELLO_WORLD Image (aistorage/transformer_hello_world:latest)'
         required: true
         type: boolean
         default: true
       build_md5_image:
-        description: 'Build MD5 Image (aistore/transformer_md5:latest)'
+        description: 'Build MD5 Image (aistorage/transformer_md5:latest)'
         required: true
         type: boolean
         default: true
       build_tar2tf_image:
-        description: 'Build TAR2TF Image (aistore/transformer_tar2tf:latest)'
+        description: 'Build TAR2TF Image (aistorage/transformer_tar2tf:latest)'
         required: true
         type: boolean
         default: true
       build_compress_image:
-        description: 'Build COMPRESS Image (aistore/transformer_compress:latest)'
+        description: 'Build COMPRESS Image (aistorage/transformer_compress:latest)'
         required: true
         type: boolean
         default: true
       build_keras_preprocess_image:
-        description: 'Build Keras Preprocess Image (aistore/transformer_keras:latest)'
+        description: 'Build Keras Preprocess Image (aistorage/transformer_keras:latest)'
         required: true
         type: boolean
         default: true
       build_ffmpeg_image:
-        description: 'Build FFMPEG Image (aistore/transformer_ffmpeg:latest)'
+        description: 'Build FFMPEG Image (aistorage/transformer_ffmpeg:latest)'
+        required: true
+        type: boolean
+        default: true
+      build_torchvision_preprocess_image:
+        description: 'Build TORCHVISION_PREPROCESS Image (aistorage/transformer_torchvision_preprocess:latest)'
         required: true
         type: boolean
         default: true
@@ -56,6 +61,7 @@ env:
   COMPRESS_ENABLE: ${{ github.event.inputs.build_compress_image }}
   KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
   FFMPEG_ENABLE: ${{ github.event.inputs.build_ffmpeg_image }}
+  TORCHVISION_ENABLE: ${{ github.event.inputs.build_torchvision_preprocess_image }}
 
 jobs:
   build:

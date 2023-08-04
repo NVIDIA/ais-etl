@@ -8,7 +8,7 @@ import unittest
 import io
 import os
 
-from tests.test_base import TestBase
+from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
 
 from keras.preprocessing.image import (

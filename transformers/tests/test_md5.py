@@ -11,7 +11,7 @@ from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import MD5
 
 from tests.utils import git_test_mode_format_image_tag_test
-from tests.test_base import TestBase
+from tests.base import TestBase
 
 
 class TestMD5Transformer(TestBase):

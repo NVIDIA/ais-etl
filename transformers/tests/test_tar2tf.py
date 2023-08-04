@@ -15,7 +15,7 @@ import tensorflow as tf
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
-from tests.test_base import TestBase
+from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
 
 from aistore.sdk.etl_const import ETL_COMM_HREV

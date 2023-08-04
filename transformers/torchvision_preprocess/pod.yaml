@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-torchvision
+  annotations:
+    # Values it can take ["hpull://","hrev://","hpush://"]
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_torchvision:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 80
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
+      env:
+        - name: FORMAT
+        # Expected Values - PNG, JPEG, etc.
+          value: ${FORMAT}
+        - name: TRANSFORM
+        # MANDATORY: Expected JSON string parameter-value pairs. 
+        # https://pytorch.org/vision/0.9/transforms.html
+        # e.g. '{"ColorJitter": {"brightness": 0.8, "contrast": 0.4}, "RandomRotation": {"degrees": 30}}'
+          value:  ${TRANSFORM}
+      # This is a health check endpoint which one should specify
+      # for aistore to determine the health of the ETL container.
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
