@@ -22,7 +22,7 @@ spec:
         # expected values - PNG, JPEG, etc
           value: ${FORMAT:-"JPEG"}
         - name: TRANSFORM
-        # MANDATORY: expected json string parameter-value paris. 
+        # MANDATORY: expected json string parameter-value pairs. 
         # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator#apply_transform
         # e.g. '{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}'
           value:  ${TRANSFORM}
