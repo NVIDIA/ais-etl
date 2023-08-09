@@ -104,7 +104,7 @@ func logAndRespondError(w http.ResponseWriter, err error, msg string, status int
 }
 
 func logError(err error, msg string) {
-	logger.Printf("%s: %v", msg, err)
+	logger.Printf("%s: %v\n", msg, err)
 }
 
 func readContent(w http.ResponseWriter, body io.ReadCloser, contentLength int64, path string) {
