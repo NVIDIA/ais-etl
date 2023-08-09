@@ -39,6 +39,7 @@ endif
 all: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@ all
+	docker system prune -a -f --volumes
 
 common_deps:
 	pip install -r tests/requirements.txt
