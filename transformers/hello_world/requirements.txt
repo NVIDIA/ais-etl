@@ -1,1 +1,4 @@
-requests
+fastapi
+uvicorn[standard]
+gunicorn
+aiohttp
