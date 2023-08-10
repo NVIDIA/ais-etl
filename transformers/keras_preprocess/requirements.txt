@@ -1,7 +1,8 @@
-requests
+fastapi
+uvicorn[standard]
+gunicorn
+aiohttp
 pillow
 scipy
 keras
 tensorflow
-Flask
-gunicorn
