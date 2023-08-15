@@ -1,10 +1,16 @@
 image: aistorage/ci:latest
 
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
 stages:
     - build
     - test
 
-build:docker: # Build and push Docker images w/ `test` tag
+# Common setup for all build stages
+.build_template:
+    when: manual
     stage: build
     services:
         - docker:20.10.16-dind
@@ -15,29 +21,169 @@ build:docker: # Build and push Docker images w/ `test` tag
     before_script:
         - docker info
         - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
-    script:
-        - cd transformers && make -B all
 
-test:transformers: # Test transformers w/ `test` tag
-  stage: test
-  tags: 
-    - ais-k8s
-  variables:
-    AIS_ENDPOINT: "http://192.168.49.2:8080"
-    GIT_TEST: "true"
-  before_script:
-    - git clone https://github.com/NVIDIA/aistore.git
-    - cd aistore && make all
-    - ./deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
-    - cd ..
-    - wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-    - tar -xf ffmpeg-release-amd64-static.tar.xz
-    - FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
-    - cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
-    - cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
-    - rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
-    - ffmpeg -version
-  script:
-    - sleep 10
-    - cd transformers
-    - make test
+# Common setup for all test stages
+.test_template:
+    when: on_success
+    stage: test
+    tags: 
+        - ais-k8s
+    variables:
+        AIS_ENDPOINT: "http://192.168.49.2:8080"
+        GIT_TEST: "true"
+    before_script:
+        - git clone https://github.com/NVIDIA/aistore.git
+        - cd aistore && make all
+        - ./deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
+        - cd .. && pip install -r transformers/tests/requirements.txt
+
+build:echo:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd echo && make -B all
+        - cd ..
+        - cd go_echo && make -B all
+    rules:
+      - changes:
+          - transformers/echo/**/*
+          - transformers/go_echo/**/*
+          - tests/test_echo.py
+          - tests/test_go_echo.py
+        when: always
+      - when: manual
+
+build:hello_world:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd hello_world && make -B all
+        - cd ..
+        - cd go_hello_world && make -B all
+    rules:
+      - changes:
+          - transformers/hello_world/**/*
+          - transformers/go_hello_world/**/*
+          - tests/test_hello_world.py
+        when: always
+      - when: manual
+
+build:md5:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd md5 && make -B all
+    rules:
+      - changes:
+          - transformers/md5/**/*
+          - tests/test_md5.py
+        when: always
+      - when: manual
+
+build:tar2tf:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd tar2tf && make -B all
+    rules:
+      - changes:
+          - transformers/tar2tf/**/*
+          - tests/test_tar2tf.py
+        when: always
+      - when: manual
+
+build:compress:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd compress && make -B all
+    rules:
+      - changes:
+          - transformers/compress/**/*
+          - tests/test_compress.py
+        when: always
+      - when: manual
+
+build:ffmpeg:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd ffmpeg && make -B all
+    rules:
+      - changes:
+          - transformers/ffmpeg/**/*
+          - tests/test_ffmpeg.py
+        when: always
+      - when: manual
+
+build:torchvision:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd torchvision_preprocess && make -B all
+    rules:
+      - changes:
+          - transformers/torchvision_preprocess/**/*
+          - tests/test_torchvision_transformer.py
+        when: always
+      - when: manual
+
+build:keras:
+    extends: .build_template
+    script:
+        - cd transformers
+        - cd keras_preprocess && make -B all
+    rules:
+      - changes:
+          - transformers/keras_preprocess/**/*
+          - tests/test_keras_transformer.py
+        when: always
+      - when: manual
+
+test:echo:
+    extends: .test_template
+    needs: ["build:echo"]
+    script:
+        - cd transformers/tests && pytest -v test_echo.py test_go_echo.py
+
+test:hello_world:
+    extends: .test_template
+    needs: ["build:hello_world"]
+    script:
+        - cd transformers/tests && pytest -v test_hello_world.py
+
+test:md5:
+    extends: .test_template
+    needs: ["build:md5"]
+    script:
+        - cd transformers/tests && pytest -v test_md5.py
+
+test:tar2tf:
+    extends: .test_template
+    needs: ["build:tar2tf"]
+    script:
+        - cd transformers/tests && pytest -v test_tar2tf.py
+
+test:compress:
+    extends: .test_template
+    needs: ["build:compress"]
+    script:
+        - cd transformers/tests && pytest -v test_compress.py
+
+test:ffmpeg:
+    extends: .test_template
+    needs: ["build:ffmpeg"]
+    script:
+        - cd transformers/tests && pytest -v test_ffmpeg.py
+
+test:torchvision:
+    extends: .test_template
+    needs: ["build:torchvision"]
+    script:
+        - cd transformers/tests && pytest -v test_torchvision_transformer.py
+
+test:keras:
+    extends: .test_template
+    needs: ["build:keras"]
+    script:
+        - cd transformers/tests && pytest -v test_keras_transformer.py
