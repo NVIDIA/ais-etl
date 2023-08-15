@@ -13,10 +13,8 @@ spec:
       imagePullPolicy: Always
       ports:
         - name: default
-          containerPort: 8000
-      command: ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"] 
-      # This is a health check endpoint which one should specify
-      # for aistore to determine the health of the ETL container.
+          containerPort: 80
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
       readinessProbe:
         httpGet:
           path: /health
