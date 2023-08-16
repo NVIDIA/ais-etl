@@ -68,8 +68,7 @@ async def get_handler(
     resp = await client.get(object_url)
     if not resp or resp.status != 200:
         raise HTTPException(status_code=500, detail="Error retreiving object ({full_path}) from target")
-    content = await resp.read()
-    _ = content.copy()
+    await resp.read()
     return Response(
         content=b"Hello World!", media_type="application/octet-stream"
     )
@@ -86,8 +85,7 @@ async def put_handler(request: Request):
     # Read bytes from request (request.body)
     # Transform the bytes
     # Return the transformed bytes
-    content = await request.body()
-    _ = content.copy()
+    await request.body()
     return Response(
         content=b"Hello World!", media_type="application/octet-stream"
     )
