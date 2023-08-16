@@ -7,7 +7,7 @@ metadata:
     # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
     # Visit https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms 
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 5m
+    wait_timeout: 10m
 spec:
   containers:
     - name: server
@@ -16,7 +16,7 @@ spec:
       ports:
         - name: default
           containerPort: 80
-      command: ["gunicorn", "--bind", "0.0.0.0:80", "app:app"]
+      command: ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "12", "app:app"]
 
       env:
         - name: FORMAT

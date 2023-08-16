@@ -7,7 +7,7 @@ metadata:
     # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
     # Visit https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms 
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 5m
+    wait_timeout: 10m
 spec:
   containers:
     - name: server
@@ -16,7 +16,8 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command:  ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      # change worker nodes to x2 of number of cores (cpu) available
+      command:  ["gunicorn", "main:app", "--workers", "12", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
       env:
         - name: FORMAT
         # expected values - PNG, JPEG, etc

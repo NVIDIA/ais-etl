@@ -9,6 +9,7 @@ import json
 import logging
 import io
 
+import urllib
 import requests
 from flask import Flask, request
 from keras.preprocessing.image import (
@@ -26,6 +27,9 @@ ARG_TYPE = os.getenv("ARG_TYPE", "bytes")
 
 # Environment Variables
 host_target = os.environ.get("AIS_TARGET_URL")
+
+logging.info(host_target)
+
 TRANSFORM = os.environ.get("TRANSFORM")
 if not host_target:
     raise EnvironmentError("AIS_TARGET_URL environment variable missing")
@@ -47,9 +51,9 @@ def transform_image(data: bytes) -> bytes:
         buf = io.BytesIO()
         img.save(buf, format=FORMAT)
         return buf.getvalue()
-    except Exception as e:
-        logging.error("Error processing data: %s", str(e))
-        raise
+    except Exception as exp:
+        logging.error("Error processing data in transform_image: %s", str(exp))
+        raise exp
 
 
 @app.route("/health")
@@ -70,23 +74,22 @@ def image_handler(path: str):  # pylint: disable=unused-argument
 
         if request.method == "GET":
             if ARG_TYPE == "url":
-                # Need this for webdataset
+                # webdataset
                 query_path = request.args.get("url")
                 result = transform_image(requests.get(query_path, timeout=5).content)
             else:
-                query_path = host_target + request.path
-                content = requests.get(query_path, timeout=5).content
-                result = transform_image(content)
+                # normal GET - hpull and hrev
+                object_path = urllib.parse.quote(path, safe="@")
+                object_url = f"{host_target}/{object_path}"
+                resp = requests.get(object_url, timeout=5)
+                if resp.status_code != 200:
+                    raise FileNotFoundError(f"Error getting '{path}' from '{host_target}'")
+                result = transform_image(resp.content)
 
             if result is not None:
                 return result, 200
             return "Data processing failed", 500
-
-    except Exception as e:
-        logging.error("Error processing request: %s", str(e))
+    except Exception as exp:
+        logging.error("Error processing request: %s", str(exp))
         return "Data processing failed", 500
 
-
-if __name__ == "__main__":
-    # run the app using gunicorn
-    app.run()
