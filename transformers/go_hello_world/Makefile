@@ -4,7 +4,7 @@ ifeq ($(GIT_TEST), true)
 	TAG := test
 endif
 
-REGISTRY_URL ?= docker.io/gaikwadabhishek
+REGISTRY_URL ?= docker.io/aistorage
 
 all: build push
 
