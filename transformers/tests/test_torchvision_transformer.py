@@ -36,7 +36,7 @@ class TestTransformers(TestBase):
 
         # Transform via AIStore
         self.test_etl.init_spec(
-            template=template, communication_type=communication_type
+            template=template, communication_type=communication_type, timeout="10m"
         )
         etl_transformed_image_bytes = (
             self.test_bck.object(self.test_image_filename)
