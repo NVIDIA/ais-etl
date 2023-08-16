@@ -98,6 +98,9 @@ jobs:
         cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
         rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
         ffmpeg -version
+    - name: Install Torchvision
+      run: |
+        pip install torchvision --index-url https://download.pytorch.org/whl/cpu
     - name: Build & Push Transformer Docker Images w/ `test` Tag
       run: |
         pushd $GITHUB_WORKSPACE/transformers
@@ -146,6 +149,9 @@ jobs:
         cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
         rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
         ffmpeg -version
+    - name: Install Torchvision
+      run: |
+        pip install torchvision --index-url https://download.pytorch.org/whl/cpu
     - name: Build & Push Transformer Docker Images w/ `latest` Tag
       run: |
         pushd $GITHUB_WORKSPACE/transformers

@@ -2,7 +2,8 @@ image: aistorage/ci:latest
 
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "master" || $CI_PIPELINE_SOURCE == "web"'
 
 stages:
     - build
@@ -35,7 +36,7 @@ stages:
         - git clone https://github.com/NVIDIA/aistore.git
         - cd aistore && make all
         - ./deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
-        - cd .. && pip install -r transformers/tests/requirements.txt
+        - cd .. && cd transformers && make common_deps && cd ..
 
 build:echo:
     extends: .build_template
@@ -48,8 +49,8 @@ build:echo:
       - changes:
           - transformers/echo/**/*
           - transformers/go_echo/**/*
-          - tests/test_echo.py
-          - tests/test_go_echo.py
+          - transformers/tests/test_echo.py
+          - transformers/tests/test_go_echo.py
         when: always
       - when: manual
 
@@ -64,7 +65,7 @@ build:hello_world:
       - changes:
           - transformers/hello_world/**/*
           - transformers/go_hello_world/**/*
-          - tests/test_hello_world.py
+          - transformers/tests/test_hello_world.py
         when: always
       - when: manual
 
@@ -76,7 +77,7 @@ build:md5:
     rules:
       - changes:
           - transformers/md5/**/*
-          - tests/test_md5.py
+          - transformers/tests/test_md5.py
         when: always
       - when: manual
 
@@ -88,7 +89,7 @@ build:tar2tf:
     rules:
       - changes:
           - transformers/tar2tf/**/*
-          - tests/test_tar2tf.py
+          - transformers/tests/test_tar2tf.py
         when: always
       - when: manual
 
@@ -100,7 +101,7 @@ build:compress:
     rules:
       - changes:
           - transformers/compress/**/*
-          - tests/test_compress.py
+          - transformers/tests/test_compress.py
         when: always
       - when: manual
 
@@ -112,7 +113,7 @@ build:ffmpeg:
     rules:
       - changes:
           - transformers/ffmpeg/**/*
-          - tests/test_ffmpeg.py
+          - transformers/tests/test_ffmpeg.py
         when: always
       - when: manual
 
@@ -124,7 +125,7 @@ build:torchvision:
     rules:
       - changes:
           - transformers/torchvision_preprocess/**/*
-          - tests/test_torchvision_transformer.py
+          - transformers/tests/test_torchvision_transformer.py
         when: always
       - when: manual
 
@@ -136,7 +137,7 @@ build:keras:
     rules:
       - changes:
           - transformers/keras_preprocess/**/*
-          - tests/test_keras_transformer.py
+          - transformers/tests/test_keras_transformer.py
         when: always
       - when: manual
 
@@ -174,12 +175,20 @@ test:ffmpeg:
     extends: .test_template
     needs: ["build:ffmpeg"]
     script:
+        - wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+        - tar -xf ffmpeg-release-amd64-static.tar.xz
+        - FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
+        - cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
+        - cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
+        - rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
+        - ffmpeg -version
         - cd transformers/tests && pytest -v test_ffmpeg.py
 
 test:torchvision:
     extends: .test_template
     needs: ["build:torchvision"]
     script:
+        - pip install torchvision --index-url https://download.pytorch.org/whl/cpu
         - cd transformers/tests && pytest -v test_torchvision_transformer.py
 
 test:keras:

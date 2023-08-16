@@ -43,7 +43,6 @@ $(SUBDIRS):
 
 common_deps:
 	pip install -r tests/requirements.txt
-	pip install torchvision --index-url https://download.pytorch.org/whl/cpu
 
 test: common_deps
 	cd tests && for test_file in test_*.py; do pytest -v $$test_file; done
