@@ -13,14 +13,12 @@ stages:
 .build_template:
     when: manual
     stage: build
-    services:
-        - docker:20.10.16-dind
     tags: 
         - ais
     variables:
         GIT_TEST: "true"
+        DOCKER_TLS_CERTDIR: ""
     before_script:
-        - docker info
         - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
 
 # Common setup for all test stages
