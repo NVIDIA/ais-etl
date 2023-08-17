@@ -33,10 +33,7 @@ stages:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
         GIT_TEST: "true"
     before_script:
-        - git clone https://github.com/NVIDIA/aistore.git
-        - cd aistore && make all
-        - ./deploy/scripts/clean_deploy.sh --target-cnt 1 --proxy-cnt 1 --mountpath-cnt 6
-        - cd .. && cd transformers && make common_deps && cd ..
+        - cd transformers && make common_deps && cd ..
 
 build:echo:
     extends: .build_template
