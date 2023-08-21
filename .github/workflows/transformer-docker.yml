@@ -91,7 +91,7 @@ jobs:
         python-version: 3.11
     - name: Install FFMPEG
       run: |
-        wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+        wget -nv http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
         tar -xf ffmpeg-release-amd64-static.tar.xz
         FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
         cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
