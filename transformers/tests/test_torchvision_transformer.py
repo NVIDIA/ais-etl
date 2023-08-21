@@ -8,45 +8,15 @@ import io
 import os
 import unittest
 
-from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
-# from aistore.sdk.etl_templates import TORCHVISION_TRANSFORMER
 from PIL import Image
 from torchvision import transforms
 
 from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
+from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl_templates import TORCHVISION_TRANSFORMER
 
-TORCHVISION_TRANSFORMER = """
-# https://github.com/NVIDIA/ais-etl/blob/master/transformers/keras_transformer/README.md
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-keras
-  annotations:
-    # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
-    # Visit https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms 
-    communication_type: "{communication_type}://"
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_keras:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 8000
-      command:  ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
-      env:
-        - name: FORMAT
-        # expected values - PNG, JPEG, etc
-          value: "{format}"
-        - name: TRANSFORM
-          value: '{transform}'
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-"""
+
 class TestTransformers(TestBase):
     def setUp(self):
         super().setUp()
