@@ -45,7 +45,7 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return b"Ok"
+    return b"Running"
 
 
 @app.get("/")

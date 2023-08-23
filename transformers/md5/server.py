@@ -31,7 +31,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             self._set_headers()
-            self.wfile.write(b"OK")
+            self.wfile.write(b"Running")
             return
 
         x = requests.get(host_target + self.path)

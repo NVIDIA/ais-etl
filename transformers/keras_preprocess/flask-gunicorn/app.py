@@ -58,7 +58,7 @@ def transform_image(data: bytes) -> bytes:
 
 @app.route("/health")
 def health_check():
-    return "OK"
+    return "Running"
 
 
 @app.route("/", defaults={"path": ""}, methods=["PUT", "GET"])

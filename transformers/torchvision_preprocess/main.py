@@ -70,7 +70,7 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return b"Ok"
+    return b"Running"
 
 
 async def transform_image(image_bytes: bytes) -> bytes:

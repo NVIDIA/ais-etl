@@ -48,7 +48,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		w.Write([]byte("Running"))
 	default:
 		invalidMsgHandler(w, http.StatusBadRequest, "invalid http method %s", r.Method)
 	}

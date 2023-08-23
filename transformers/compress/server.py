@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if self.path == "/health":
                 self._set_headers()
-                self.wfile.write(b"OK")
+                self.wfile.write(b"Running")
                 return
 
             response = requests.get(host_target + self.path)

@@ -52,7 +52,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Invalid HTTP method %q", r.Method), http.StatusBadRequest)
 		return
 	}
-	if _, err := w.Write([]byte("OK")); err != nil {
+	if _, err := w.Write([]byte("Running")); err != nil {
 		logError(err, fmt.Sprintf("Error writing response for %q", r.URL.EscapedPath()))
 	}
 }
