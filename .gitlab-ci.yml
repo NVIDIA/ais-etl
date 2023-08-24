@@ -8,6 +8,7 @@ workflow:
 stages:
     - build
     - test
+    - stress
 
 # Common setup for all build stages
 .build_template:
@@ -30,6 +31,16 @@ stages:
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
         GIT_TEST: "true"
+    before_script:
+        - cd transformers && make common_deps && cd ..
+
+.stress_template:
+    when: manual
+    stage: stress
+    tags: 
+        - ais-k8s-stress
+    variables:
+        AIS_ENDPOINT: "http://192.168.49.2:8080"
     before_script:
         - cd transformers && make common_deps && cd ..
 
@@ -191,3 +202,11 @@ test:keras:
     needs: ["build:keras"]
     script:
         - cd transformers/tests && pytest -v test_keras_transformer.py
+
+stress:keras:
+    extends: .stress_template
+    script:
+        - pytest -v -s transformers/tests/test_keras_stress.py
+    artifacts:
+      reports:
+        metrics: metrics.txt
