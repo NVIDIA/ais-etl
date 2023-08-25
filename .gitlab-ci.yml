@@ -39,10 +39,14 @@ stages:
     stage: stress
     tags: 
         - ais-k8s-stress
+    timeout: 30m
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
     before_script:
         - cd transformers && make common_deps && cd ..
+    after_script:
+        - echo "Test Results"
+        - cat metrics.txt
 
 build:echo:
     extends: .build_template
@@ -203,9 +207,10 @@ test:keras:
     script:
         - cd transformers/tests && pytest -v test_keras_transformer.py
 
-stress:keras:
+stress:test:
     extends: .stress_template
     script:
+        - pytest -v -s transformers/tests/test_hello_world_stress.py
         - pytest -v -s transformers/tests/test_keras_stress.py
     artifacts:
       reports:

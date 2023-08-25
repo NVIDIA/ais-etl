@@ -5,10 +5,17 @@ Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 """
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
+import logging
 from datetime import datetime
 from tests.base import TestBase
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import KERAS_TRANSFORMER
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
 
 
 class TestKerasStress(TestBase):
@@ -42,7 +49,7 @@ class TestKerasStress(TestBase):
             len(self.test_bck.list_all_objects()),
         )
 
-        print(f"{func_name} {time_elapsed}")
+        logger.info("%s %s", func_name, time_elapsed)
         with open("metrics.txt", "a+", encoding="utf-8") as file:
             file.write(f"{func_name} {time_elapsed}\n")
 
