@@ -1,4 +1,4 @@
-fastapi
-uvicorn[standard]
-gunicorn
+fastapi==0.101.1
+uvicorn[standard]===0.23.2
+gunicorn==21.2.0
 aiohttp

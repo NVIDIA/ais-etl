@@ -16,8 +16,14 @@ import urllib.parse
 from fastapi import FastAPI, Request, Depends, Response, HTTPException
 import aiohttp  # async
 
+# from aistore.sdk.errors import AISError
+
 app = FastAPI()
-host_target = os.environ["AIS_TARGET_URL"]
+host_target = os.environ.get("AIS_TARGET_URL")
+if not host_target:
+    raise EnvironmentError("AIS_TARGET_URL environment variable missing")
+
+arg_type = os.getenv("ARG_TYPE", "")
 
 
 class HttpClient:
@@ -54,38 +60,49 @@ async def get_handler(
     full_path: str, client: aiohttp.ClientSession = Depends(http_client)
 ):
     """
-    Handles GET requests.
+    Handles `hpull://` and `hrev://` requests.
     Retrieves the destination/name of the object from the URL or the full_path variable,
     fetches the object from the AIS target based on the destination/name,
     transforms the bytes, and returns the modified bytes.
     """
     # Get destination/name of object from URL or from full_path variable
-    # Fetch object from AIS target based on the destination/name
-    # Transform the bytes
-    # Return the transformed bytes
-    object_path = urllib.parse.quote(full_path, safe="@")
-    object_url = f"{host_target}/{object_path}"
-    resp = await client.get(object_url)
-    if not resp or resp.status != 200:
-        raise HTTPException(status_code=500, detail="Error retreiving object ({full_path}) from target")
-    await resp.read()
-    return Response(
-        content=b"Hello World!", media_type="application/octet-stream"
-    )
+    if arg_type.lower() == "fqn":
+        with open(full_path, "rb") as file:
+            file.read()
+    else:
+        object_path = urllib.parse.quote(full_path, safe="@")
+        object_url = f"{host_target}/{object_path}"
+
+        # Fetch object from AIS target based on the destination/name
+        resp = await client.get(object_url)
+        if not resp or resp.status != 200:
+            raise HTTPException(
+                status_code=500,
+                detail="Error retreiving object ({full_path}) from target",
+            )
+
+        # Transform the bytes
+        await resp.read()
+
+    return Response(content=b"Hello World!", media_type="application/octet-stream")
 
 
 @app.put("/")
 @app.put("/{full_path:path}", response_class=Response)
-async def put_handler(request: Request):
+async def put_handler(request: Request, full_path: str):
     """
-    Handles PUT requests.
+    Handles `hpush://` requests.
     Reads bytes from the request, performs byte transformation,
     and returns the modified bytes.
     """
     # Read bytes from request (request.body)
+    if arg_type.lower() == "fqn":
+        with open(full_path, "rb") as file:
+            file.read()
+    else:
+        await request.body()
+
     # Transform the bytes
+
     # Return the transformed bytes
-    await request.body()
-    return Response(
-        content=b"Hello World!", media_type="application/octet-stream"
-    )
+    return Response(content=b"Hello World!", media_type="application/octet-stream")
