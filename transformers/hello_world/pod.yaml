@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: transformer-hello-world
   annotations:
-    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpush://\""}
     wait_timeout: 5m
 spec:
   containers:
@@ -22,9 +22,9 @@ spec:
         - name: ais
           mountPath: /tmp/ais
       env:
-        # ARG_TYPE can be "fqn", "bytes", "url"
+        # ARG_TYPE can be "fqn", "", "url"
         - name: ARG_TYPE
-          value: "fqn"
+          value: ${ARG_TYPE:-""}
   volumes:
     - name: ais
       hostPath:
