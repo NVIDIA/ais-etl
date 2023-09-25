@@ -3,13 +3,10 @@
 #
 
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
-
+import logging
 import unittest
 import io
 import os
-
-from tests.base import TestBase
-from tests.utils import git_test_mode_format_image_tag_test
 
 from keras.preprocessing.image import (
     ImageDataGenerator,
@@ -19,6 +16,14 @@ from keras.preprocessing.image import (
 )
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import KERAS_TRANSFORMER
+from tests.utils import git_test_mode_format_image_tag_test
+from tests.base import TestBase
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
 
 
 class TestTransformers(TestBase):
@@ -42,51 +47,64 @@ class TestTransformers(TestBase):
         img.save(buf, format="JPEG")
         return buf.getvalue()
 
-    def get_template(self, comm_type: str) -> str:
+    def get_template(self, comm_type: str, arg_type: str) -> str:
         template = KERAS_TRANSFORMER.format(
             communication_type=comm_type,
             format="JPEG",
             transform='{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}',
+            arg_type=arg_type,
         )
         if self.git_test_mode == "true":
             template = git_test_mode_format_image_tag_test(template, "keras")
         return template
+
+    def run_keras_test(self, communication_type: str, fqn_flag: bool = False):
+        arg_type = "fqn" if fqn_flag else ""
+        template = self.get_template(communication_type, arg_type)
+        self.test_etl.init_spec(
+            template=template, communication_type=communication_type, arg_type=arg_type
+        )
+
+        logger.info(self.test_etl.view())
+
+        transformed_image_etl = (
+            self.test_bck.object(self.test_image_filename)
+            .get(etl_name=self.test_etl.name)
+            .read_all()
+        )
+        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
 
     @unittest.skipIf(
         os.getenv("KERAS_ENABLE", "true") == "false",
         "Keras image was not built, skipping keras test",
     )
     def test_keras_transformer_hpull(self):
-        self.test_etl.init_spec(template=self.get_template(ETL_COMM_HPULL))
-        transformed_image_etl = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
+        self.run_keras_test(communication_type=ETL_COMM_HPULL, fqn_flag=False)
 
     @unittest.skipIf(
         os.getenv("KERAS_ENABLE", "true") == "false",
         "Keras image was not built, skipping keras test",
     )
     def test_keras_transformer_hrev(self):
-        self.test_etl.init_spec(template=self.get_template(ETL_COMM_HREV))
-        transformed_image_etl = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
+        self.run_keras_test(communication_type=ETL_COMM_HREV, fqn_flag=False)
 
     @unittest.skipIf(
         os.getenv("KERAS_ENABLE", "true") == "false",
         "Keras image was not built, skipping keras test",
     )
     def test_keras_transformer_hpush(self):
-        self.test_etl.init_spec(template=self.get_template(ETL_COMM_HPUSH))
-        transformed_image_etl = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-        self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
+        self.run_keras_test(communication_type=ETL_COMM_HPUSH, fqn_flag=False)
+
+    @unittest.skipIf(
+        os.getenv("KERAS_ENABLE", "true") == "false",
+        "Keras image was not built, skipping keras test",
+    )
+    def test_keras_transformer_hpush_fqn(self):
+        self.run_keras_test(communication_type=ETL_COMM_HPUSH, fqn_flag=True)
+
+    @unittest.skipIf(
+        os.getenv("KERAS_ENABLE", "true") == "false",
+        "Keras image was not built, skipping keras test",
+    )
+    def test_keras_transformer_hpull_fqn(self):
+        self.run_keras_test(communication_type=ETL_COMM_HPULL, fqn_flag=True)

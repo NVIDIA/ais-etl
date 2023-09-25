@@ -30,7 +30,7 @@ app = FastAPI()
 
 # Constants
 FORMAT = os.getenv("FORMAT", "JPEG")
-ARG_TYPE = os.getenv("ARG_TYPE", "bytes")
+arg_type = os.getenv("ARG_TYPE", "")
 
 # Environment Variables
 host_target = os.environ.get("AIS_TARGET_URL")
@@ -43,6 +43,7 @@ if not TRANSFORM:
     )
 
 transform_dict = json.loads(TRANSFORM)
+
 
 class HttpClient:
     session: aiohttp.ClientSession = None
@@ -60,6 +61,7 @@ class HttpClient:
 
 
 http_client = HttpClient()
+
 
 @app.on_event("startup")
 async def startup():
@@ -102,10 +104,14 @@ async def get_handler(
     # Fetch object from AIS target based on the destination/name
     # Transform the bytes
     # Return the transformed bytes
-    object_path = urllib.parse.quote(full_path, safe="@")
-    object_url = f"{host_target}/{object_path}"
-    resp = await client.get(object_url)
-    body = await resp.read()
+    if arg_type.lower() == "fqn":
+        with open(full_path, "rb") as file:
+            body = file.read()
+    else:
+        object_path = urllib.parse.quote(full_path, safe="@")
+        object_url = f"{host_target}/{object_path}"
+        resp = await client.get(object_url)
+        body = await resp.read()
 
     return Response(
         content=await transform_image(body), media_type="application/octet-stream"
@@ -114,7 +120,7 @@ async def get_handler(
 
 @app.put("/")
 @app.put("/{full_path:path}", response_class=Response)
-async def put_handler(request: Request):
+async def put_handler(request: Request, full_path: str):
     """
     Handles PUT requests.
     Reads bytes from the request, performs byte transformation,
@@ -123,7 +129,11 @@ async def put_handler(request: Request):
     # Read bytes from request (request.body)
     # Transform the bytes
     # Return the transformed bytes
-    body = await request.body()
+    if arg_type.lower() == "fqn":
+        with open(full_path, "rb") as file:
+            body = file.read()
+    else:
+        body = await request.body()
     return Response(
         content=await transform_image(body), media_type="application/octet-stream"
     )

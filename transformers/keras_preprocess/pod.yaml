@@ -27,7 +27,17 @@ spec:
         # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator#apply_transform
         # e.g. '{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}'
           value:  ${TRANSFORM}
+        - name: ARG_TYPE
+          value: ${ARG_TYPE:-""}
       readinessProbe:
         httpGet:
           path: /health
           port: default
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/
+        type: Directory

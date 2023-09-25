@@ -7,9 +7,9 @@ Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
 import logging
 from datetime import datetime
-from tests.base import TestBase
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import KERAS_TRANSFORMER
+from tests.base import TestBase
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -24,13 +24,17 @@ class TestKerasStress(TestBase):
         # Keep this bucket
         self.images_bck = self.client.bucket(bck_name="stress-test-images")
 
-    def run_test(self, comm_type: str, func_name: str):
+    def run_test(self, comm_type: str, func_name: str, fqn_flag: bool = False):
+        arg_type = "fqn" if fqn_flag else ""
         template = KERAS_TRANSFORMER.format(
             communication_type=comm_type,
             format="JPEG",
             transform='{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}',
+            arg_type=arg_type,
         )
-        self.test_etl.init_spec(template=template, communication_type=comm_type)
+        self.test_etl.init_spec(
+            template=template, communication_type=comm_type, arg_type=arg_type
+        )
 
         start_time = datetime.now()
         job_id = self.images_bck.transform(
@@ -61,3 +65,9 @@ class TestKerasStress(TestBase):
 
     def test_keras_hrev_fastapi(self):
         self.run_test(ETL_COMM_HREV, "test_keras_hrev_fastapi")
+
+    def test_keras_hpull_fastapi_fqn(self):
+        self.run_test(ETL_COMM_HPULL, "test_keras_hpull_fastapi_fqn", True)
+
+    def test_keras_hpush_fastapi_fqn(self):
+        self.run_test(ETL_COMM_HPUSH, "test_keras_hpush_fastapi_fqn", True)
