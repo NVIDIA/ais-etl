@@ -12,43 +12,6 @@ from aistore.sdk.etl_templates import HELLO_WORLD
 from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
 
-
-FQN = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-hello-world
-  annotations:
-    communication_type: "hpull://"
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_hello_world:test
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 8000
-      command: ["gunicorn", "main:app", "--workers", "20", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
-      # command: ["uvicorn", "main:app", "--reload"]
-      env:
-        - name: ARG_TYPE
-          value: "fqn"
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/
-        type: Directory
-"""
-
-
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -82,10 +45,7 @@ class TestHelloWorldStress(TestBase):
         )
 
     def run_test(self, comm_type: str, func_name: str, arg_type: str = ""):
-        template = HELLO_WORLD.format(communication_type=comm_type)
-
-        if arg_type.lower() == "fqn":
-            template = FQN
+        template = HELLO_WORLD.format(communication_type=comm_type, arg_type=arg_type)
 
         template = git_test_mode_format_image_tag_test(template, "hello_world")
 

@@ -16,41 +16,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-FQN = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-hello-world
-  annotations:
-    communication_type: "hpull://"
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_hello_world:test
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 8000
-      command: ["gunicorn", "main:app", "--workers", "20", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
-      # command: ["uvicorn", "main:app", "--reload"]
-      env:
-        - name: ARG_TYPE
-          value: "fqn"
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/
-        type: Directory
-"""
-
 
 class TestHelloWorldTransformer(TestBase):
     def setUp(self):
@@ -68,12 +33,10 @@ class TestHelloWorldTransformer(TestBase):
         )
         self.assertEqual(b"Hello World!", transformed_data_bytes)
 
-    def run_hello_world_test(self, communication_type: str, fqn_flag: bool = False):
-        template = HELLO_WORLD.format(communication_type=communication_type)
-        arg_type = "fqn" if fqn_flag else ""
-
-        if fqn_flag:
-            template = FQN
+    def run_hello_world_test(self, communication_type: str, arg_type: str = ""):
+        template = HELLO_WORLD.format(
+            communication_type=communication_type, arg_type=arg_type
+        )
 
         if self.git_test_mode == "true":
             template = git_test_mode_format_image_tag_test(template, "hello_world")
@@ -97,7 +60,7 @@ class TestHelloWorldTransformer(TestBase):
         self.run_hello_world_test(ETL_COMM_HREV)
 
     def test_hello_world_hpull_fqn(self):
-        self.run_hello_world_test(ETL_COMM_HPULL, True)
+        self.run_hello_world_test(ETL_COMM_HPULL, "fqn")
 
     def test_hello_world_hpush_fqn(self):
-        self.run_hello_world_test(ETL_COMM_HPUSH, True)
+        self.run_hello_world_test(ETL_COMM_HPUSH, "fqn")
