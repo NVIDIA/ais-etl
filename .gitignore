@@ -140,3 +140,5 @@ cython_debug/
 
 # JetBrains IDE 
 .idea/
+transformers/face_detection/model/weights.caffemodel
+transformers/face_detection/model/architecture.txt

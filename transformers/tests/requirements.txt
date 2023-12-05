@@ -11,3 +11,6 @@ scipy
 keras
 pytest
 tensorflow
+opencv-python
+aiofiles
+kaggle

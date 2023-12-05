@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-face-detection
+  annotations:
+    # Values it can take ["hpull://","hrev://","hpush://"]
+    communication_type: "${COMMUNICATION_TYPE}"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_face_detection:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command:  ["gunicorn", "main:app", "--workers", "5", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      env:
+        - name: FORMAT
+        # Expected Values - png, jpeg, etc.
+          value: "${FORMAT}"
+        - name: ARG_TYPE
+          value: "${ARG_TYPE}"
+      # This is a health check endpoint which one should specify
+      # for aistore to determine the health of the ETL container.
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      # volume mounts and volumes are needed if you are planning to use ARG_TYPE = `fqn`
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/ais
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/ais
+        type: Directory

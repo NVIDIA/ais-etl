@@ -39,7 +39,7 @@ stages:
     stage: stress
     tags: 
         - ais-k8s-stress
-    timeout: 45m
+    timeout: 1h
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
     before_script:
@@ -151,6 +151,19 @@ build:keras:
         when: always
       - when: manual
 
+build:face_detection:
+    extends: .build_template
+    script:
+        - cd transformers/face_detection 
+        - echo ${KAGGLE_CREDS_JSON} > kaggle_creds.json
+        - make -B all
+    rules:
+      - changes:
+          - transformers/face_detection/**/*
+          - transformers/tests/test_face_detection_transformer.py
+        when: always
+      - when: manual
+
 test:echo:
     extends: .test_template
     needs: ["build:echo"]
@@ -207,11 +220,25 @@ test:keras:
     script:
         - cd transformers/tests && pytest -v test_keras_transformer.py
 
+test:face_detection:
+    extends: .test_template
+    needs: ["build:face_detection"]
+    script:
+        - mkdir -p /root/.kaggle
+        - echo ${KAGGLE_CREDS_JSON} > /root/.kaggle/kaggle.json
+        - chmod 600 /root/.kaggle/kaggle.json
+        - mkdir -p transformers/face_detection/model
+        - kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretrained-model
+        - unzip caffe-face-detector-opencv-pretrained-model.zip -d transformers/face_detection/model/
+        - apt-get update -y && apt-get install ffmpeg libsm6 libxext6 -y
+        - cd transformers/tests && pytest -v test_face_detection.py
+
 stress:test:
     extends: .stress_template
     script:
         - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_hello_world_stress.py
         - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_keras_stress.py
+        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_face_detection_stress.py
     artifacts:
       reports:
         metrics: metrics.txt

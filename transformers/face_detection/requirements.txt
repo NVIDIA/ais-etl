@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+gunicorn
+aiohttp
+numpy
+opencv-python
+aiofiles
+kaggle
