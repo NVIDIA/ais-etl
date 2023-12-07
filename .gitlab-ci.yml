@@ -39,7 +39,7 @@ stages:
     stage: stress
     tags: 
         - ais-k8s-stress
-    timeout: 30m
+    timeout: 45m
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
     before_script:
