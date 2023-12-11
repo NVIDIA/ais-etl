@@ -7,7 +7,6 @@ import json
 import os
 import shutil
 import tarfile
-import unittest
 
 import numpy as np
 import tensorflow as tf
@@ -37,9 +36,6 @@ class TestTar2TFTransformer(TestBase):
         shutil.rmtree(dir_path)
         super().tearDown()
 
-    @unittest.skipIf(
-        os.getenv("TAR2TF_ENABLE", "true") == "false", "TAR2TF is disabled"
-    )
     def test_tar2tf_simple(self):
         template = TAR2TF.format(communication_type=ETL_COMM_HREV, arg="", val="")
 
@@ -81,9 +77,6 @@ class TestTar2TFTransformer(TestBase):
         )
         self.assertEqual(cls, original_cls)
 
-    @unittest.skipIf(
-        os.getenv("TAR2TF_ENABLE", "true") == "false", "TAR2TF is disabled"
-    )
     def test_tar2tf_rotation(self):
         spec = {
             "conversions": [

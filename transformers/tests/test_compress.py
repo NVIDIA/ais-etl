@@ -7,8 +7,6 @@
 import bz2
 import gzip
 import json
-import os
-import unittest
 
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import COMPRESS
@@ -158,103 +156,58 @@ class TestCompressTransformer(TestBase):
         self.assertEqual(original_image_content, etl_decompressed_img)
         self.assertEqual(original_text_content, etl_decompressed_txt)
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_default_compress_hpull(self):
         self._compress_test_helper(ETL_COMM_HPULL, {})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_default_compress_hpush(self):
         self._compress_test_helper(ETL_COMM_HPUSH, {})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_default_compress_hrev(self):
         self._compress_test_helper(ETL_COMM_HREV, {})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_gzip_compress_hpull(self):
         self._compress_test_helper(ETL_COMM_HPULL, {"compression": "gzip"})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_gzip_compress_hpush(self):
         self._compress_test_helper(ETL_COMM_HPUSH, {"compression": "gzip"})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_gzip_compress_hrev(self):
         self._compress_test_helper(ETL_COMM_HREV, {"compression": "gzip"})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_bz2_compress_hpull(self):
         self._compress_test_helper(ETL_COMM_HPULL, {"compression": "bz2"})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_bz2_compress_hpush(self):
         self._compress_test_helper(ETL_COMM_HPUSH, {"compression": "bz2"})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_bz2_compress_hrev(self):
         self._compress_test_helper(ETL_COMM_HREV, {"compression": "bz2"})
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_gzip_decompress_hpull(self):
         self._decompress_test_helper(
             ETL_COMM_HPULL, {"mode": "decompress", "compression": "gzip"}
         )
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_gzip_decompress_hpush(self):
         self._decompress_test_helper(
             ETL_COMM_HPUSH, {"mode": "decompress", "compression": "gzip"}
         )
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_gzip_decompress_hrev(self):
         self._decompress_test_helper(
             ETL_COMM_HREV, {"mode": "decompress", "compression": "gzip"}
         )
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_bz2_decompress_hpull(self):
         self._decompress_test_helper(
             ETL_COMM_HPULL, {"mode": "decompress", "compression": "bz2"}
         )
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_bz2_decompress_hpush(self):
         self._decompress_test_helper(
             ETL_COMM_HPUSH, {"mode": "decompress", "compression": "bz2"}
         )
 
-    @unittest.skipIf(
-        os.getenv("COMPRESS_ENABLE", "true") == "false", "COMPRESS is disabled"
-    )
     def test_bz2_decompress_hrev(self):
         self._decompress_test_helper(
             ETL_COMM_HREV, {"mode": "decompress", "compression": "bz2"}

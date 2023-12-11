@@ -4,9 +4,7 @@
 
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 import logging
-import unittest
 import io
-import os
 
 from keras.preprocessing.image import (
     ImageDataGenerator,
@@ -74,37 +72,17 @@ class TestTransformers(TestBase):
         )
         self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
 
-    @unittest.skipIf(
-        os.getenv("KERAS_ENABLE", "true") == "false",
-        "Keras image was not built, skipping keras test",
-    )
     def test_keras_transformer_hpull(self):
         self.run_keras_test(communication_type=ETL_COMM_HPULL, fqn_flag=False)
 
-    @unittest.skipIf(
-        os.getenv("KERAS_ENABLE", "true") == "false",
-        "Keras image was not built, skipping keras test",
-    )
     def test_keras_transformer_hrev(self):
         self.run_keras_test(communication_type=ETL_COMM_HREV, fqn_flag=False)
 
-    @unittest.skipIf(
-        os.getenv("KERAS_ENABLE", "true") == "false",
-        "Keras image was not built, skipping keras test",
-    )
     def test_keras_transformer_hpush(self):
         self.run_keras_test(communication_type=ETL_COMM_HPUSH, fqn_flag=False)
 
-    @unittest.skipIf(
-        os.getenv("KERAS_ENABLE", "true") == "false",
-        "Keras image was not built, skipping keras test",
-    )
     def test_keras_transformer_hpush_fqn(self):
         self.run_keras_test(communication_type=ETL_COMM_HPUSH, fqn_flag=True)
 
-    @unittest.skipIf(
-        os.getenv("KERAS_ENABLE", "true") == "false",
-        "Keras image was not built, skipping keras test",
-    )
     def test_keras_transformer_hpull_fqn(self):
         self.run_keras_test(communication_type=ETL_COMM_HPULL, fqn_flag=True)

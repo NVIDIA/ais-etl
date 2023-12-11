@@ -4,7 +4,6 @@
 
 import json
 import os
-import unittest
 
 import ffmpeg
 
@@ -24,9 +23,6 @@ class TestFFMPEGTransformer(TestBase):
         )
         return out
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_from_wav_to_flac_hpull(self):
         self.run_ffmpeg_test(
             ETL_COMM_HPULL,
@@ -35,9 +31,6 @@ class TestFFMPEGTransformer(TestBase):
             {"format": "flac", "ar": 48000, "ac": 2},
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_from_mp3_to_wav_hpull(self):
         self.run_ffmpeg_test(
             ETL_COMM_HPULL,
@@ -46,9 +39,6 @@ class TestFFMPEGTransformer(TestBase):
             {"format": "wav", "ar": 44100, "ac": 2, "af": "loudnorm"},
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_format_autodetection_hpull(self):
         test_filename = "test-audio-wav.wav"
         test_source = "./resources/test-audio-wav.wav"
@@ -63,9 +53,6 @@ class TestFFMPEGTransformer(TestBase):
             autodetect_format=file_format,
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_from_wav_to_flac_hpush(self):
         self.run_ffmpeg_test(
             ETL_COMM_HPUSH,
@@ -74,9 +61,6 @@ class TestFFMPEGTransformer(TestBase):
             {"format": "flac", "ar": 48000, "ac": 2},
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_from_mp3_to_wav_hpush(self):
         self.run_ffmpeg_test(
             ETL_COMM_HPUSH,
@@ -85,9 +69,6 @@ class TestFFMPEGTransformer(TestBase):
             {"format": "wav", "ar": 44100, "ac": 2, "af": "loudnorm"},
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_format_autodetection_hpush(self):
         test_filename = "test-audio-wav.wav"
         test_source = "./resources/test-audio-wav.wav"
@@ -102,9 +83,6 @@ class TestFFMPEGTransformer(TestBase):
             autodetect_format=file_format,
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_from_wav_to_flac_hrev(self):
         self.run_ffmpeg_test(
             ETL_COMM_HREV,
@@ -113,9 +91,6 @@ class TestFFMPEGTransformer(TestBase):
             {"format": "flac", "ar": 48000, "ac": 2},
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_from_mp3_to_wav_hrev(self):
         self.run_ffmpeg_test(
             ETL_COMM_HREV,
@@ -124,9 +99,6 @@ class TestFFMPEGTransformer(TestBase):
             {"format": "wav", "ar": 44100, "ac": 2, "af": "loudnorm"},
         )
 
-    @unittest.skipIf(
-        os.getenv("FFMPEG_ENABLE", "true") == "false", "FFMPEG is disabled"
-    )
     def test_ffmpeg_format_autodetection_hrev(self):
         test_filename = "test-audio-wav.wav"
         test_source = "./resources/test-audio-wav.wav"

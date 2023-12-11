@@ -4,8 +4,6 @@
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 import hashlib
-import os
-import unittest
 
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import MD5
@@ -53,14 +51,11 @@ class TestMD5Transformer(TestBase):
             self.test_text_filename, self.test_text_source
         )
 
-    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
     def test_md5_hpull(self):
         self.run_md5_test(ETL_COMM_HPULL)
 
-    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
     def test_md5_hpush(self):
         self.run_md5_test(ETL_COMM_HPUSH)
 
-    @unittest.skipIf(os.getenv("MD5_ENABLE", "true") == "false", "MD5 is disabled")
     def test_md5_hrev(self):
         self.run_md5_test(ETL_COMM_HREV)

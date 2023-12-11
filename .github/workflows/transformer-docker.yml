@@ -4,67 +4,62 @@ on:
   workflow_dispatch:
     inputs:
       build_echo_image:
-        description: 'Build TRANSFORMER_ECHO Image (aistorage/transformer_echo:latest)'
+        description: 'Build transformer_echo and transformer_echo_go image'
         required: true
         type: boolean
-        default: true
-      build_go_echo_image:
-        description: 'Build TRANSFORMER_GO_ECHO Image (aistorage/transformer_echo_go:latest)'
-        required: true
-        type: boolean
-        default: true
+        default: false
       build_hello_world_image:
-        description: 'Build TRANSFORMER_HELLO_WORLD Image (aistorage/transformer_hello_world:latest)'
+        description: 'Build hello_world image'
         required: true
         type: boolean
-        default: true
+        default: false
       build_md5_image:
-        description: 'Build TRANSFORMER_MD5 Image (aistorage/transformer_md5:latest)'
+        description: 'Build transformer_md5 image'
         required: true
         type: boolean
-        default: true
+        default: false
       build_tar2tf_image:
-        description: 'Build TRANSFORMER_TAR2TF Image (aistorage/transformer_tar2tf:latest)'
+        description: 'Build transformer_tar2tf image'
         required: true
         type: boolean
-        default: true
+        default: false
       build_compress_image:
-        description: 'Build TRANSFORMER_COMPRESS Image (aistorage/transformer_compress:latest)'
+        description: 'Build transformer_compress image'
         required: true
         type: boolean
-        default: true
-      build_keras_preprocess_image:
-        description: 'Build TRANSFORMER_KERAS Image (aistorage/transformer_keras:latest)'
-        required: true
-        type: boolean
-        default: true
+        default: false
       build_ffmpeg_image:
-        description: 'Build TRANSFORMER_FFMPEG Image (aistorage/transformer_ffmpeg:latest)'
+        description: 'Build transformer_ffmpeg image'
         required: true
         type: boolean
-        default: true
+        default: false
       build_torchvision_preprocess_image:
-        description: 'Build TRANSFORMER_TORCHVISION Image (aistorage/transformer_torchvision:latest)'
+        description: 'Build transformer_torchvision image'
         required: true
         type: boolean
-        default: true
+        default: false  
+      build_keras_preprocess_image:
+        description: 'Build transformer_keras image'
+        required: true
+        type: boolean
+        default: false
+
   push:
     paths:
       - 'transformers/**'
 
 env:
   ECHO_ENABLE: ${{ github.event.inputs.build_echo_image }}
-  GO_ECHO_ENABLE: ${{ github.event.inputs.build_go_echo_image }}
   HELLO_WORLD_ENABLE: ${{ github.event.inputs.build_hello_world_image }}
   MD5_ENABLE: ${{ github.event.inputs.build_md5_image }}
   TAR2TF_ENABLE: ${{ github.event.inputs.build_tar2tf_image }}
   COMPRESS_ENABLE: ${{ github.event.inputs.build_compress_image }}
-  KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
   FFMPEG_ENABLE: ${{ github.event.inputs.build_ffmpeg_image }}
   TORCHVISION_ENABLE: ${{ github.event.inputs.build_torchvision_preprocess_image }}
+  KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
 
 jobs:
-  build-test-tag:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -85,11 +80,121 @@ jobs:
         git clone https://github.com/NVIDIA/aistore.git
         cd aistore/deploy/dev/k8s
         ./minimal.sh
+        export AIS_ENDPOINT="http://$(minikube ip):8080"
     - name: Setup Python 3.11
       uses: actions/setup-python@v2
       with:
         python-version: 3.11
-    - name: Install FFMPEG
+    - name: Check Path for Changes
+      id: paths_filter
+      uses: dorny/paths-filter@v2
+      with:
+        filters: |
+          echo:
+            - transformers/echo/**/*
+            - transformers/go_echo/**/*
+            - transformers/tests/test_echo.py
+            - transformers/tests/test_go_echo.py  
+          hello_world:
+            - transformers/hello_world/**/*
+            - transformers/go_hello_world/**/*
+            - transformers/tests/test_hello_world.py
+          md5:
+            - transformers/md5/**/*
+            - transformers/tests/test_md5.py
+          tar2tf:
+            - transformers/tar2tf/**/*
+            - transformers/tests/test_tar2tf.py
+          compress:
+            - transformers/compress/**/*
+            - transformers/tests/test_compress.py
+          ffmpeg:
+            - transformers/ffmpeg/**/*
+            - transformers/tests/test_ffmpeg.py
+          torchvision:
+            - transformers/torchvision_preprocess/**/*
+            - transformers/tests/test_torchvision_transformer.py
+          keras:
+            - transformers/keras_preprocess/**/*
+            - transformers/tests/test_keras_transformer.py
+    - name: Update var ECHO_ENABLE
+      if: steps.paths_filter.outputs.echo == 'true'
+      run: echo "ECHO_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var HELLO_WORLD_ENABLE
+      if: steps.paths_filter.outputs.hello_world == 'true'
+      run: echo "HELLO_WORLD_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var MD5_ENABLE
+      if: steps.paths_filter.outputs.md5 == 'true'
+      run: echo "MD5_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var TAR2TF_ENABLE
+      if: steps.paths_filter.outputs.tar2tf == 'true'
+      run: echo "TAR2TF_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var COMPRESS_ENABLE
+      if: steps.paths_filter.outputs.compress == 'true'
+      run: echo "COMPRESS_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var FFMPEG_ENABLE
+      if: steps.paths_filter.outputs.ffmpeg == 'true'
+      run: echo "FFMPEG_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var TORCHVISION_ENABLE
+      if: steps.paths_filter.outputs.torchvision == 'true'
+      run: echo "TORCHVISION_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var KERAS_ENABLE
+      if: steps.paths_filter.outputs.keras == 'true'
+      run: echo "KERAS_ENABLE=true" >> $GITHUB_ENV
+    - name: Install Python Dependencies for Testing
+      run: |
+        make -B -C $GITHUB_WORKSPACE/transformers common_deps
+    - name: Build and Test ECHO
+      if: ${{ env.ECHO_ENABLE == 'true' }}
+      run: |
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/hello_world all
+        make -B -C $GITHUB_WORKSPACE/transformers/go_hello_world all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_echo.py $GITHUB_WORKSPACE/transformers/tests/test_go_echo.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/echo all
+        make -B -C $GITHUB_WORKSPACE/transformers/go_echo all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_echo.py $GITHUB_WORKSPACE/transformers/tests/test_go_echo.py
+    - name: Build and Test HELLO_WORLD
+      if: ${{ env.HELLO_WORLD_ENABLE == 'true' }}
+      run: |
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/echo all
+        make -B -C $GITHUB_WORKSPACE/transformers/go_echo all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_hello_world.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/echo all
+        make -B -C $GITHUB_WORKSPACE/transformers/go_echo all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_hello_world.py
+    - name: Build and Test MD5
+      if: ${{ env.MD5_ENABLE == 'true' }}
+      run: |
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/md5 all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_md5.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/md5 all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_md5.py
+    - name: Build and Test TAR2TF
+      if: ${{ env.TAR2TF_ENABLE == 'true' }}
+      run: |
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/tar2tf all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_tar2tf.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/tar2tf all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_tar2tf.py
+    - name: Build and Test COMPRESS
+      if: ${{ env.COMPRESS_ENABLE == 'true' }}
+      run: |
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/compress all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_compress.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/compress all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_compress.py
+    - name: Build and Test FFMPEG
+      if: ${{ env.FFMPEG_ENABLE == 'true' }}
       run: |
         wget -nv http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
         tar -xf ffmpeg-release-amd64-static.tar.xz
@@ -98,69 +203,29 @@ jobs:
         cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
         rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
         ffmpeg -version
-    - name: Install Torchvision
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_ffmpeg.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_ffmpeg.py
+    - name: Build and Test TORCHVISION
+      if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |
         pip install torchvision --index-url https://download.pytorch.org/whl/cpu
-    - name: Build & Push Transformer Docker Images w/ `test` Tag
-      run: |
-        pushd $GITHUB_WORKSPACE/transformers
         export GIT_TEST="true"
-        make -B all
-        popd
-    - name: Test Transformer Docker Images w/ `test` Tag
+        make -B -C $GITHUB_WORKSPACE/transformers/torchvision_preprocess all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_torchvision_transformer.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/torchvision_preprocess all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_torchvision_transformer.py
+    - name: Build and Test KERAS
+      if: ${{ env.KERAS_ENABLE == 'true' }}
       run: |
-        cd $GITHUB_WORKSPACE/transformers/
-        export AIS_ENDPOINT="http://$(minikube ip):8080"
         export GIT_TEST="true"
-        make test
+        make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_keras_transformer.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
+        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_keras_transformer.py
 
-  build-latest-tag:
-    needs: build-test-tag
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Docker Login
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - name: Setup Minikube
-      uses: medyagh/setup-minikube@v0.0.13
-      with:
-        driver: docker
-        container-runtime: docker
-        cpus: max
-        memory: max
-    - name: Run AIStore in Minikube
-      run: |
-        git clone https://github.com/NVIDIA/aistore.git
-        cd aistore/deploy/dev/k8s
-        ./minimal.sh
-    - name: Setup Python 3.11
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.11
-    - name: Install FFMPEG
-      run: |
-        wget -nv http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-        tar -xf ffmpeg-release-amd64-static.tar.xz
-        FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
-        cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
-        cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
-        rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
-        ffmpeg -version
-    - name: Install Torchvision
-      run: |
-        pip install torchvision --index-url https://download.pytorch.org/whl/cpu
-    - name: Build & Push Transformer Docker Images w/ `latest` Tag
-      run: |
-        pushd $GITHUB_WORKSPACE/transformers
-        export GIT_TEST="false"
-        make -B all
-        popd
-    - name: Test Transformer Docker Images w/ `latest` Tag
-      run: |
-        cd $GITHUB_WORKSPACE/transformers/
-        export AIS_ENDPOINT="http://$(minikube ip):8080"
-        export GIT_TEST="false"
-        make test

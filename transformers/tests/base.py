@@ -15,7 +15,9 @@ class TestBase(unittest.TestCase):
         self.endpoint = os.environ.get("AIS_ENDPOINT", "http://192.168.49.2:8080")
         self.git_test_mode = os.getenv("GIT_TEST", "false")
         self.client = Client(self.endpoint)
-        self.test_bck = self.client.bucket("test-bucket" + generate_random_str()).create(exist_ok=True)
+        self.test_bck = self.client.bucket(
+            "test-bucket" + generate_random_str()
+        ).create(exist_ok=True)
         self.test_etl = self.client.etl("test-etl-" + generate_random_str())
 
     def tearDown(self):

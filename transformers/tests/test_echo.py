@@ -4,9 +4,6 @@
 
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
-import os
-import unittest
-
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 from aistore.sdk.etl_templates import ECHO
 
@@ -44,19 +41,16 @@ class TestEchoTransformer(TestBase):
 
         self.assertEqual(transformed_bytes, original_content)
 
-    @unittest.skipIf(os.getenv("ECHO_ENABLE", "true") == "false", "ECHO is disabled")
     def test_echo_hpull(self):
         self.initialize_template(ETL_COMM_HPULL)
         self.compare_transformed_data(self.test_image_filename, self.test_image_source)
         self.compare_transformed_data(self.test_text_filename, self.test_text_source)
 
-    @unittest.skipIf(os.getenv("ECHO_ENABLE", "true") == "false", "ECHO is disabled")
     def test_echo_hpush(self):
         self.initialize_template(ETL_COMM_HPUSH)
         self.compare_transformed_data(self.test_image_filename, self.test_image_source)
         self.compare_transformed_data(self.test_text_filename, self.test_text_source)
 
-    @unittest.skipIf(os.getenv("ECHO_ENABLE", "true") == "false", "ECHO is disabled")
     def test_echo_hrev(self):
         self.initialize_template(ETL_COMM_HREV)
         self.compare_transformed_data(self.test_image_filename, self.test_image_source)

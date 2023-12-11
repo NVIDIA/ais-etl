@@ -3,9 +3,6 @@
 #
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
-import os
-import unittest
-
 from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
 
@@ -23,9 +20,6 @@ class TestGoEchoTransformer(TestBase):
         self.test_bck.object(self.test_image_filename).put_file(self.test_image_source)
         self.test_bck.object(self.test_text_filename).put_file(self.test_text_source)
 
-    @unittest.skipIf(
-        os.getenv("GO_ECHO_ENABLE", "true") == "false", "GO_ECHO is disabled"
-    )
     def test_go_echo(self):
         template = GO_ECHO.format(communication_type=ETL_COMM_HPULL)
 
