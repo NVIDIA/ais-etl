@@ -19,12 +19,13 @@ import logging
 from fastapi import FastAPI, Request, Depends, Response
 import aiohttp  # async
 
-from keras.preprocessing.image import (
-    ImageDataGenerator,
+from tensorflow.keras.utils import (
     load_img,
     array_to_img,
     img_to_array,
 )
+
+from keras.preprocessing.image import ImageDataGenerator
 
 app = FastAPI()
 
