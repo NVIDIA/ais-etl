@@ -47,7 +47,7 @@ on:
         description: 'Build transformer_face_detection image'
         required: true
         type: boolean
-        default: true
+        default: false
   push:
     paths:
       - 'transformers/**'
@@ -275,9 +275,9 @@ jobs:
         make -B all
         popd
         # test image
-        sudo mkdir -p /root/.kaggle
-        echo ${{ secrets.KAGGLE_CREDS_JSON }} | sudo tee /root/.kaggle/kaggle.json > /dev/null
-        sudo chmod 600 /root/.kaggle/kaggle.json
+        sudo mkdir -p /home/runner/.kaggle
+        echo ${{ secrets.KAGGLE_CREDS_JSON }} | sudo tee /home/runner/.kaggle/kaggle.json > /dev/null
+        sudo chmod 600 /home/runner/.kaggle/kaggle.json
         mkdir -p $GITHUB_WORKSPACE/transformers/face_detection/model
         kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretrained-model
         unzip caffe-face-detector-opencv-pretrained-model.zip -d $GITHUB_WORKSPACE/transformers/face_detection/model/
