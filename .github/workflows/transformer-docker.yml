@@ -264,7 +264,7 @@ jobs:
         make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
         pytest -v test_keras_transformer.py
         popd
-    - name: Build and Test FACE_DETECTIOn
+    - name: Build and Test FACE_DETECTION
       if: ${{ env.FACE_DETECTION_ENABLE == 'true' }}
       run: |  
         docker system prune -a -f --volumes
@@ -275,9 +275,9 @@ jobs:
         make -B all
         popd
         # test image
-        mkdir -p /root/.kaggle
-        echo ${{ secrets.KAGGLE_CREDS_JSON }} > /root/.kaggle/kaggle.json
-        chmod 600 /root/.kaggle/kaggle.json
+        sudo mkdir -p /root/.kaggle
+        echo ${{ secrets.KAGGLE_CREDS_JSON }} | sudo tee /root/.kaggle/kaggle.json > /dev/null
+        sudo chmod 600 /root/.kaggle/kaggle.json
         mkdir -p $GITHUB_WORKSPACE/transformers/face_detection/model
         kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretrained-model
         unzip caffe-face-detector-opencv-pretrained-model.zip -d $GITHUB_WORKSPACE/transformers/face_detection/model/
