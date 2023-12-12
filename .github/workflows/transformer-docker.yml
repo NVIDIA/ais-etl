@@ -147,52 +147,62 @@ jobs:
     - name: Build and Test ECHO
       if: ${{ env.ECHO_ENABLE == 'true' }}
       run: |
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/hello_world all
         make -B -C $GITHUB_WORKSPACE/transformers/go_hello_world all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_echo.py $GITHUB_WORKSPACE/transformers/tests/test_go_echo.py
+        pytest -v test_echo.py test_go_echo.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/echo all
         make -B -C $GITHUB_WORKSPACE/transformers/go_echo all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_echo.py $GITHUB_WORKSPACE/transformers/tests/test_go_echo.py
+        pytest -v test_echo.py test_go_echo.py
+        popd
     - name: Build and Test HELLO_WORLD
       if: ${{ env.HELLO_WORLD_ENABLE == 'true' }}
       run: |
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/echo all
         make -B -C $GITHUB_WORKSPACE/transformers/go_echo all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_hello_world.py
+        pytest -v test_hello_world.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/echo all
         make -B -C $GITHUB_WORKSPACE/transformers/go_echo all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_hello_world.py
+        pytest -v test_hello_world.py
+        popd
     - name: Build and Test MD5
       if: ${{ env.MD5_ENABLE == 'true' }}
       run: |
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/md5 all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_md5.py
+        pytest -v test_md5.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/md5 all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_md5.py
+        pytest -v test_md5.py
+        popd
     - name: Build and Test TAR2TF
       if: ${{ env.TAR2TF_ENABLE == 'true' }}
       run: |
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/tar2tf all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_tar2tf.py
+        pytest -v test_tar2tf.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/tar2tf all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_tar2tf.py
+        pytest -v test_tar2tf.py
+        popd
     - name: Build and Test COMPRESS
       if: ${{ env.COMPRESS_ENABLE == 'true' }}
       run: |
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/compress all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_compress.py
+        pytest -v test_compress.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/compress all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_compress.py
+        pytest -v test_compress.py
+        popd
     - name: Build and Test FFMPEG
       if: ${{ env.FFMPEG_ENABLE == 'true' }}
       run: |
@@ -203,29 +213,34 @@ jobs:
         cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
         rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
         ffmpeg -version
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_ffmpeg.py
+        pytest -v test_ffmpeg.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_ffmpeg.py
+        pytest -v test_ffmpeg.py
+        popd
     - name: Build and Test TORCHVISION
       if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |
         pip install torchvision --index-url https://download.pytorch.org/whl/cpu
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/torchvision_preprocess all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_torchvision_transformer.py
+        pytest -v test_torchvision_transformer.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/torchvision_preprocess all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_torchvision_transformer.py
+        pytest -v test_torchvision_transformer.py
+        popd
     - name: Build and Test KERAS
       if: ${{ env.KERAS_ENABLE == 'true' }}
       run: |
+        pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_keras_transformer.py
+        pytest -v test_keras_transformer.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
-        pytest -v $GITHUB_WORKSPACE/transformers/tests/test_keras_transformer.py
-
+        pytest -v test_keras_transformer.py
+        popd
