@@ -87,6 +87,7 @@ jobs:
         python-version: 3.11
     - name: Check Path for Changes
       id: paths_filter
+      if: ${{ github.event_name != 'workflow_dispatch' }}
       uses: dorny/paths-filter@v2
       with:
         filters: |
@@ -147,6 +148,7 @@ jobs:
     - name: Build and Test ECHO
       if: ${{ env.ECHO_ENABLE == 'true' }}
       run: |
+        docker system prune -a -f --volumes
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/hello_world all
@@ -160,6 +162,7 @@ jobs:
     - name: Build and Test HELLO_WORLD
       if: ${{ env.HELLO_WORLD_ENABLE == 'true' }}
       run: |
+        docker system prune -a -f --volumes
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/echo all
@@ -173,6 +176,7 @@ jobs:
     - name: Build and Test MD5
       if: ${{ env.MD5_ENABLE == 'true' }}
       run: |
+        docker system prune -a -f --volumes
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/md5 all
@@ -184,6 +188,7 @@ jobs:
     - name: Build and Test TAR2TF
       if: ${{ env.TAR2TF_ENABLE == 'true' }}
       run: |
+        docker system prune -a -f --volumes  
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/tar2tf all
@@ -195,6 +200,7 @@ jobs:
     - name: Build and Test COMPRESS
       if: ${{ env.COMPRESS_ENABLE == 'true' }}
       run: |
+        docker system prune -a -f --volumes  
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/compress all
@@ -213,6 +219,7 @@ jobs:
         cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
         rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
         ffmpeg -version
+        docker system prune -a -f --volumes
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
@@ -224,6 +231,7 @@ jobs:
     - name: Build and Test TORCHVISION
       if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |
+        docker system prune -a -f --volumes
         pip install torchvision --index-url https://download.pytorch.org/whl/cpu
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
@@ -235,7 +243,8 @@ jobs:
         popd
     - name: Build and Test KERAS
       if: ${{ env.KERAS_ENABLE == 'true' }}
-      run: |
+      run: |  
+        docker system prune -a -f --volumes
         pushd $GITHUB_WORKSPACE/transformers/tests
         export GIT_TEST="true"
         make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
