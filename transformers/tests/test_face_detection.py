@@ -4,8 +4,6 @@
 
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 import logging
-import unittest
-import os
 
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 import cv2
@@ -117,7 +115,10 @@ class TestTransformers(TestBase):
         arg_type = "fqn" if fqn_flag else ""
         template = self.get_template(communication_type, arg_type)
         self.test_etl.init_spec(
-            template=template, communication_type=communication_type, arg_type=arg_type
+            template=template,
+            communication_type=communication_type,
+            arg_type=arg_type,
+            timeout="10m",
         )
 
         logger.info(self.test_etl.view())
@@ -129,37 +130,17 @@ class TestTransformers(TestBase):
         )
         self.assertEqual(self.get_transformed_image_local(), transformed_image_etl)
 
-    @unittest.skipIf(
-        os.getenv("FACE_DETECTION_ENABLE", "true") == "false",
-        "Face detection transformer image was not built, skipping test",
-    )
     def test_face_detection_transformer_hpull(self):
         self.run_face_detection_test(communication_type=ETL_COMM_HPULL, fqn_flag=False)
 
-    @unittest.skipIf(
-        os.getenv("FACE_DETECTION_ENABLE", "true") == "false",
-        "Face detection transformer image was not built, skipping face_detection test",
-    )
     def test_face_detection_transformer_hrev(self):
         self.run_face_detection_test(communication_type=ETL_COMM_HREV, fqn_flag=False)
 
-    @unittest.skipIf(
-        os.getenv("FACE_DETECTION_ENABLE", "true") == "false",
-        "Face detection transformer image was not built, skipping face_detection test",
-    )
     def test_face_detection_transformer_hpush(self):
         self.run_face_detection_test(communication_type=ETL_COMM_HPUSH, fqn_flag=False)
 
-    @unittest.skipIf(
-        os.getenv("FACE_DETECTION_ENABLE", "true") == "false",
-        "Face detection transformer image was not built, skipping face_detection test",
-    )
     def test_face_detection_transformer_hpush_fqn(self):
         self.run_face_detection_test(communication_type=ETL_COMM_HPUSH, fqn_flag=True)
 
-    @unittest.skipIf(
-        os.getenv("FACE_DETECTION_ENABLE", "true") == "false",
-        "Face detection transformer image was not built, skipping face_detection test",
-    )
     def test_face_detection_transformer_hpull_fqn(self):
         self.run_face_detection_test(communication_type=ETL_COMM_HPULL, fqn_flag=True)

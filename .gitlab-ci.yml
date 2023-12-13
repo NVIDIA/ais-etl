@@ -160,7 +160,7 @@ build:face_detection:
     rules:
       - changes:
           - transformers/face_detection/**/*
-          - transformers/tests/test_face_detection_transformer.py
+          - transformers/tests/test_face_detection.py
         when: always
       - when: manual
 

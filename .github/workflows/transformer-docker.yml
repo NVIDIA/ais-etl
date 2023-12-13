@@ -125,7 +125,7 @@ jobs:
             - transformers/tests/test_keras_transformer.py
           face_detection:
             - transformers/face_detection/**/*
-            - transformers/tests/test_face_detection_transformer.py
+            - transformers/tests/test_face_detection.py
     - name: Update var ECHO_ENABLE
       if: steps.paths_filter.outputs.echo == 'true'
       run: echo "ECHO_ENABLE=true" >> $GITHUB_ENV
@@ -278,10 +278,10 @@ jobs:
         kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretrained-model
         unzip caffe-face-detector-opencv-pretrained-model.zip -d $GITHUB_WORKSPACE/transformers/face_detection/model/
         pushd $GITHUB_WORKSPACE/transformers/tests
-        pytest -v test_face_detection.py
+        pytest -o log_cli=true --log-cli-level=INFO test_face_detection.py
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
-        pytest -v test_face_detection.py
+        pytest -o log_cli=true --log-cli-level=INFO test_face_detection.py
         popd
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
