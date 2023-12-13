@@ -10,21 +10,33 @@ $ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --b
 
 Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 """
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring, broad-exception-caught
+# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring, broad-exception-caught, unused-import
 import os
 import urllib.parse
+import io
+import logging
 
 import aiofiles
 from fastapi import FastAPI, Request, Depends, Response
+from fastapi.logger import logger
 import aiohttp  # async
 import cv2
 import numpy as np
+import webdataset as wds
+from PIL import Image
+
+# logging
+gunicorn_logger = logging.getLogger("gunicorn.error")
+logger.handlers = gunicorn_logger.handlers
+logger.setLevel(logging.DEBUG)
 
 app = FastAPI()
 
+# env vars
 host_target = os.environ["AIS_TARGET_URL"]
 FORMAT = os.environ["FORMAT"]
 arg_type = os.getenv("ARG_TYPE", "")
+file_format = os.getenv("FILE_FORMAT", "image")
 
 
 class HttpClient:
@@ -55,12 +67,27 @@ async def health():
     return b"Running"
 
 
-cvNet = cv2.dnn.readNetFromCaffe(
+MODEL = cv2.dnn.readNetFromCaffe(
     "./model/architecture.txt", "./model/weights.caffemodel"
 )
 
 
-async def transform_image(image_bytes: bytes) -> bytes:
+def transform_tar(obj_url: str) -> bytes:
+    dataset = wds.WebDataset(obj_url)
+    processed_shard = dataset.map_dict(**{f"{FORMAT}": transform_image})
+
+    # Write the output to a memory buffer and return the value
+    buffer = io.BytesIO()
+    with wds.TarWriter(fileobj=buffer) as dst:
+        for sample in processed_shard:
+            dst.write(sample)
+    buffer.seek(0)
+    data = buffer.read()
+    buffer.close()
+    return data
+
+
+def transform_image(image_bytes: bytes) -> bytes:
     image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
     image_height, image_width, _ = image.shape
     output_image = image.copy()
@@ -72,8 +99,8 @@ async def transform_image(image_bytes: bytes) -> bytes:
         swapRB=False,
         crop=False,
     )
-    cvNet.setInput(preprocessed_image)
-    results = cvNet.forward()
+    MODEL.setInput(preprocessed_image)
+    results = MODEL.forward()
 
     for face in results[0][0]:
         face_confidence = face[2]
@@ -109,18 +136,36 @@ async def get_handler(
     # Fetch object from AIS target based on the destination/name
     # Transform the bytes
     # Return the transformed bytes
-
+    logger.info("TRANSFORMATION STARTED :: %s", full_path)
     if arg_type.lower() == "fqn":
-        async with aiofiles.open(full_path, "rb") as file:
-            body = await file.read()
+        if (
+            file_format.lower() == "tar"
+            or file_format.lower() == "wds"
+            or file_format.lower() == "webdataset"
+        ):
+            result = transform_tar(full_path)
+        else:
+            async with aiofiles.open(full_path, "rb") as file:
+                body = await file.read()
+            result = transform_image(body)
     else:
         object_path = urllib.parse.quote(full_path, safe="@")
         object_url = f"{host_target}/{object_path}"
-        resp = await client.get(object_url)
-        body = await resp.read()
+        logger.info("object_url: %s", object_url)
+        if (
+            file_format.lower() == "tar"
+            or file_format.lower() == "wds"
+            or file_format.lower() == "webdataset"
+        ):
+            result = transform_tar(object_url)
+        else:
+            resp = await client.get(object_url)
+            body = await resp.read()
+            result = transform_image(body)
 
+    logger.info("TRANSFORMATION COMPLETED ::  %s", full_path)
     return Response(
-        content=await transform_image(body),
+        content=result,
         media_type="application/octet-stream",
     )
 
@@ -134,15 +179,36 @@ async def put_handler(request: Request, full_path: str):
     and returns the modified bytes.
     """
     # Read bytes from request (request.body)
-    if arg_type.lower() == "fqn":
-        async with aiofiles.open(full_path, "rb") as file:
-            body = await file.read()
-    else:
-        body = await request.body()
-
     # Transform the bytes
+    logger.info("TRANSFORMATION STARTED :: %s", full_path)
+    if arg_type.lower() == "fqn":
+        if (
+            file_format.lower() == "tar"
+            or file_format.lower() == "wds"
+            or file_format.lower() == "webdataset"
+        ):
+            result = transform_tar(full_path)
+        else:
+            async with aiofiles.open(full_path, "rb") as file:
+                body = await file.read()
+            result = transform_image(body)
+    else:
+        if (
+            file_format.lower() == "tar"
+            or file_format.lower() == "wds"
+            or file_format.lower() == "webdataset"
+        ):
+            # no way to find the url of the object
+            raise ValueError(
+                'FILE_FORMAT "tar" requires comm_type=hpush or arg_type=fqn'
+            )
+
+        body = await request.body()
+        result = transform_image(body)
+
     # Return the transformed bytes
+    logger.info("TRANSFORMATION COMPLETED ::  %s", full_path)
     return Response(
-        content=await transform_image(body),
+        content=result,
         media_type="application/octet-stream",
     )

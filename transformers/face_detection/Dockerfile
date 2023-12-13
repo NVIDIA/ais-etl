@@ -1,9 +1,11 @@
-FROM python:slim
+# Prior to building this image make you own kaggle_creds.json file
+# containing kaggle keys to download dataset
+FROM python:3.8-slim
 
 WORKDIR /
 
 # install packages needed for open-cv to work
-RUN apt-get update && apt-get -y install gcc ffmpeg libsm6 libxext6 unzip
+RUN apt-get update && apt-get -y install gcc ffmpeg libsm6 libxext6 unzip curl
 
 # install python dependencies
 COPY ./requirements.txt requirements.txt
@@ -28,5 +30,7 @@ RUN kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretr
 COPY main.py main.py
 
 ENV PYTHONUNBUFFERED 1
+
+ENV LOG_LEVEL DEBUG
 
 EXPOSE 8000

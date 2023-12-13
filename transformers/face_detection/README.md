@@ -30,6 +30,7 @@ Adjust the following parameters in the `pod.yaml` file as per your requirements:
 |------------|---------------------------------------------------------------------|---------------|
 | `FORMAT`   | Image format for processing/storing (png, jpeg, etc.)                | "jpeg"        |
 | `ARG_TYPE` | Local object reading (`fqn`) vs. HTTP request for object retrieval   | ""            |
+| `FILE_FORMAT` | Configure as "tar" for processing datasets in the webdataset format or for handling batches of images packaged in a tarball   | ""            |
 
 ### Setting Up the Face Detection Transformer with AIStore CLI
 
@@ -42,6 +43,7 @@ cd transformers/face_detection
 # Set FORMAT and ARG_TYPE environment variables
 export FORMAT="jpeg"
 export ARG_TYPE="" # Or use 'fqn' for local reading
+export FILE_FORMAT="" # or use "tar", if using webdataset format
 
 # Define communication type
 export COMMUNICATION_TYPE="hpush://"
@@ -58,4 +60,7 @@ ais etl object <etl-name> ais://src/<image-name>.JPEG dst.JPEG
 
 # For offline (bucket-to-bucket) transformation
 ais etl bucket <etl-name> ais://src-bck ais://dst-bck --ext="{jpg:jpg}"
+
+# or, if using webdataset style format
+# ais etl bucket <etl-name> ais://src-bck ais://dst-bck --ext="{tar:tar}"
 ```

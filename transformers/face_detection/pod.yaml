@@ -14,13 +14,15 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command:  ["gunicorn", "main:app", "--workers", "5", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      command:  ["gunicorn", "main:app", "--workers", "5", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "300"]
       env:
         - name: FORMAT
         # Expected Values - png, jpeg, etc.
           value: "${FORMAT}"
         - name: ARG_TYPE
           value: "${ARG_TYPE}"
+        - name: FILE_FORMAT
+          value: "${FILE_FORMAT}"
       # This is a health check endpoint which one should specify
       # for aistore to determine the health of the ETL container.
       readinessProbe:

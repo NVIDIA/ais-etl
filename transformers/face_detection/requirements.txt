@@ -5,4 +5,6 @@ aiohttp
 numpy
 opencv-python
 aiofiles
-kaggle
+kaggle==1.5.16
+webdataset==0.2.86
+Pillow==10.0.0

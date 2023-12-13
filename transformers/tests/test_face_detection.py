@@ -8,7 +8,7 @@ import logging
 from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
 import cv2
 
-# from aistore.sdk.etl_templates import FACE_DETECTION_TRANSFORMER
+from aistore.sdk.etl_templates import FACE_DETECTION_TRANSFORMER
 from tests.utils import git_test_mode_format_image_tag_test
 from tests.base import TestBase
 
@@ -17,43 +17,6 @@ logging.basicConfig(
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
-
-# TODO: move var to aistore.sdk.etl_templates after merge
-FACE_DETECTION_TRANSFORMER = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-face-detection
-  annotations:
-    communication_type: "{communication_type}://"
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_face_detection:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 8000
-      command:  ["gunicorn", "main:app", "--workers", "20", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      env:
-        - name: FORMAT
-          value: "{format}"
-        - name: ARG_TYPE
-          value: "{arg_type}"
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/ais
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/ais
-        type: Directory
-"""
 
 
 class TestTransformers(TestBase):
