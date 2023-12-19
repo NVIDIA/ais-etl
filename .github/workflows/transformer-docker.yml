@@ -279,10 +279,9 @@ jobs:
         unzip caffe-face-detector-opencv-pretrained-model.zip -d $GITHUB_WORKSPACE/transformers/face_detection/model/
         pushd $GITHUB_WORKSPACE/transformers/tests
         pytest -o log_cli=true --log-cli-level=INFO test_face_detection.py
-        export GIT_TEST="false"
-        make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all
-        pytest -o log_cli=true --log-cli-level=INFO test_face_detection.py
         popd
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/keras_preprocess all        
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
