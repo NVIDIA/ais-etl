@@ -2,5 +2,5 @@ fastapi==0.104.1
 uvicorn==0.24.0.post1
 gunicorn==21.2.0
 aiohttp==3.9.1
-Pillow==10.1.0
+pillow==10.2.0
 torchvision==0.16.1
