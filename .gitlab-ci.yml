@@ -211,7 +211,7 @@ test:torchvision:
     extends: .test_template
     needs: ["build:torchvision"]
     script:
-        - pip install torchvision --index-url https://download.pytorch.org/whl/cpu
+        - pip install torchvision==0.16.1 --index-url https://download.pytorch.org/whl/cpu
         - cd transformers/tests && pytest -v test_torchvision_transformer.py
 
 test:keras:

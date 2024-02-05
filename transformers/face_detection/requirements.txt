@@ -1,7 +1,7 @@
-fastapi
+fastapi>=0.109.1
 uvicorn[standard]
 gunicorn
-aiohttp
+aiohttp>=3.9.2
 numpy
 opencv-python
 aiofiles

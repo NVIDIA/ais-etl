@@ -25,7 +25,7 @@ class TestTransformers(TestBase):
     def simple_torchvision_test(self, communication_type):
         template = TORCHVISION_TRANSFORMER.format(
             communication_type=communication_type,
-            transform='{"Resize": {"size": [100, 100]}, "Grayscale": {"num_output_channels": 1}}',
+            transform="{\"Resize\": {\"size\": [100, 100]}, \"Grayscale\": {\"num_output_channels\": 1}}",
             format="JPEG",
         )
 
