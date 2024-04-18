@@ -1,5 +1,5 @@
 """
-Transorming images with Keras API using FastAPI framework and Gunivorn and Uvicorn webserver.
+Transorming images with Keras API using FastAPI framework and Gunicorn and Uvicorn webserver.
 
 Steps to run: 
 $ # with uvicorn

@@ -14,3 +14,4 @@ tensorflow
 opencv-python
 aiofiles
 kaggle
+typing-extensions>=4.3.0

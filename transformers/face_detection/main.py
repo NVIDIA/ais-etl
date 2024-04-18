@@ -1,6 +1,6 @@
 """
 Detecting Faces w/ SSD model (SSD: Single Shot MultiBox Detector) using FastAPI framework 
-and Gunivorn and Uvicorn webserver.
+and Gunicorn and Uvicorn webserver.
 
 Steps to run: 
 $ # with uvicorn

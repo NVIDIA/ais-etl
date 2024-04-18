@@ -1,5 +1,5 @@
 """
-A simple echo transformation using FastAPI framework and Gunivorn and Uvicorn webserver.
+A simple echo transformation using FastAPI framework and Gunicorn and Uvicorn webserver.
 
 Steps to run: 
 $ # with uvicorn
