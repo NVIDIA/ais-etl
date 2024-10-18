@@ -1,5 +1,4 @@
 aistore
-ffmpeg-python
 filetype
 keras
 numpy

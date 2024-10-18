@@ -1,4 +1,4 @@
-# NeMo FFMPEG Transformer
+# NeMo FFmpeg Transformer
 
 This transformer is based on [NeMo's Speech Data Processor (SDP) Toolkit](https://github.com/NVIDIA/NeMo-speech-data-processor). It is used to transform audio files into WAV format with control over Audio Channels (`AC`) and Audio Rate (`AR`).
 
@@ -10,7 +10,7 @@ To transform your audio files using this ETL, follow these steps:
    Go to the directory where the specification ([`pod.yaml`](pod.yaml)) file exists.
 
    ```bash
-   cd ais-etl/transformers/NeMo/FFMPEG/
+   cd ais-etl/transformers/NeMo/FFmpeg/
    ```
 
 2. **Configure AIStore Endpoint**  

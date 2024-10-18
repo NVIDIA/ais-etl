@@ -220,11 +220,11 @@ jobs:
         make -B -C $GITHUB_WORKSPACE/transformers/compress all
         pytest -v test_compress.py
         popd
-    - name: Build and Test FFMPEG
+    - name: Build and Test FFmpeg
       if: ${{ env.FFMPEG_ENABLE == 'true' }}
       run: |
         export GIT_TEST="false"
-        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/FFMPEG all
+        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/FFmpeg all
     - name: Build and Test TORCHVISION
       if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |

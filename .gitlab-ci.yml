@@ -115,18 +115,6 @@ build:compress:
         when: always
       - when: manual
 
-build:ffmpeg:
-    extends: .build_template
-    script:
-        - cd transformers
-        - cd ffmpeg && make -B all
-    rules:
-      - changes:
-          - transformers/ffmpeg/**/*
-          - transformers/tests/test_ffmpeg.py
-        when: always
-      - when: manual
-
 build:torchvision:
     extends: .build_template
     script:
@@ -193,19 +181,6 @@ test:compress:
     needs: ["build:compress"]
     script:
         - cd transformers/tests && pytest -v test_compress.py
-
-test:ffmpeg:
-    extends: .test_template
-    needs: ["build:ffmpeg"]
-    script:
-        - wget -nv http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-        - tar -xf ffmpeg-release-amd64-static.tar.xz
-        - FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
-        - cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
-        - cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
-        - rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
-        - ffmpeg -version
-        - cd transformers/tests && pytest -v test_ffmpeg.py
 
 test:torchvision:
     extends: .test_template

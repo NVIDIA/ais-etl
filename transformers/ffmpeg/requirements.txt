@@ -1,3 +1,0 @@
-requests
-ffmpeg-python
-filetype

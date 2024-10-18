@@ -10,7 +10,7 @@ AIStore hosts a variety of sample transformers in the form of Docker images to b
 | [`md5`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/md5) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the `MD5` sum of the original data as the response. |
 | [`tar2tf`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/tar2tf) | `golang:1.21` | `hrev` | Returns the transformed TensorFlow compatible data for the input `TAR` files. |
 | [`compress`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/compress) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the compressed or decompressed data using `gzip` or `bz2`. |
-| [`ffmpeg`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/ffmpeg) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the `FFMPEG` decoded data. |
+| [`NeMo/FFmpeg`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/NeMo/FFmpeg) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns audio files in WAV format with control over Audio Channels (`AC`) and Audio Rate (`AR`). |
 | [`keras`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/keras_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Keras` pre-processing. |
 | [`torchvision`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/torchvision_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Torchvision` pre-processing. |
 
@@ -18,7 +18,7 @@ AIStore hosts a variety of sample transformers in the form of Docker images to b
 
 The following sections demonstrate initializing ETLs on AIStore using the provided sample transformers.
 
-> For detailed usage information regarding the `Tar2TF`, `Compress`, `FFMPEG`, `Keras`, `Torchvision` transformers and their optional parameters, please refer to the `README` documents located in their respective sub-directories.
+> For detailed usage information regarding the `Tar2TF`, `Compress`, `NeMo/FFmpeg`, `Keras`, `Torchvision` transformers and their optional parameters, please refer to the `README` documents located in their respective sub-directories.
 
 #### Pre-Requisites
 
