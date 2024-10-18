@@ -29,7 +29,7 @@ on:
         type: boolean
         default: false
       build_ffmpeg_image:
-        description: 'Build transformer_ffmpeg image'
+        description: 'Build transformer_nemo_ffmpeg image'
         required: true
         type: boolean
         default: false
@@ -223,22 +223,8 @@ jobs:
     - name: Build and Test FFMPEG
       if: ${{ env.FFMPEG_ENABLE == 'true' }}
       run: |
-        wget -nv http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-        tar -xf ffmpeg-release-amd64-static.tar.xz
-        FFMPEG_DIR=$(ls | grep ffmpeg-*-static)
-        cp ${FFMPEG_DIR}/ffmpeg /usr/local/bin/
-        cp ${FFMPEG_DIR}/ffprobe /usr/local/bin/
-        rm -rf ffmpeg-*-static ffmpeg-release-amd64-static.tar.xz
-        ffmpeg -version
-        docker system prune -a -f --volumes
-        pushd $GITHUB_WORKSPACE/transformers/tests
-        export GIT_TEST="true"
-        make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
-        pytest -v test_ffmpeg.py
         export GIT_TEST="false"
-        make -B -C $GITHUB_WORKSPACE/transformers/ffmpeg all
-        pytest -v test_ffmpeg.py
-        popd
+        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/FFMPEG all
     - name: Build and Test TORCHVISION
       if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |
