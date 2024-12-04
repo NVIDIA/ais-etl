@@ -33,6 +33,11 @@ on:
         required: true
         type: boolean
         default: false
+      build_split_audio_image:
+        description: 'Build transformer_split_audio image'
+        required: true
+        type: boolean
+        default: false  
       build_torchvision_preprocess_image:
         description: 'Build transformer_torchvision image'
         required: true
@@ -62,6 +67,7 @@ env:
   TORCHVISION_ENABLE: ${{ github.event.inputs.build_torchvision_preprocess_image }}
   KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
   FACE_DETECTION_ENABLE: ${{ github.event.inputs.build_face_detection_image }}
+  SPLIT_AUDIO_ENABLE: ${{ github.event.inputs.build_split_audio_image }}
 
 jobs:
   build-and-test:
@@ -225,6 +231,11 @@ jobs:
       run: |
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/NeMo/FFmpeg all
+    - name: Build and Test Split Audio
+      if: ${{ env.SPLIT_AUDIO_ENABLE == 'true' }}
+      run: |
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/split_audio all
     - name: Build and Test TORCHVISION
       if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |

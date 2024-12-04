@@ -1,0 +1,4 @@
+soundfile
+requests
+aistore
+numpy

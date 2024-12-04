@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-nemo-split-audio
+  annotations:
+    # Values it can take ["hpull://","hrev://","hpush://"]
+    communication_type: "hpull://"
+    wait_timeout: 10m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_split_audio:latest
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: default
+          containerPort: 80
+      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: AIS_ENDPOINT
+          value: "http://asr.iad.oci.aistore.nvidia.com:51080"
+        - name: AIS_BUCKET
+          value: "ais://YTC2"
+        - name: AIS_PREFIX
+          value: "en_dwnld/"
+        - name: AIS_EXTENSION
+          value: "flac"
