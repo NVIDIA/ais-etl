@@ -80,7 +80,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     - name: Setup Minikube
-      uses: medyagh/setup-minikube@v0.0.13
+      uses: medyagh/setup-minikube@v0.0.18
       with:
         driver: docker
         container-runtime: docker
