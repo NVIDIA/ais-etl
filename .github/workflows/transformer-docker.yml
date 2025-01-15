@@ -99,7 +99,7 @@ jobs:
     - name: Check Path for Changes
       id: paths_filter
       if: ${{ github.event_name != 'workflow_dispatch' }}
-      uses: dorny/paths-filter@v2
+      uses: dorny/paths-filter@v3
       with:
         filters: |
           echo:
