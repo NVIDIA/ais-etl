@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: transformer-nemo-split-audio
+  name: transformer-audio-splitter
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: "hpull://"
@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: aistorage/transformer_split_audio:latest
+      image: aistorage/transformer_audio_splitter:latest
       imagePullPolicy: IfNotPresent
       ports:
         - name: default
@@ -19,12 +19,3 @@ spec:
         httpGet:
           path: /health
           port: default
-      env:
-        - name: AIS_ENDPOINT
-          value: "http://asr.iad.oci.aistore.nvidia.com:51080"
-        - name: AIS_BUCKET
-          value: "ais://YTC2"
-        - name: AIS_PREFIX
-          value: "en_dwnld/"
-        - name: AIS_EXTENSION
-          value: "flac"
