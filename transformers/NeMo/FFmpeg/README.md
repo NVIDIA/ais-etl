@@ -1,6 +1,6 @@
 # NeMo FFmpeg Transformer
 
-This transformer is based on [NeMo's Speech Data Processor (SDP) Toolkit](https://github.com/NVIDIA/NeMo-speech-data-processor). It is used to transform audio files into WAV format with control over Audio Channels (`AC`) and Audio Rate (`AR`).
+This transformer is used to transform audio files into WAV format with control over Audio Channels (`AC`) and Audio Rate (`AR`). It is based on [NeMo's Speech Data Processor (SDP) Toolkit](https://github.com/NVIDIA/NeMo-speech-data-processor).
 
 To transform your audio files using this ETL, follow these steps:
 
@@ -40,14 +40,6 @@ ais etl init spec --from-file pod_with_fqn.yaml --comm-type hpull --arg-type fqn
 
 - Replace `<etl-name>` with a name for your ETL.
 - Use `pod_with_fqn.yaml` as your specification file, which includes the necessary disk attachments.
-
-**Advantages:**
-
-- **Performance Improvement**: Using FQN can provide a slight performance boost because it avoids transferring the object data over the network to the transformation pod.
-
-**Disadvantages:**
-
-- **Disk Attachment Required**: You must attach all the disks that are attached to the AIStore target to the transformation pod. This requires updating the pod specification as shown in [`pod_with_fqn.yaml`](pod_with_fqn.yaml).
 
 ## Transform Data Using the ETL
 
@@ -101,3 +93,35 @@ ais etl bucket <etl-name> <source-bucket> <destination-bucket> \
 - `--prepend="transformed/"`: (Optional) Prepend this path to the destination objects.
 
 This command transforms all data in the `<source-bucket>` (optionally within the specified virtual sub-directory) and saves it to the `<destination-bucket>`, optionally under the `transformed/` sub-directory.
+
+## **Performance**
+
+This transformer achieves significantly better performance than traditional FFmpeg methods by leveraging **AIStore’s parallelization** across multiple nodes and ETL communication mechanisms.
+
+### **Performance Highlights**
+- **Up to 5x faster** than traditional FFmpeg.
+- Performance scales **linearly** with the number of AIStore targets, as objects are distributed across more transformation pods.
+
+### **Benchmark Results**
+We benchmarked the transformation of **300 audio files** (each **10 MiB**) using different ETL communication mechanisms:
+
+| **ETL Mode**      | **Time Taken** |
+|-------------------|---------------|
+| **hpull**         | **46 sec**     |
+| **hpush**         | **48 sec**     |
+| **hpull with FQN** | **50 sec**     |
+
+For comparison, we tested against:
+1. **Python-based FFmpeg script** ('[benchmark.py](benchmark.py)' which is based on [NeMo's Speech Data Processor](https://github.com/NVIDIA/NeMo-speech-data-processor)):  
+   - **Time Taken**: **4 min 2.78 sec** (Sequential processing)  
+   
+2. **FFmpeg Linux CLI Utility**:  
+   ```bash
+   time bash -c '
+   mkdir -p tmp1
+   for i in {0..299}; do
+       ffmpeg -i audio000.m4a -map 0:a -ac 2 -ar 44100 -c:a pcm_s16le "tmp1/output_audio$i.wav"
+   done
+   '
+   ```
+   - **Time Taken**: **3 min 23.71 sec**  
