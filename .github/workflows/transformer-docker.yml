@@ -4,52 +4,52 @@ on:
   workflow_dispatch:
     inputs:
       build_echo_image:
-        description: 'Build transformer_echo and transformer_echo_go image'
+        description: 'Build echo transformer image'
         required: true
         type: boolean
         default: false
       build_hello_world_image:
-        description: 'Build hello_world image'
+        description: 'Build hello_world transformer image'
         required: true
         type: boolean
         default: false
       build_md5_image:
-        description: 'Build transformer_md5 image'
+        description: 'Build md5 transformer image'
         required: true
         type: boolean
         default: false
       build_tar2tf_image:
-        description: 'Build transformer_tar2tf image'
+        description: 'Build tar2tf transformer image'
         required: true
         type: boolean
         default: false
       build_compress_image:
-        description: 'Build transformer_compress image'
+        description: 'Build compress transformer image'
         required: true
         type: boolean
         default: false
       build_ffmpeg_image:
-        description: 'Build transformer_nemo_ffmpeg image'
+        description: 'Build NeMo/FFmpeg transformer image'
         required: true
         type: boolean
         default: false
-      build_split_audio_image:
-        description: 'Build transformer_split_audio image'
+      build_audio_split_image:
+        description: 'Build NeMo/audio_split_consolidate transformer image'
         required: true
         type: boolean
         default: false  
       build_torchvision_preprocess_image:
-        description: 'Build transformer_torchvision image'
+        description: 'Build torchvision transformer image'
         required: true
         type: boolean
         default: false  
       build_keras_preprocess_image:
-        description: 'Build transformer_keras image'
+        description: 'Build keras transformer image'
         required: true
         type: boolean
         default: false
       build_face_detection_image:
-        description: 'Build transformer_face_detection image'
+        description: 'Build face detection transformer image'
         required: true
         type: boolean
         default: false
@@ -67,7 +67,7 @@ env:
   TORCHVISION_ENABLE: ${{ github.event.inputs.build_torchvision_preprocess_image }}
   KERAS_ENABLE: ${{ github.event.inputs.build_keras_preprocess_image }}
   FACE_DETECTION_ENABLE: ${{ github.event.inputs.build_face_detection_image }}
-  SPLIT_AUDIO_ENABLE: ${{ github.event.inputs.build_split_audio_image }}
+  AUDIO_SPLIT_ENABLE: ${{ github.event.inputs.build_audio_split_image }}
 
 jobs:
   build-and-test:
@@ -232,10 +232,10 @@ jobs:
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/NeMo/FFmpeg all
     - name: Build and Test Split Audio
-      if: ${{ env.SPLIT_AUDIO_ENABLE == 'true' }}
+      if: ${{ env.AUDIO_SPLIT_ENABLE == 'true' }}
       run: |
-        export GIT_TEST="false"
-        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/split_audio all
+        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/audio_split_consolidate/audio_manager all
+        make -B -C $GITHUB_WORKSPACE/transformers/NeMo/audio_split_consolidate/audio_splitter all
     - name: Build and Test TORCHVISION
       if: ${{ env.TORCHVISION_ENABLE == 'true' }}
       run: |
