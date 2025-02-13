@@ -5,8 +5,9 @@
 
 import hashlib
 
-from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
-from aistore.sdk.etl_templates import MD5
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_templates import MD5
+from aistore.sdk.etl import ETLConfig
 
 from tests.utils import git_test_mode_format_image_tag_test
 from tests.base import TestBase
@@ -29,7 +30,9 @@ class TestMD5Transformer(TestBase):
 
     def compare_transformed_data_with_md5_hash(self, filename, original_filepath):
         transformed_data_bytes = (
-            self.test_bck.object(filename).get(etl_name=self.test_etl.name).read_all()
+            self.test_bck.object(filename)
+            .get(etl=ETLConfig(self.test_etl.name))
+            .read_all()
         )
         original_file_hash = self.md5_hash_file(original_filepath)
         self.assertEqual(transformed_data_bytes.decode("utf-8"), original_file_hash)

@@ -1,11 +1,12 @@
 #
-# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 #
 
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
-from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
-from aistore.sdk.etl_templates import ECHO
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_templates import ECHO
+from aistore.sdk.etl import ETLConfig
 
 from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
@@ -33,7 +34,9 @@ class TestEchoTransformer(TestBase):
 
     def compare_transformed_data(self, filename: str, source: str):
         transformed_bytes = (
-            self.test_bck.object(filename).get(etl_name=self.test_etl.name).read_all()
+            self.test_bck.object(filename)
+            .get(etl=ETLConfig(self.test_etl.name))
+            .read_all()
         )
 
         with open(source, "rb") as file:

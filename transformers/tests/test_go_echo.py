@@ -1,13 +1,14 @@
 #
-# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 #
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 from tests.base import TestBase
 from tests.utils import git_test_mode_format_image_tag_test
 
-from aistore.sdk.etl_const import ETL_COMM_HPULL
-from aistore.sdk.etl_templates import GO_ECHO
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
+from aistore.sdk.etl.etl_templates import GO_ECHO
+from aistore.sdk.etl import ETLConfig
 
 
 class TestGoEchoTransformer(TestBase):
@@ -30,12 +31,12 @@ class TestGoEchoTransformer(TestBase):
 
         transformed_image_bytes = (
             self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
+            .get(etl=ETLConfig(self.test_etl.name))
             .read_all()
         )
         transformed_text_bytes = (
             self.test_bck.object(self.test_text_filename)
-            .get(etl_name=self.test_etl.name)
+            .get(etl=ETLConfig(self.test_etl.name))
             .read_all()
         )
 

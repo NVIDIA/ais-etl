@@ -7,42 +7,41 @@ import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-host_target = os.environ['AIS_TARGET_URL']
+host_target = os.environ["AIS_TARGET_URL"]
 
 
 class Handler(BaseHTTPRequestHandler):
-    def log_request(self, code='-', size='-'):
-        # Don't log successful requests info. Unsuccessful logged by log_error().
-        pass
+    def log_request(self, code="-", size="-"):
+        pass  # Disable request logging
 
-    def _set_headers(self):
+    def _set_headers(self, content_length):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", str(content_length))
         self.end_headers()
 
     def do_PUT(self):
-        content_length = int(self.headers['Content-Length'])
+        content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
-        md5 = hashlib.md5()
-        md5.update(post_data)
-        self._set_headers()
-        self.wfile.write(md5.hexdigest().encode())
+        digest = hashlib.md5(post_data).hexdigest().encode()
+        self._set_headers(len(digest))
+        self.wfile.write(digest)
 
     def do_GET(self):
         if self.path == "/health":
-            self._set_headers()
-            self.wfile.write(b"Running")
+            response = b"Running"
+            self._set_headers(len(response))
+            self.wfile.write(response)
             return
 
-        x = requests.get(host_target + self.path)
-        md5 = hashlib.md5()
-        md5.update(x.content)
-        self._set_headers()
-        self.wfile.write(md5.hexdigest().encode())
+        content = requests.get(host_target + self.path).content
+        digest = hashlib.md5(content).hexdigest().encode()
+        self._set_headers(len(digest))
+        self.wfile.write(digest)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    """Handle requests in a separate thread."""
+    """Handle requests in separate threads."""
 
 
 def run(addr="localhost", port=8000):

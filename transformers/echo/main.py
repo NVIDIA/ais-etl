@@ -1,14 +1,15 @@
 """
-A simple echo transformation using FastAPI framework and Gunicorn and Uvicorn webserver.
+A simple echo transformation using FastAPI framework with Gunicorn and Uvicorn web server.
 
-Steps to run: 
+Steps to run:
 $ # with uvicorn
-$ uvicorn main:app --reload 
+$ uvicorn main:app --reload
 $ # with multiple uvicorn processes managed by gunicorn
-$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 
+$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 
-Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 """
+
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring, broad-exception-caught
 import os
 import urllib.parse
@@ -59,18 +60,20 @@ async def get_handler(
     fetches the object from the AIS target based on the destination/name,
     transforms the bytes, and returns the modified bytes.
     """
-    # Get destination/name of object from URL or from full_path variable
-    # Fetch object from AIS target based on the destination/name
-    # Transform the bytes
-    # Return the transformed bytes
     object_path = urllib.parse.quote(full_path, safe="@")
     object_url = f"{host_target}/{object_path}"
     resp = await client.get(object_url)
     if not resp or resp.status != 200:
         raise HTTPException(
-            status_code=500, detail="Error retreiving object ({full_path}) from target"
+            status_code=500, detail=f"Error retrieving object ({full_path}) from target"
         )
-    return Response(content=await resp.read(), media_type="application/octet-stream")
+
+    content = await resp.read()
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Length": str(len(content))},  # Set Content-Length
+    )
 
 
 @app.put("/")
@@ -81,8 +84,10 @@ async def put_handler(request: Request):
     Reads bytes from the request, performs byte transformation,
     and returns the modified bytes.
     """
-    # Read bytes from request (request.body)
-    # Transform the bytes
-    # Return the transformed bytes
+    content = await request.body()
 
-    return Response(content=await request.body(), media_type="application/octet-stream")
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Length": str(len(content))},  # Set Content-Length
+    )
