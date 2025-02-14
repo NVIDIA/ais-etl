@@ -1,214 +1,179 @@
 #
-# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 #
-
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 import bz2
 import gzip
 import json
 
-from aistore.sdk.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
-from aistore.sdk.etl_templates import COMPRESS
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_templates import COMPRESS
+from aistore.sdk.etl import ETLConfig
 
-from tests.base import TestBase
-from tests.utils import git_test_mode_format_image_tag_test
+from .base import TestBase
+from .utils import format_image_tag_for_git_test_mode, cases, generate_random_string
 
 
 class TestCompressTransformer(TestBase):
+    """Unit tests for AIStore ETL compression and decompression transformations."""
+
     def setUp(self):
+        """Sets up test files and initializes test bucket."""
         super().setUp()
-        self.test_image_filename = "test-image.jpg"
-        self.test_image_source = "./resources/test-image.jpg"
-        self.test_text_filename = "test-text.txt"
-        self.test_text_source = "./resources/test-text.txt"
-        self.test_image_gz_filename = "test-image.jpg.gz"
-        self.test_image_gz_source = "./resources/test-image.jpg.gz"
-        self.test_text_gz_filename = "test-text.txt.gz"
-        self.test_text_gz_source = "./resources/test-text.txt.gz"
-        self.test_image_bz2_filename = "test-image.jpg.bz2"
-        self.test_image_bz2_source = "./resources/test-image.jpg.bz2"
-        self.test_text_bz2_filename = "test-text.txt.bz2"
-        self.test_text_bz2_source = "./resources/test-text.txt.bz2"
-        self.test_text_bz2_filename = "test-text.txt.bz2"
-        self.test_text_bz2_source = "./resources/test-text.txt.bz2"
+        self.files = {
+            "image": {
+                "filename": "test-image.jpg",
+                "source": "./resources/test-image.jpg",
+            },
+            "text": {
+                "filename": "test-text.txt",
+                "source": "./resources/test-text.txt",
+            },
+        }
+
+        self.compressed_files = {
+            "gzip": {
+                "image": {
+                    "filename": "test-image.jpg.gz",
+                    "source": "./resources/test-image.jpg.gz",
+                },
+                "text": {
+                    "filename": "test-text.txt.gz",
+                    "source": "./resources/test-text.txt.gz",
+                },
+            },
+            "bz2": {
+                "image": {
+                    "filename": "test-image.jpg.bz2",
+                    "source": "./resources/test-image.jpg.bz2",
+                },
+                "text": {
+                    "filename": "test-text.txt.bz2",
+                    "source": "./resources/test-text.txt.bz2",
+                },
+            },
+        }
 
     def _get_compression_algorithm(self, compress_options):
-        if compress_options.get("compression") == "bz2":
-            algorithm = bz2
-        else:
-            algorithm = gzip
+        """Returns the appropriate compression algorithm based on options."""
+        return bz2 if compress_options.get("compression") == "bz2" else gzip
 
-        return algorithm
-
-    def _compress_test_helper(self, communication_type, compress_options):
-        algorithm = self._get_compression_algorithm(compress_options)
-        self.test_bck.object(self.test_image_filename).put_file(self.test_image_source)
-        self.test_bck.object(self.test_text_filename).put_file(self.test_text_source)
-        compress_options = json.dumps(compress_options)
+    def _initialize_etl(self, communication_type, compress_options, etl_name):
+        """Initializes the ETL transformation for compression or decompression."""
         template = COMPRESS.format(
-            communication_type=communication_type, compress_options=compress_options
+            communication_type=communication_type,
+            compress_options=json.dumps(compress_options),
         )
 
         if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "compress")
+            template = format_image_tag_for_git_test_mode(template, "compress")
 
-        self.test_etl.init_spec(
+        self.client.etl(etl_name).init_spec(
             template=template, communication_type=communication_type
         )
 
-        etl_compressed_img = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-
-        etl_compressed_txt = (
-            self.test_bck.object(self.test_text_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-
-        with open(self.test_image_source, "rb") as file:
-            original_image_content = file.read()
-
-        with open(self.test_text_source, "r", encoding="utf-8") as file:
-            original_text_content = file.read()
-
-        self.assertEqual(
-            algorithm.decompress(etl_compressed_img), original_image_content
-        )
-        self.assertEqual(
-            original_text_content,
-            algorithm.decompress(etl_compressed_txt).decode("utf-8"),
-        )
-
-    def _decompress_test_helper(self, communication_type, compress_options):
+    def _compress_test_helper(self, communication_type, compress_options, etl_name):
+        """Tests ETL compression for images and text files."""
         algorithm = self._get_compression_algorithm(compress_options)
 
-        if algorithm == bz2:
-            self.test_bck.object(self.test_image_bz2_filename).put_file(
-                self.test_image_bz2_source
-            )
-            self.test_bck.object(self.test_text_bz2_filename).put_file(
-                self.test_text_bz2_source
-            )
-            compress_options = json.dumps(compress_options)
-            template = COMPRESS.format(
-                communication_type=communication_type, compress_options=compress_options
-            )
+        # Upload original files
+        for file in self.files.values():
+            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
 
-            if self.git_test_mode == "true":
-                template = git_test_mode_format_image_tag_test(template, "compress")
+        # Initialize ETL transformation
+        self._initialize_etl(communication_type, compress_options, etl_name)
 
-            self.test_etl.init_spec(
-                template=template, communication_type=communication_type
-            )
-            etl_decompressed_img = (
-                self.test_bck.object(self.test_image_bz2_filename)
-                .get(etl_name=self.test_etl.name)
+        # Validate compressed output
+        for file in self.files.values():
+            etl_compressed = (
+                self.test_bck.object(file["filename"])
+                .get_reader(etl=ETLConfig(etl_name))
                 .read_all()
             )
-            etl_decompressed_txt = (
-                self.test_bck.object(self.test_text_bz2_filename)
-                .get(etl_name=self.test_etl.name)
+
+            with open(file["source"], "rb") as f:
+                original_content = f.read()
+
+            if file["filename"].endswith(".txt"):
+                self.assertEqual(
+                    original_content.decode("utf-8"),
+                    algorithm.decompress(etl_compressed).decode("utf-8"),
+                )
+            else:
+                self.assertEqual(original_content, algorithm.decompress(etl_compressed))
+
+    def _decompress_test_helper(self, communication_type, compress_options, etl_name):
+        """Tests ETL decompression for images and text files."""
+        algorithm = self._get_compression_algorithm(compress_options)
+        compression_type = "bz2" if algorithm == bz2 else "gzip"
+
+        # Upload pre-compressed files
+        for file in self.compressed_files[compression_type].values():
+            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
+
+        # Initialize ETL transformation
+        self._initialize_etl(communication_type, compress_options, etl_name)
+
+        # Validate decompressed output
+        for file_key, file in self.compressed_files[compression_type].items():
+            etl_decompressed = (
+                self.test_bck.object(file["filename"])
+                .get_reader(etl=ETLConfig(etl_name))
                 .read_all()
-                .decode("utf-8")
-            )
-        elif algorithm == gzip:
-            self.test_bck.object(self.test_image_gz_filename).put_file(
-                self.test_image_gz_source
-            )
-            self.test_bck.object(self.test_text_gz_filename).put_file(
-                self.test_text_gz_source
-            )
-            compress_options = json.dumps(compress_options)
-            template = COMPRESS.format(
-                communication_type=communication_type, compress_options=compress_options
             )
 
-            if self.git_test_mode == "true":
-                template = git_test_mode_format_image_tag_test(template, "compress")
+            with open(self.files[file_key]["source"], "rb") as f:
+                original_content = f.read()
 
-            self.test_etl.init_spec(
-                template=template, communication_type=communication_type
-            )
-            etl_decompressed_img = (
-                self.test_bck.object(self.test_image_gz_filename)
-                .get(etl_name=self.test_etl.name)
-                .read_all()
-            )
-            etl_decompressed_txt = (
-                self.test_bck.object(self.test_text_gz_filename)
-                .get(etl_name=self.test_etl.name)
-                .read_all()
-                .decode("utf-8")
-            )
-        else:
-            raise ValueError("Unexpected compression algorithm")
+            if file["filename"].endswith(".txt"):
+                self.assertEqual(
+                    original_content.decode("utf-8"), etl_decompressed.decode("utf-8")
+                )
+            else:
+                self.assertEqual(original_content, etl_decompressed)
 
-        with open(self.test_image_source, "rb") as file:
-            original_image_content = file.read()
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    def test_default_compress(self, communication_type):
+        """Tests default compression for all communication types."""
+        etl_name = f"test-etl-{generate_random_string(5)}"
+        self.etls.append(etl_name)
 
-        with open(self.test_text_source, "r", encoding="utf-8") as file:
-            original_text_content = file.read()
+        self._compress_test_helper(communication_type, {}, etl_name)
 
-        self.assertEqual(original_image_content, etl_decompressed_img)
-        self.assertEqual(original_text_content, etl_decompressed_txt)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    def test_gzip_compress(self, communication_type):
+        """Tests Gzip compression for all communication types."""
+        etl_name = f"test-etl-{generate_random_string(5)}"
+        self.etls.append(etl_name)
 
-    def test_default_compress_hpull(self):
-        self._compress_test_helper(ETL_COMM_HPULL, {})
-
-    def test_default_compress_hpush(self):
-        self._compress_test_helper(ETL_COMM_HPUSH, {})
-
-    def test_default_compress_hrev(self):
-        self._compress_test_helper(ETL_COMM_HREV, {})
-
-    def test_gzip_compress_hpull(self):
-        self._compress_test_helper(ETL_COMM_HPULL, {"compression": "gzip"})
-
-    def test_gzip_compress_hpush(self):
-        self._compress_test_helper(ETL_COMM_HPUSH, {"compression": "gzip"})
-
-    def test_gzip_compress_hrev(self):
-        self._compress_test_helper(ETL_COMM_HREV, {"compression": "gzip"})
-
-    def test_bz2_compress_hpull(self):
-        self._compress_test_helper(ETL_COMM_HPULL, {"compression": "bz2"})
-
-    def test_bz2_compress_hpush(self):
-        self._compress_test_helper(ETL_COMM_HPUSH, {"compression": "bz2"})
-
-    def test_bz2_compress_hrev(self):
-        self._compress_test_helper(ETL_COMM_HREV, {"compression": "bz2"})
-
-    def test_gzip_decompress_hpull(self):
-        self._decompress_test_helper(
-            ETL_COMM_HPULL, {"mode": "decompress", "compression": "gzip"}
+        self._compress_test_helper(
+            communication_type, {"compression": "gzip"}, etl_name
         )
 
-    def test_gzip_decompress_hpush(self):
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    def test_bz2_compress(self, communication_type):
+        """Tests BZ2 compression for all communication types."""
+        etl_name = f"test-etl-{generate_random_string(5)}"
+        self.etls.append(etl_name)
+
+        self._compress_test_helper(communication_type, {"compression": "bz2"}, etl_name)
+
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    def test_gzip_decompress(self, communication_type):
+        """Tests Gzip decompression for all communication types."""
+        etl_name = f"test-etl-{generate_random_string(5)}"
+        self.etls.append(etl_name)
+
         self._decompress_test_helper(
-            ETL_COMM_HPUSH, {"mode": "decompress", "compression": "gzip"}
+            communication_type, {"mode": "decompress", "compression": "gzip"}, etl_name
         )
 
-    def test_gzip_decompress_hrev(self):
-        self._decompress_test_helper(
-            ETL_COMM_HREV, {"mode": "decompress", "compression": "gzip"}
-        )
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    def test_bz2_decompress(self, communication_type):
+        """Tests BZ2 decompression for all communication types."""
+        etl_name = f"test-etl-{generate_random_string(5)}"
+        self.etls.append(etl_name)
 
-    def test_bz2_decompress_hpull(self):
         self._decompress_test_helper(
-            ETL_COMM_HPULL, {"mode": "decompress", "compression": "bz2"}
-        )
-
-    def test_bz2_decompress_hpush(self):
-        self._decompress_test_helper(
-            ETL_COMM_HPUSH, {"mode": "decompress", "compression": "bz2"}
-        )
-
-    def test_bz2_decompress_hrev(self):
-        self._decompress_test_helper(
-            ETL_COMM_HREV, {"mode": "decompress", "compression": "bz2"}
+            communication_type, {"mode": "decompress", "compression": "bz2"}, etl_name
         )

@@ -5,7 +5,7 @@
 
 import os
 import unittest
-from tests.utils import generate_random_str
+from tests.utils import generate_random_string
 
 from aistore import Client
 
@@ -16,11 +16,12 @@ class TestBase(unittest.TestCase):
         self.git_test_mode = os.getenv("GIT_TEST", "false")
         self.client = Client(self.endpoint)
         self.test_bck = self.client.bucket(
-            "test-bucket" + generate_random_str()
+            "test-bucket" + generate_random_string()
         ).create(exist_ok=True)
-        self.test_etl = self.client.etl("test-etl-" + generate_random_str())
+        self.etls = []
 
     def tearDown(self):
         self.test_bck.delete()
-        self.test_etl.stop()
-        self.test_etl.delete()
+        for etl_name in self.etls:
+            self.client.etl(etl_name).stop()
+            self.client.etl(etl_name).delete()

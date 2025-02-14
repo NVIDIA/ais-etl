@@ -1,7 +1,6 @@
 #
-# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 #
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 import json
 import os
@@ -14,134 +13,141 @@ import tensorflow as tf
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
-from tests.base import TestBase
-from tests.utils import git_test_mode_format_image_tag_test
+from aistore.sdk.etl.etl_const import ETL_COMM_HREV
+from aistore.sdk.etl.etl_templates import TAR2TF
+from aistore.sdk.etl import ETLConfig
 
-from aistore.sdk.etl_const import ETL_COMM_HREV
-from aistore.sdk.etl_templates import TAR2TF
+from tests.base import TestBase
+from tests.utils import (
+    format_image_tag_for_git_test_mode,
+    cases,
+    generate_random_string,
+)
 
 
 class TestTar2TFTransformer(TestBase):
+    """Unit tests for the TAR-to-TFRecord AIStore ETL Transformer."""
+
     def setUp(self):
+        """Sets up the test environment by uploading a test tar file to the bucket."""
         super().setUp()
         self.test_tar_filename = "test-tar-single.tar"
         self.test_tar_source = "./resources/test-tar-single.tar"
-        self.test_tfrecord_filename = "test-tar-single.tfrecord"
         self.test_bck.object(self.test_tar_filename).put_file(self.test_tar_source)
 
     def tearDown(self):
-        file_path = "./test.tfrecord"
-        os.remove(file_path)
-        dir_path = "./tmp/"
-        shutil.rmtree(dir_path)
+        """Cleans up generated files and directories after each test."""
+        try:
+            os.remove("./test.tfrecord")
+        except FileNotFoundError:
+            pass
+        shutil.rmtree("./tmp/", ignore_errors=True)
         super().tearDown()
 
-    def test_tar2tf_simple(self):
-        template = TAR2TF.format(communication_type=ETL_COMM_HREV, arg="", val="")
+    def run_tar2tf_test(self, spec=None):
+        """
+        Runs a TAR-to-TFRecord transformation test with optional modifications.
+
+        Args:
+            spec (dict, optional): JSON spec for transformations. Defaults to None.
+        """
+        template = TAR2TF.format(
+            communication_type=ETL_COMM_HREV,
+            arg="-spec" if spec else "",
+            val=json.dumps(spec) if spec else "",
+        )
 
         if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "tar2tf")
+            template = format_image_tag_for_git_test_mode(template, "tar2tf")
 
-        self.test_etl.init_spec(communication_type=ETL_COMM_HREV, template=template)
+        # Initialize ETL transformation
+        etl_name = f"tar2tf-{generate_random_string(5)}"
+        self.etls.append(etl_name)
+        self.client.etl(etl_name).init_spec(
+            communication_type=ETL_COMM_HREV, template=template
+        )
 
+        # Retrieve transformed TFRecord bytes
         tfrecord_bytes = (
             self.test_bck.object(self.test_tar_filename)
-            .get(etl_name=self.test_etl.name)
+            .get_reader(etl=ETLConfig(etl_name))
             .read_all()
         )
-        tfrecord_filename = "test.tfrecord"
 
+        # Save TFRecord to a file
+        tfrecord_filename = "test.tfrecord"
         with open(tfrecord_filename, "wb") as f:
             f.write(tfrecord_bytes)
 
+        # Read the TFRecord file
         tfrecord = next(iter(tf.data.TFRecordDataset([tfrecord_filename])))
         example = tf.train.Example()
         example.ParseFromString(tfrecord.numpy())
 
-        cls = example.features.feature["cls"].bytes_list.value[0]
-        cls = cls.decode("utf-8")
+        # Extract class label from TFRecord
+        cls = example.features.feature["cls"].bytes_list.value[0].decode("utf-8")
 
+        # Extract transformed image
         transformed_img = example.features.feature["png"].bytes_list.value[0]
         transformed_img = tf.image.decode_image(transformed_img)
 
+        # Extract the original image and class label from the tar file
         with tarfile.open(self.test_tar_source, "r") as tar:
             tar.extractall(path="./tmp")
 
         original_img = Image.open("./tmp/tar-single/0001.png")
         original_img_tensor = tf.convert_to_tensor(np.array(original_img))
+
         with open("./tmp/tar-single/0001.cls", "r", encoding="utf-8") as file:
             original_cls = file.read().strip()
 
-        self.assertTrue(
-            np.array_equal(transformed_img.numpy(), original_img_tensor.numpy())
-        )
+        if spec:
+            # Apply transformation manually for comparison
+            if "Rotate" in json.dumps(spec):
+                angle = spec["conversions"][1]["angle"]
+                original_img = original_img.rotate(
+                    angle=angle, expand=True, fillcolor=(0, 0, 0)
+                )
+                original_img_tensor = tf.convert_to_tensor(np.array(original_img))
+
+                # Ensure both images have the same dimensions before comparison
+                transformed_img = tf.image.resize(
+                    transformed_img, original_img_tensor.shape[:2]
+                )
+
+                # Compute Structural Similarity Index (SSIM)
+                score, _ = ssim(
+                    transformed_img.numpy(),
+                    original_img_tensor.numpy(),
+                    full=True,
+                    multichannel=True,
+                    win_size=3,
+                    data_range=255,
+                )
+
+                # Assume SSIM > 0.99 indicates a visually identical match
+                self.assertTrue(score > 0.99)
+
+        else:
+            # Verify image content matches without transformations
+            self.assertTrue(
+                np.array_equal(transformed_img.numpy(), original_img_tensor.numpy())
+            )
+
         self.assertEqual(cls, original_cls)
 
-    def test_tar2tf_rotation(self):
-        spec = {
-            "conversions": [
-                {"type": "Decode", "ext_name": "png"},
-                {"type": "Rotate", "ext_name": "png", "angle": 30},
-            ],
-            "selections": [{"ext_name": "png"}, {"ext_name": "cls"}],
-        }
-        spec = json.dumps(spec)
-
-        template = TAR2TF.format(
-            communication_type=ETL_COMM_HREV, arg="-spec", val=spec
-        )
-
-        if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "tar2tf")
-
-        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HREV)
-
-        tfrecord_bytes = (
-            self.test_bck.object(self.test_tar_filename)
-            .get(etl_name=self.test_etl.name)
-            .read_all()
-        )
-        tfrecord_filename = "test.tfrecord"
-
-        with open(tfrecord_filename, "wb") as file:
-            file.write(tfrecord_bytes)
-
-        tfrecord = tf.data.TFRecordDataset([tfrecord_filename])
-        raw_record = next(iter(tfrecord))
-        example = tf.train.Example()
-        example.ParseFromString(raw_record.numpy())
-
-        cls = example.features.feature["cls"].bytes_list.value[0]
-        cls = cls.decode("utf-8")
-
-        transformed_img = example.features.feature["png"].bytes_list.value[0]
-        transformed_img = tf.image.decode_image(transformed_img)
-
-        with tarfile.open(self.test_tar_source, "r") as tar:
-            tar.extractall(path="./tmp")
-
-        original_img = Image.open("./tmp/tar-single/0001.png").rotate(
-            angle=30, expand=True, fillcolor=(0, 0, 0)
-        )
-        original_img_tensor = tf.convert_to_tensor(np.array(original_img))
-        with open("./tmp/tar-single/0001.cls", "r", encoding="utf-8") as file:
-            original_cls = file.read().strip()
-
-        # Ensure both images have the same dimensions
-        transformed_img = tf.image.resize(
-            transformed_img, original_img_tensor.shape[:2]
-        )
-
-        # Calculate the SSIM
-        score, _ = ssim(
-            transformed_img.numpy(),
-            original_img_tensor.numpy(),
-            full=True,
-            multichannel=True,
-            win_size=3,
-            data_range=255,
-        )
-
-        # Assuming we consider images with SSIM > 0.99 as visually identical
-        self.assertTrue(score > 0.99)
-        self.assertEqual(cls, original_cls)
+    @cases(
+        (None),
+        (
+            {
+                "conversions": [
+                    {"type": "Decode", "ext_name": "png"},
+                    {"type": "Rotate", "ext_name": "png", "angle": 30},
+                ],
+                "selections": [{"ext_name": "png"}, {"ext_name": "cls"}],
+            }
+        ),
+    )
+    def test_tar2tf_transformations(self, spec):
+        """Tests TAR-to-TFRecord transformation with different configurations."""
+        self.run_tar2tf_test(spec)

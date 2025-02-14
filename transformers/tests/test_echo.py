@@ -9,33 +9,50 @@ from aistore.sdk.etl.etl_templates import ECHO
 from aistore.sdk.etl import ETLConfig
 
 from tests.base import TestBase
-from tests.utils import git_test_mode_format_image_tag_test
+from tests.utils import (
+    format_image_tag_for_git_test_mode,
+    cases,
+    generate_random_string,
+)
 
 
 class TestEchoTransformer(TestBase):
-    def setUp(self):
-        super().setUp()
-        self.test_image_filename = "test-image.jpg"
-        self.test_image_source = "./resources/test-image.jpg"
-        self.test_text_filename = "test-text.txt"
-        self.test_text_source = "./resources/test-text.txt"
-        self.test_bck.object(self.test_image_filename).put_file(self.test_image_source)
-        self.test_bck.object(self.test_text_filename).put_file(self.test_text_source)
+    """Unit tests for AIStore ETL Echo transformer."""
 
-    def initialize_template(self, communication_type: str):
+    def setUp(self):
+        """Sets up test files and initializes the test bucket."""
+        super().setUp()
+        self.files = {
+            "image": {
+                "filename": "test-image.jpg",
+                "source": "./resources/test-image.jpg",
+            },
+            "text": {
+                "filename": "test-text.txt",
+                "source": "./resources/test-text.txt",
+            },
+        }
+
+        # Upload test files
+        for file in self.files.values():
+            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
+
+    def initialize_template(self, communication_type: str, etl_name: str):
+        """Initializes the ETL template for a given communication type."""
         template = ECHO.format(communication_type=communication_type)
 
         if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "echo")
+            template = format_image_tag_for_git_test_mode(template, "echo")
 
-        self.test_etl.init_spec(
+        self.client.etl(etl_name).init_spec(
             template=template, communication_type=communication_type
         )
 
-    def compare_transformed_data(self, filename: str, source: str):
+    def compare_transformed_data(self, filename: str, source: str, etl_name: str):
+        """Compares transformed data with the original source file."""
         transformed_bytes = (
             self.test_bck.object(filename)
-            .get(etl=ETLConfig(self.test_etl.name))
+            .get_reader(etl=ETLConfig(etl_name))
             .read_all()
         )
 
@@ -44,17 +61,13 @@ class TestEchoTransformer(TestBase):
 
         self.assertEqual(transformed_bytes, original_content)
 
-    def test_echo_hpull(self):
-        self.initialize_template(ETL_COMM_HPULL)
-        self.compare_transformed_data(self.test_image_filename, self.test_image_source)
-        self.compare_transformed_data(self.test_text_filename, self.test_text_source)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    def test_echo(self, communication_type):
+        """Tests Echo transformer for all communication types."""
+        etl_name = f"test-etl-{generate_random_string(5)}"
+        self.etls.append(etl_name)
 
-    def test_echo_hpush(self):
-        self.initialize_template(ETL_COMM_HPUSH)
-        self.compare_transformed_data(self.test_image_filename, self.test_image_source)
-        self.compare_transformed_data(self.test_text_filename, self.test_text_source)
+        self.initialize_template(communication_type, etl_name)
 
-    def test_echo_hrev(self):
-        self.initialize_template(ETL_COMM_HREV)
-        self.compare_transformed_data(self.test_image_filename, self.test_image_source)
-        self.compare_transformed_data(self.test_text_filename, self.test_text_source)
+        for file in self.files.values():
+            self.compare_transformed_data(file["filename"], file["source"], etl_name)

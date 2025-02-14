@@ -204,7 +204,7 @@ test:torchvision:
     extends: .test_template
     needs: ["build:torchvision"]
     script:
-        - pip install torchvision==0.16.1 --index-url https://download.pytorch.org/whl/cpu
+        - pip install torchvision==0.21.0
         - cd transformers/tests && pytest -v test_torchvision_transformer.py
 
 test:keras:
@@ -221,9 +221,10 @@ test:face_detection:
         - echo ${KAGGLE_CREDS_JSON} > /root/.kaggle/kaggle.json
         - chmod 600 /root/.kaggle/kaggle.json
         - mkdir -p transformers/face_detection/model
+        - apt-get update -y && apt-get install unzip -y
         - kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretrained-model
         - unzip caffe-face-detector-opencv-pretrained-model.zip -d transformers/face_detection/model/
-        - apt-get update -y && apt-get install ffmpeg libsm6 libxext6 -y
+        - apt-get install ffmpeg libsm6 libxext6 -y
         - cd transformers/tests && pytest -v test_face_detection.py
 
 stress:test:

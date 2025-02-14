@@ -1,10 +1,15 @@
 #
 # Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 #
+
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 from tests.base import TestBase
-from tests.utils import git_test_mode_format_image_tag_test
+from tests.utils import (
+    format_image_tag_for_git_test_mode,
+    cases,
+    generate_random_string,
+)
 
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
 from aistore.sdk.etl.etl_templates import GO_ECHO
@@ -12,40 +17,59 @@ from aistore.sdk.etl import ETLConfig
 
 
 class TestGoEchoTransformer(TestBase):
-    def setUp(self):
-        super().setUp()
-        self.test_image_filename = "test-image.jpg"
-        self.test_image_source = "./resources/test-image.jpg"
-        self.test_text_filename = "test-text.txt"
-        self.test_text_source = "./resources/test-text.txt"
-        self.test_bck.object(self.test_image_filename).put_file(self.test_image_source)
-        self.test_bck.object(self.test_text_filename).put_file(self.test_text_source)
+    """Unit tests for AIStore ETL Go Echo transformation."""
 
-    def test_go_echo(self):
+    def setUp(self):
+        """Sets up the test environment by uploading test image and text files."""
+        super().setUp()
+        self.test_files = {
+            "image": {
+                "filename": "test-image.jpg",
+                "source": "./resources/test-image.jpg",
+            },
+            "text": {
+                "filename": "test-text.txt",
+                "source": "./resources/test-text.txt",
+            },
+        }
+
+        # Upload test files
+        for file in self.test_files.values():
+            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
+
+    def initialize_etl(self, etl_name: str):
+        """Initializes the ETL template for Go Echo Transformer."""
         template = GO_ECHO.format(communication_type=ETL_COMM_HPULL)
 
         if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "echo_go")
+            template = format_image_tag_for_git_test_mode(template, "echo_go")
 
-        self.test_etl.init_spec(template=template, communication_type=ETL_COMM_HPULL)
-
-        transformed_image_bytes = (
-            self.test_bck.object(self.test_image_filename)
-            .get(etl=ETLConfig(self.test_etl.name))
-            .read_all()
-        )
-        transformed_text_bytes = (
-            self.test_bck.object(self.test_text_filename)
-            .get(etl=ETLConfig(self.test_etl.name))
-            .read_all()
+        self.client.etl(etl_name).init_spec(
+            template=template, communication_type=ETL_COMM_HPULL
         )
 
-        # Compare image content
-        with open(self.test_image_source, "rb") as file:
-            original_image_content = file.read()
-        self.assertEqual(transformed_image_bytes, original_image_content)
+    @cases("image", "text")
+    def test_go_echo(self, file_type):
+        """Tests Go Echo transformation for both image and text files."""
+        etl_name = f"go-echo-{generate_random_string(5)}"
+        self.etls.append(etl_name)
 
-        # Compare text content
-        with open(self.test_text_source, "r", encoding="utf-8") as file:
-            original_text_content = file.read()
-        self.assertEqual(transformed_text_bytes.decode("utf-8"), original_text_content)
+        self.initialize_etl(etl_name)
+
+        file_info = self.test_files[file_type]
+        transformed_bytes = (
+            self.test_bck.object(file_info["filename"])
+            .get_reader(etl=ETLConfig(etl_name))
+            .read_all()
+        )
+
+        with open(file_info["source"], "rb") as file:
+            original_content = file.read()
+
+        # Decode text files before comparison
+        if file_type == "text":
+            self.assertEqual(
+                transformed_bytes.decode("utf-8"), original_content.decode("utf-8")
+            )
+        else:
+            self.assertEqual(transformed_bytes, original_content)
