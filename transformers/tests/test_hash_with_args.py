@@ -7,15 +7,16 @@ import xxhash
 import random
 
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl import ETLConfig
 
 from tests.utils import git_test_mode_format_image_tag_test
 from tests.base import TestBase
 
-HASH_WITH_METADATA_SPEC_TEMPLATE = """
+HASH_WITH_ARGS_SPEC_TEMPLATE = """
 apiVersion: v1
 kind: Pod
 metadata:
-  name: transformer-hash-with-metadata
+  name: transformer-hash-with-args
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: "{communication_type}://"
@@ -23,7 +24,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: aistorage/transformer_hash_with_metadata:latest
+      image: aistorage/transformer_hash_with_args:latest
       imagePullPolicy: Always
       ports:
         - name: default
@@ -38,7 +39,7 @@ spec:
           value: "{seed_default}"
 """
 
-class TestHashWithMetadataTransformer(TestBase):
+class TestHashWithArgsTransformer(TestBase):
     def setUp(self):
         super().setUp()
         self.test_image_filename = "test-image.jpg"
@@ -57,17 +58,17 @@ class TestHashWithMetadataTransformer(TestBase):
 
     def compare_transformed_data_with_seeded_hash(self, filename, original_filepath, seed):
         transformed_data_bytes = (
-            self.test_bck.object(filename).get_reader(etl_name=self.test_etl.name).read_all()
+            self.test_bck.object(filename).get_reader(etl=ETLConfig(name=self.test_etl.name, args=str(seed))).read_all()
         )
         original_file_hash = self.seeded_hash_file(original_filepath, seed)
         self.assertEqual(transformed_data_bytes.decode("utf-8"), original_file_hash)
 
     def run_seeded_hash_test(self, communication_type):
         seed_default=random.randint(0, 1000)
-        template = HASH_WITH_METADATA_SPEC_TEMPLATE.format(communication_type=communication_type, seed_default=seed_default)
+        template = HASH_WITH_ARGS_SPEC_TEMPLATE.format(communication_type=communication_type, seed_default=seed_default)
 
         if self.git_test_mode == "true":
-            template = git_test_mode_format_image_tag_test(template, "hash-with-metadata")
+            template = git_test_mode_format_image_tag_test(template, "hash_with_args")
 
         self.test_etl.init_spec(
             template=template, communication_type=communication_type

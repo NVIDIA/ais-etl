@@ -18,6 +18,11 @@ on:
         required: true
         type: boolean
         default: false
+      build_hash_with_args_image:
+        description: 'Build hash_with_args transformer image'
+        required: true
+        type: boolean
+        default: false
       build_tar2tf_image:
         description: 'Build tar2tf transformer image'
         required: true
@@ -61,6 +66,7 @@ env:
   ECHO_ENABLE: ${{ github.event.inputs.build_echo_image }}
   HELLO_WORLD_ENABLE: ${{ github.event.inputs.build_hello_world_image }}
   MD5_ENABLE: ${{ github.event.inputs.build_md5_image }}
+  HASH_WITH_ARGS_ENABLE: ${{ github.event.inputs.build_hash_with_args_image }}
   TAR2TF_ENABLE: ${{ github.event.inputs.build_tar2tf_image }}
   COMPRESS_ENABLE: ${{ github.event.inputs.build_compress_image }}
   FFMPEG_ENABLE: ${{ github.event.inputs.build_ffmpeg_image }}
@@ -114,6 +120,9 @@ jobs:
           md5:
             - transformers/md5/**/*
             - transformers/tests/test_md5.py
+          hash_with_args:
+            - transformers/hash_with_args/**/*
+            - transformers/tests/test_hash_with_args.py
           tar2tf:
             - transformers/tar2tf/**/*
             - transformers/tests/test_tar2tf.py
@@ -141,6 +150,9 @@ jobs:
     - name: Update var MD5_ENABLE
       if: steps.paths_filter.outputs.md5 == 'true'
       run: echo "MD5_ENABLE=true" >> $GITHUB_ENV
+    - name: Update var HASH_WITH_ARGS_ENABLE
+      if: steps.paths_filter.outputs.hash_with_args == 'true'
+      run: echo "HASH_WITH_ARGS_ENABLE=true" >> $GITHUB_ENV
     - name: Update var TAR2TF_ENABLE
       if: steps.paths_filter.outputs.tar2tf == 'true'
       run: echo "TAR2TF_ENABLE=true" >> $GITHUB_ENV
@@ -201,6 +213,18 @@ jobs:
         export GIT_TEST="false"
         make -B -C $GITHUB_WORKSPACE/transformers/md5 all
         pytest -v test_md5.py
+        popd
+    - name: Build and Test HASH_WITH_ARGS
+      if: ${{ env.HASH_WITH_ARGS_ENABLE == 'true' }}
+      run: |
+        docker system prune -a -f --volumes
+        pushd $GITHUB_WORKSPACE/transformers/tests
+        export GIT_TEST="true"
+        make -B -C $GITHUB_WORKSPACE/transformers/hash_with_args all
+        pytest -v test_hash_with_args.py
+        export GIT_TEST="false"
+        make -B -C $GITHUB_WORKSPACE/transformers/hash_with_args all
+        pytest -v test_hash_with_args.py
         popd
     - name: Build and Test TAR2TF
       if: ${{ env.TAR2TF_ENABLE == 'true' }}

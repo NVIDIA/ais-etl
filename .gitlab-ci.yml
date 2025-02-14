@@ -91,15 +91,15 @@ build:md5:
         when: always
       - when: manual
 
-build:hash_with_metadata:
+build:hash_with_args:
     extends: .build_template
     script:
         - cd transformers
-        - cd hash_with_metadata && make -B all
+        - cd hash_with_args && make -B all
     rules:
       - changes:
-          - transformers/hash_with_metadata/**/*
-          - transformers/tests/test_hash_with_metadata.py
+          - transformers/hash_with_args/**/*
+          - transformers/tests/test_hash_with_args.py
         when: always
       - when: manual
 
@@ -182,11 +182,11 @@ test:md5:
     script:
         - cd transformers/tests && pytest -v test_md5.py
 
-test:hash_with_metadata:
+test:hash_with_args:
     extends: .test_template
-    needs: ["build:hash_with_metadata"]
+    needs: ["build:hash_with_args"]
     script:
-        - cd transformers/tests && pytest -v test_hash_with_metadata.py
+        - cd transformers/tests && pytest -v test_hash_with_args.py
 
 test:tar2tf:
     extends: .test_template

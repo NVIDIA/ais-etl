@@ -34,9 +34,11 @@ class Handler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             parsed_url = urlparse(self.path)        
             seed = seed_default
+            logging.info("PUT request received")
             params = parse_qs(parsed_url.query)
-            if "etl_meta" in params:
-                seed = int(params["etl_meta"][0])
+            if "etl_args" in params:
+                seed = int(params["etl_args"][0])
+                logging.info("PUT request with seed %d", seed)
 
             hash_result = self.calculate_xxhash(post_data, seed)
             self._set_headers()
@@ -56,9 +58,11 @@ class Handler(BaseHTTPRequestHandler):
             x = requests.get(host_target + self.path)
 
             seed = seed_default
+            logging.info("GET request received")
             params = parse_qs(parsed_url.query)
-            if "etl_meta" in params:
-                seed = int(params["etl_meta"][0])
+            if "etl_args" in params:
+                seed = int(params["etl_args"][0])
+                logging.info("GET request with seed %d", seed)
 
             hash_result = self.calculate_xxhash(x.content, seed)
             self._set_headers()

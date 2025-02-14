@@ -1,4 +1,4 @@
-aistore
+aistore==1.12.1
 filetype
 keras
 numpy

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: transformer-hash-with-metadata
+  name: transformer-hash-with-args
   annotations:
     # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
@@ -9,8 +9,8 @@ metadata:
 spec:
   containers:
     - name: server
-      image: aistorage/transformer_hash_with_metadata:latest
-      imagePullPolicy: IfNotPresent
+      image: aistorage/transformer_hash_with_args:latest
+      imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80
