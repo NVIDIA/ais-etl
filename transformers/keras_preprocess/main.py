@@ -1,14 +1,15 @@
 """
 Transorming images with Keras API using FastAPI framework and Gunicorn and Uvicorn webserver.
 
-Steps to run: 
+Steps to run:
 $ # with uvicorn
-$ uvicorn main:app --reload 
+$ uvicorn main:app --reload
 $ # with multiple uvicorn processes managed by gunicorn
-$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 
+$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 
 Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 """
+
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring, broad-exception-caught
 import os
 import urllib.parse
@@ -25,7 +26,7 @@ from tensorflow.keras.utils import (
     img_to_array,
 )
 
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 app = FastAPI()
 
