@@ -4,7 +4,7 @@ A simple hash transformer that processes objects (bytes) by extracting ETL argum
 
 ### Initializing ETL with AIStore CLI
 
-The following steps demonstrate how to initialize the `transformer-hash-with-args` with using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md):
+The following steps demonstrate how to initialize the `transformer-hash-with-args` with using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md):
 
 ```!bash
 $ cd transformers/hash_with_args

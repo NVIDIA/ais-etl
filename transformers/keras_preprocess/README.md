@@ -21,7 +21,7 @@ The transformer supports both `hpull`, `hpush` and `hrev` communication mechanis
 
 **Please Note:** This transformer utilizes the [`FastAPI`](https://fastapi.tiangolo.com/) framework alongside the [`Gunicorn`](https://gunicorn.org/) + [Uvicorn](https://www.uvicorn.org/) combination as its web server. Alternate implementations of the same functionality are provided using [`Flask`](https://flask.palletsprojects.com/en/2.3.x/) and [`Gunicorn`](https://gunicorn.org/) within the [`flask-gunicorn`](/flask-gunicorn) directory. Additionally, there's a version that employs a multithreaded HTTP server, which can be found in the [`http-multithreaded-server`](/http-multithreaded-server/) folder.
 
-> For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms).
+> For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
 ## Parameters
 Only two parameters need to be updated in the `pod.yaml` file.
@@ -35,7 +35,7 @@ Please ensure to adjust these parameters according to your specific requirements
 
 ### Initializing ETL with AIStore CLI
 
-The following steps demonstrate how to initialize the `Keras Transformer` with using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md):
+The following steps demonstrate how to initialize the `Keras Transformer` with using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md):
 
 ```!bash
 $ cd transformers/keras_transformer

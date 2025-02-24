@@ -4,7 +4,7 @@ The Torchvision Image Pre-Processing Transformer leverages [torchvision](https:/
 
 This sample transformer supports `hpull`, `hpush`, and `hrev` communication mechanisms.
 
-> For more information on communication mechanisms, please refer [here](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms).
+> For more information on communication mechanisms, please refer [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
 ## Parameters
 
@@ -24,7 +24,7 @@ These variables should be set according to your specific requirements. The JSON 
 
 ### Initializing ETL with AIStore CLI
 
-The following steps demonstrate how to initialize the Torchvision Image Pre-Processing Transformer using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md).
+The following steps demonstrate how to initialize the Torchvision Image Pre-Processing Transformer using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md).
 
 ```bash
 cd transformers/torch_preprocess
@@ -50,7 +50,7 @@ ais etl init spec --name torch-preprocess-etl --from-file torch_preprocess_pod_c
 
 ### Initializing ETL with AIStore Python SDK
 
-The following steps demonstrate how to initialize the Torchvision Image Pre-Processing Transformer using the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md).
+The following steps demonstrate how to initialize the Torchvision Image Pre-Processing Transformer using the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/README.md).
 
 
 ```python
@@ -77,9 +77,9 @@ torchvision_etl = client.etl("torchvision-etl").init_spec(template=torchvision_t
 
 ## References
 
-- [Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md)
-- [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md)
-- [AIS-ETL](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md)
+- [Python SDK](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/README.md)
+- [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md)
+- [AIS-ETL](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md)
 - [Torchvision](https://pytorch.org/vision/stable/index.html)
 - [PyTorch](https://pytorch.org/)
 

@@ -1,11 +1,11 @@
-# https://github.com/NVIDIA/ais-etl/blob/master/transformers/keras_transformer/README.md
+# https://github.com/NVIDIA/ais-etl/blob/main/transformers/keras_transformer/README.md
 apiVersion: v1
 kind: Pod
 metadata:
   name: transformer-keras
   annotations:
     # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
-    # Visit https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms 
+    # Visit https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms 
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
     wait_timeout: 10m
 spec:

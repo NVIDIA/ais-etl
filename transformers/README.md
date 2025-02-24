@@ -1,18 +1,18 @@
 # Sample Transformers
 
-AIStore hosts a variety of sample transformers in the form of Docker images to be used with ETL workflows on AIStore via the [`init spec`](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#init-spec-request) functionality.
+AIStore hosts a variety of sample transformers in the form of Docker images to be used with ETL workflows on AIStore via the [`init spec`](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#init-spec-request) functionality.
 
 | Transformer | Language | Communication Mechanisms | Description |
 | ---------- | -------- | ------------------------ | ----------- |
-| [`echo`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/echo) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
-| [`go_echo`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/go_echo) | `golang:1.21` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
-| [`hello_world`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/hello_world) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns `Hello World!` string on any request. |
-| [`md5`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/md5) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the `MD5` sum of the original data as the response. |
-| [`tar2tf`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/tar2tf) | `golang:1.21` | `hrev` | Returns the transformed TensorFlow compatible data for the input `TAR` files. |
-| [`compress`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/compress) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the compressed or decompressed data using `gzip` or `bz2`. |
-| [`NeMo/FFmpeg`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/NeMo/FFmpeg) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns audio files in WAV format with control over Audio Channels (`AC`) and Audio Rate (`AR`). |
-| [`keras`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/keras_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Keras` pre-processing. |
-| [`torchvision`](https://github.com/NVIDIA/ais-etl/tree/master/transformers/torchvision_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Torchvision` pre-processing. |
+| [`echo`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/echo) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
+| [`go_echo`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/go_echo) | `golang:1.21` | `hpull`, `hpush`, `hrev` | Returns the original data, with an `MD5` sum in the response headers. |
+| [`hello_world`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/hello_world) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns `Hello World!` string on any request. |
+| [`md5`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/md5) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the `MD5` sum of the original data as the response. |
+| [`tar2tf`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/tar2tf) | `golang:1.21` | `hrev` | Returns the transformed TensorFlow compatible data for the input `TAR` files. |
+| [`compress`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/compress) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns the compressed or decompressed data using `gzip` or `bz2`. |
+| [`NeMo/FFmpeg`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/NeMo/FFmpeg) | `python:3.11` | `hpull`, `hpush`, `hrev` | Returns audio files in WAV format with control over Audio Channels (`AC`) and Audio Rate (`AR`). |
+| [`keras`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/keras_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Keras` pre-processing. |
+| [`torchvision`](https://github.com/NVIDIA/ais-etl/tree/main/transformers/torchvision_preprocess) | `python:slim` | `hpull`, `hpush`, `hrev` | Returns the transformed images using `Torchvision` pre-processing. |
 
 ## General Usage
 
@@ -22,9 +22,9 @@ The following sections demonstrate initializing ETLs on AIStore using the provid
 
 #### Pre-Requisites
 
-[ETLs](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md) on AIStore requires the installation and use of Kubernetes.
+[ETLs](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md) on AIStore requires the installation and use of Kubernetes.
 
-> For more information on AIStore Kubernetes deployment options, refer [here](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#kubernetes-deployment).
+> For more information on AIStore Kubernetes deployment options, refer [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#kubernetes-deployment).
 
 ### Usage w/ AIStore CLI
 
@@ -53,7 +53,7 @@ ais etl init spec --name md5-etl --from-file "./md5_pod_config.yaml"
 
 ### Usage w/ AIStore Python SDK
 
-The `YAML` specification files for the sample transformers are provided as [templates](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/etl_templates.py) in the [Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md).
+The `YAML` specification files for the sample transformers are provided as [templates](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/etl_templates.py) in the [Python SDK](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/README.md).
 
 The basic procedure is as follows: 
 
@@ -82,10 +82,10 @@ The maintenance of the sample transformers on [DockerHub](https://hub.docker.com
 
 To contribute, push any changes to sample transformers to the GitHub repository. The existing GitHub workflows will build and push the updated sample transformers to the [DockerHub](https://hub.docker.com/u/aistorage) repostiory.
 
-> For more information, refer to the GitHub workflow files [here](https://github.com/NVIDIA/ais-etl/tree/master/.github/workflows).
+> For more information, refer to the GitHub workflow files [here](https://github.com/NVIDIA/ais-etl/tree/main/.github/workflows).
 
 ## References
 
-- [Python SDK](https://github.com/NVIDIA/aistore/blob/master/python/aistore/sdk/README.md)
-- [AIStore CLI](https://github.com/NVIDIA/aistore/blob/master/docs/cli.md)
-- [AIS-ETL](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md)
+- [Python SDK](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/README.md)
+- [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md)
+- [AIS-ETL](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md)

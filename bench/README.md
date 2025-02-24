@@ -30,5 +30,5 @@ Here are sample results from a 12 core/16GB machine:
 | Python | [FastAPI](https://fastapi.tiangolo.com/) | [Uvicorn](https://www.uvicorn.org/) + [Gunicorn](https://gunicorn.org/) | [/fast-api](bench/fast-api/) | 1670 | 
 | Go | Go | Net/HTTP Server | [/go-http-server](bench/go-http-server/) | 1675 |
 
-An important consideration is how your ETL container pods will communicate with the AIStore cluster. There are several [communication mechanisms](https://github.com/NVIDIA/aistore/blob/master/docs/etl.md#communication-mechanisms) to choose from depending on your needs. There's no one perfect solution - pick the mechanism that best fits your ETL workflow.
+An important consideration is how your ETL container pods will communicate with the AIStore cluster. There are several [communication mechanisms](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms) to choose from depending on your needs. There's no one perfect solution - pick the mechanism that best fits your ETL workflow.
 
