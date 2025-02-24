@@ -1,7 +1,10 @@
 # Default image tag is 'latest'
 TAG := latest
 
-# TODO: change to aistorage
+ifeq ($(GIT_TEST), true)
+	TAG := test
+endif
+
 REGISTRY_URL ?= docker.io/aistorage
 
 all: build push

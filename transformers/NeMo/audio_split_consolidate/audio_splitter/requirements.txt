@@ -1,4 +1,3 @@
 soundfile
 requests
-aistore
 numpy

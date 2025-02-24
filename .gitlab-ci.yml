@@ -164,6 +164,17 @@ build:face_detection:
         when: always
       - when: manual
 
+build:audio_splitter:
+    extends: .build_template
+    script:
+        - cd transformers/NeMo/audio_split_consolidate/audio_splitter && make -B all    
+    rules:
+      - changes:
+          - transformers/NeMo/audio_split_consolidate/audio_splitter/**/*
+          - transformers/tests/test_audio_split.py
+        when: always
+      - when: manual 
+
 test:echo:
     extends: .test_template
     needs: ["build:echo"]
@@ -226,6 +237,13 @@ test:face_detection:
         - unzip caffe-face-detector-opencv-pretrained-model.zip -d transformers/face_detection/model/
         - apt-get install ffmpeg libsm6 libxext6 -y
         - cd transformers/tests && pytest -v test_face_detection.py
+
+test:audio_splitter:
+    extends: .test_template
+    needs: ["build:audio_splitter"]
+    script:
+        - pip install soundfile
+        - cd transformers/tests && pytest -v --log-cli-level=INFO test_audio_split.py
 
 stress:test:
     extends: .stress_template
