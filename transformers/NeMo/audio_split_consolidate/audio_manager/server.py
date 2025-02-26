@@ -15,6 +15,7 @@ from socketserver import ThreadingMixIn
 from typing import Optional, Dict, Any
 
 from aistore import Client
+from aistore.sdk.etl import ETLConfig
 import requests
 
 # Configure logging
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 class Config:
     def __init__(self):
         self.host_target = os.getenv("AIS_TARGET_URL")
-        self.ais_endpoint = os.getenv("AIS_ENDPOINT", "http://localhost:51080")
+        self.ais_endpoint = os.getenv("AIS_ENDPOINT")
         self.bucket = os.getenv("SRC_BUCKET")
         self.provider = os.getenv("SRC_PROVIDER", "ais")
         self.prefix = os.getenv("OBJ_PREFIX", "")
@@ -42,7 +43,8 @@ class Config:
             raise ValueError("ETL_NAME environment variable is required")
         if not self.host_target:
             raise ValueError("AIS_TARGET_URL environment variable is required")
-
+        if not self.ais_endpoint:
+            raise ValueError("AIS_ENDPOINT environment variable is required")
 
 # Initialize configuration and client
 try:
@@ -56,34 +58,18 @@ except Exception as e:
     logger.critical("Initialization failed: %s", e)
     exit(1)
 
-
-def add_metadata(audio_id: str, from_time: float, to_time: float) -> None:
-    """Add metadata to the audio file in AIS."""
-    try:
-        obj_path = f"{config.prefix}/{audio_id}.{config.extension}"
-        obj = src_bucket.object(obj_path)
-
-        obj.get_writer().set_custom_props(
-            {
-                "id": audio_id,
-                "from_time": str(from_time),
-                "to_time": str(to_time),
-            }
-        )
-        logger.info("Metadata added for %s: %s-%s", audio_id, from_time, to_time)
-    except Exception as e:
-        logger.error("Failed to add metadata for %s: %s", audio_id, e)
-        raise
-
-
-def fetch_transformed_audio(audio_id: str) -> bytes:
+def fetch_transformed_audio(data: dict) -> bytes:
     """Retrieve transformed audio file from AIS using ETL."""
     try:
-        obj_path = f"{config.prefix}/{audio_id}.{config.extension}"
+        audio_id = data.get("id")
+        obj_path = f"{config.prefix}{audio_id}.{config.extension}"
+        etl_args = json.dumps(data)  # Serialize args for better logging
+        logger.info("Fetching transformed audio: path=%s, etl_args=%s", obj_path, etl_args)
+
         obj = src_bucket.object(obj_path)
-        return obj.get_reader(etl_name=config.etl_name).read_all()
+        return obj.get_reader(etl=ETLConfig(config.etl_name, args=data), direct=True).read_all()
     except Exception as e:
-        logger.error("Failed to fetch audio %s: %s", audio_id, e)
+        logger.exception("Error fetching transformed audio for ID %s: %s", audio_id, str(e))
         raise
 
 
@@ -112,12 +98,11 @@ def create_tar_archive(input_bytes: bytes) -> bytes:
                     continue
 
                 if (data := process_json_line(line)) is None:
+                    logger.info("Skipping invalid line %d : %s", line_number, line)
                     continue
 
                 try:
-                    add_metadata(data["id"], data["from_time"], data["to_time"])
-                    audio_content = fetch_transformed_audio(data["id"])
-
+                    audio_content = fetch_transformed_audio(data)
                     tar_info = tarfile.TarInfo(name=f"{data['id']}_{data['part']}.wav")
                     tar_info.size = len(audio_content)
                     tar.addfile(tar_info, BytesIO(audio_content))
@@ -135,6 +120,9 @@ def create_tar_archive(input_bytes: bytes) -> bytes:
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
     """Custom HTTP request handler with improved error handling."""
+
+    def log_request(self, code="-", size="-"):
+        pass
 
     def _send_response(
         self,
