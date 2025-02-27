@@ -124,13 +124,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(response)
             return
 
+        logging.info("Processing GET request for path: %s", self.path)
+
         etl_args = self._parse_etl_args()
         if etl_args is None:
             return  # Error already handled in _parse_etl_args
 
         try:
             query_path = HOST_TARGET + urlparse(self.path).path
-            logging.info("Processing GET request for path: %s", query_path)
             data = requests.get(query_path, timeout=120).content
             output_bytes = transform(data, etl_args=etl_args)
             logging.info("Transformation completed for: %s", query_path)
@@ -143,6 +144,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_error(500, f"Internal Server Error: {e}")
 
     def do_PUT(self):
+        logging.info("Processing PUT request for path: %s", self.path)
         etl_args = self._parse_etl_args()
         if etl_args is None:
             return  # Error already handled in _parse_etl_args

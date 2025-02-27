@@ -46,6 +46,7 @@ class Config:
         if not self.ais_endpoint:
             raise ValueError("AIS_ENDPOINT environment variable is required")
 
+
 # Initialize configuration and client
 try:
     config = Config()
@@ -58,18 +59,25 @@ except Exception as e:
     logger.critical("Initialization failed: %s", e)
     exit(1)
 
+
 def fetch_transformed_audio(data: dict) -> bytes:
     """Retrieve transformed audio file from AIS using ETL."""
     try:
         audio_id = data.get("id")
         obj_path = f"{config.prefix}{audio_id}.{config.extension}"
         etl_args = json.dumps(data)  # Serialize args for better logging
-        logger.info("Fetching transformed audio: path=%s, etl_args=%s", obj_path, etl_args)
+        logger.info(
+            "Fetching transformed audio: path=%s, etl_args=%s", obj_path, etl_args
+        )
 
         obj = src_bucket.object(obj_path)
-        return obj.get_reader(etl=ETLConfig(config.etl_name, args=data), direct=True).read_all()
+        return obj.get_reader(
+            etl=ETLConfig(config.etl_name, args=data), direct=True
+        ).read_all()
     except Exception as e:
-        logger.exception("Error fetching transformed audio for ID %s: %s", audio_id, str(e))
+        logger.exception(
+            "Error fetching transformed audio for ID %s: %s", audio_id, str(e)
+        )
         raise
 
 

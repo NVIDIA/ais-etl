@@ -10,7 +10,7 @@ spec:
   containers:
     - name: server
       image: aistorage/transformer_audio_splitter:latest
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80

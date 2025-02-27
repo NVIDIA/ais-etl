@@ -164,13 +164,16 @@ build:face_detection:
         when: always
       - when: manual
 
-build:audio_splitter:
+build:audio_split_consolidate:
     extends: .build_template
     script:
-        - cd transformers/NeMo/audio_split_consolidate/audio_splitter && make -B all    
+        - cd transformers/NeMo/audio_split_consolidate/
+        - make -C audio_manager all
+        - make -C audio_splitter all
     rules:
       - changes:
-          - transformers/NeMo/audio_split_consolidate/audio_splitter/**/*
+          - transformers/NeMo/audio_split_consolidate/**/*
+          - transformers/tests/test_audio_split_consolidate.py
           - transformers/tests/test_audio_split.py
         when: always
       - when: manual 
@@ -238,12 +241,14 @@ test:face_detection:
         - apt-get install ffmpeg libsm6 libxext6 -y
         - cd transformers/tests && pytest -v test_face_detection.py
 
-test:audio_splitter:
+test:audio_split_consolidate:
     extends: .test_template
-    needs: ["build:audio_splitter"]
+    needs: ["build:audio_split_consolidate"]
     script:
-        - pip install soundfile
-        - cd transformers/tests && pytest -v --log-cli-level=INFO test_audio_split.py
+        - pip install --upgrade soundfile aistore
+        - cd transformers/tests
+        - pytest -v --log-cli-level=INFO test_audio_split.py
+        - pytest -v --log-cli-level=INFO test_audio_split_consolidate.py
 
 stress:test:
     extends: .stress_template
