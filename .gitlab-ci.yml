@@ -8,6 +8,7 @@ workflow:
 stages:
     - build
     - test
+    - publish
     - stress
 
 # Common setup for all build stages
@@ -18,6 +19,18 @@ stages:
         - ais
     variables:
         GIT_TEST: "true"
+        DOCKER_TLS_CERTDIR: ""
+    before_script:
+        - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+
+# Common setup for all publish stages
+.publish_template:
+    when: on_success
+    stage: publish
+    tags: 
+        - ais
+    variables:
+        GIT_TEST: "false"
         DOCKER_TLS_CERTDIR: ""
     before_script:
         - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
@@ -52,9 +65,8 @@ build:echo:
     extends: .build_template
     script:
         - cd transformers
-        - cd echo && make -B all
-        - cd ..
-        - cd go_echo && make -B all
+        - make -C echo all
+        - make -C go_echo all
     rules:
       - changes:
           - transformers/echo/**/*
@@ -68,9 +80,8 @@ build:hello_world:
     extends: .build_template
     script:
         - cd transformers
-        - cd hello_world && make -B all
-        - cd ..
-        - cd go_hello_world && make -B all
+        - make -C hello_world all
+        - make -C go_hello_world all
     rules:
       - changes:
           - transformers/hello_world/**/*
@@ -83,7 +94,7 @@ build:md5:
     extends: .build_template
     script:
         - cd transformers
-        - cd md5 && make -B all
+        - make -C md5 all
     rules:
       - changes:
           - transformers/md5/**/*
@@ -95,7 +106,7 @@ build:hash_with_args:
     extends: .build_template
     script:
         - cd transformers
-        - cd hash_with_args && make -B all
+        - make -C hash_with_args all
     rules:
       - changes:
           - transformers/hash_with_args/**/*
@@ -107,7 +118,7 @@ build:tar2tf:
     extends: .build_template
     script:
         - cd transformers
-        - cd tar2tf && make -B all
+        - make -C tar2tf all
     rules:
       - changes:
           - transformers/tar2tf/**/*
@@ -119,7 +130,7 @@ build:compress:
     extends: .build_template
     script:
         - cd transformers
-        - cd compress && make -B all
+        - make -C compress all
     rules:
       - changes:
           - transformers/compress/**/*
@@ -131,7 +142,7 @@ build:torchvision:
     extends: .build_template
     script:
         - cd transformers
-        - cd torchvision_preprocess && make -B all
+        - make -C torchvision_preprocess all
     rules:
       - changes:
           - transformers/torchvision_preprocess/**/*
@@ -143,7 +154,7 @@ build:keras:
     extends: .build_template
     script:
         - cd transformers
-        - cd keras_preprocess && make -B all
+        - make -C keras_preprocess all
     rules:
       - changes:
           - transformers/keras_preprocess/**/*
@@ -156,7 +167,7 @@ build:face_detection:
     script:
         - cd transformers/face_detection 
         - echo ${KAGGLE_CREDS_JSON} > kaggle_creds.json
-        - make -B all
+        - make all
     rules:
       - changes:
           - transformers/face_detection/**/*
@@ -249,6 +260,80 @@ test:audio_split_consolidate:
         - cd transformers/tests
         - pytest -v --log-cli-level=INFO test_audio_split.py
         - pytest -v --log-cli-level=INFO test_audio_split_consolidate.py
+
+publish:echo:
+    extends: .publish_template
+    needs: ["test:echo"]
+    script:
+        - cd transformers
+        - make -C echo all
+        - make -C go_echo all
+
+publish:hello_world:
+    extends: .publish_template
+    needs: ["test:hello_world"]
+    script:
+        - cd transformers
+        - make -C hello_world all
+        - make -C go_hello_world all
+
+publish:md5:
+    extends: .publish_template
+    needs: ["test:md5"]
+    script:
+        - cd transformers
+        - make -C md5 all
+
+publish:hash_with_args:
+    extends: .publish_template
+    needs: ["test:hash_with_args"]
+    script:
+        - cd transformers
+        - make -C hash_with_args all
+
+publish:tar2tf:
+    extends: .publish_template
+    needs: ["test:tar2tf"]
+    script:
+        - cd transformers
+        - make -C tar2tf all
+
+publish:compress:
+    extends: .publish_template
+    needs: ["test:compress"]
+    script:
+        - cd transformers
+        - make -C compress all
+
+publish:torchvision:
+    extends: .publish_template
+    needs: ["test:torchvision"]
+    script:
+        - cd transformers
+        - make -C torchvision_preprocess all
+
+publish:keras:
+    needs: ["test:keras"]
+    extends: .publish_template
+    script:
+        - cd transformers
+        - make -C keras_preprocess all
+
+publish:face_detection:
+    extends: .publish_template
+    needs: ["test:face_detection"]
+    script:
+        - cd transformers/face_detection 
+        - echo ${KAGGLE_CREDS_JSON} > kaggle_creds.json
+        - make all
+
+publish:audio_split_consolidate:
+    extends: .publish_template
+    needs: ["test:audio_split_consolidate"]
+    script:
+        - cd transformers/NeMo/audio_split_consolidate/
+        - make -C audio_manager all
+        - make -C audio_splitter all
 
 stress:test:
     extends: .stress_template
