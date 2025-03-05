@@ -28,12 +28,6 @@ def trim_audio(
 ) -> Optional[bytes]:
     """Trim audio bytes from start_time to end_time."""
     try:
-        logging.info(
-            "Trimming audio from %s to %s in %s format",
-            start_time,
-            end_time,
-            audio_format,
-        )
         audio_buffer = BytesIO(audio_bytes)
         with sf.SoundFile(audio_buffer, mode="r") as audio_file:
             sample_rate = audio_file.samplerate
@@ -51,7 +45,6 @@ def trim_audio(
             format=audio_format,
         ) as trimmed_file:
             trimmed_file.write(trimmed_data)
-        logging.info("Audio trimming completed")
         return trimmed_audio_buffer.getvalue()
     except Exception as e:
         logging.error("Error trimming audio: %s", e)
@@ -134,7 +127,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             query_path = HOST_TARGET + urlparse(self.path).path
             data = requests.get(query_path, timeout=120).content
             output_bytes = transform(data, etl_args=etl_args)
-            logging.info("Transformation completed for: %s", query_path)
             self._send_response(200, output_bytes)
         except requests.HTTPError as http_err:
             logging.error("HTTP error in GET request: %s", http_err)
@@ -159,9 +151,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
 
             output_bytes = transform(data, etl_args=etl_args)
-            logging.info(
-                "Transformation and PUT forwarding completed for: %s", self.path
-            )
             self._send_response(200, output_bytes)
         except requests.HTTPError as http_err:
             logging.error("HTTP error in PUT request: %s", http_err)

@@ -36,6 +36,20 @@ class Config:
         self.prefix = os.getenv("OBJ_PREFIX", "")
         self.extension = os.getenv("OBJ_EXTENSION", "wav")
         self.etl_name = os.getenv("ETL_NAME")
+        self.direct_from_target = os.getenv(
+            "DIRECT_FROM_TARGET", "true"
+        ).strip().lower() in ("true", "1", "yes")
+        max_pool_size_str = os.getenv("MAX_POOL_SIZE")
+        try:
+            self.max_pool_size = (
+                int(max_pool_size_str) if max_pool_size_str is not None else 50
+            )
+        except ValueError:
+            logging.error(
+                "Invalid MAX_POOL_SIZE value '%s'. Falling back to default (50).",
+                max_pool_size_str,
+            )
+            self.max_pool_size = 50
 
         if not self.bucket:
             raise ValueError("SRC_BUCKET environment variable is required")
@@ -72,7 +86,7 @@ def fetch_transformed_audio(data: dict) -> bytes:
 
         obj = src_bucket.object(obj_path)
         return obj.get_reader(
-            etl=ETLConfig(config.etl_name, args=data), direct=True
+            etl=ETLConfig(config.etl_name, args=data), direct=config.direct_from_target
         ).read_all()
     except Exception as e:
         logger.exception(
@@ -119,7 +133,7 @@ def create_tar_archive(input_bytes: bytes) -> bytes:
                 except Exception as e:
                     logger.error("Failed to process line %d: %s", line_number, e)
 
-        logger.info("Created tar archive with %d audio files", processed_count)
+        # logger.info("Created tar archive with %d audio files", processed_count)
         return output_tar.getvalue()
     except Exception as e:
         logger.error("Tar creation failed: %s", e)
