@@ -64,7 +64,7 @@ class Config:
 # Initialize configuration and client
 try:
     config = Config()
-    client = Client(config.ais_endpoint)
+    client = Client(config.ais_endpoint, max_pool_size=config.max_pool_size)
     src_bucket = client.bucket(bck_name=config.bucket, provider=config.provider)
 except ValueError as e:
     logger.critical("Configuration error: %s", e)
