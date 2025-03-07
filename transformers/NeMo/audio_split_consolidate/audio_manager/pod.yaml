@@ -3,7 +3,6 @@ kind: Pod
 metadata:
   name: transformer-audio-manager
   annotations:
-    # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: "hpull://"
     wait_timeout: 10m
 spec:
@@ -20,15 +19,21 @@ spec:
           path: /health
           port: default
       env:
+        # AIS endpoint
         - name: AIS_ENDPOINT
           value: "http://<ais-proxy>:51080"
+        # Bucket name of the audio files
         - name: SRC_BUCKET
-          value: "split_audio"
+          value: "audio_files"
+        # Provider of the audio files (ais, gcp, aws) 
         - name: SRC_PROVIDER
-          value: "ais"  
+          value: "ais"
+        # Prefix of the audio files
         - name: OBJ_PREFIX
           value: ""
+        # Extension of the audio files
         - name: OBJ_EXTENSION
           value: "wav"
+        # ETL Name of the Audio Splitter ETL you previously initialised
         - name: ETL_NAME
           value: "<etl-name>"

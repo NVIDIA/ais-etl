@@ -1,35 +1,91 @@
-# NeMo - Transformer for Splitting Audio Files
+# AIStore Audio Split & Consolidate Transformer
 
-This transformer allows users to split long audio files into smaller segments based on a JSON manifest. This is useful when only specific parts of an audio file are needed for training. The specified segments are extracted from the main audio file, consolidated, and returned as a tarball.
+This transformer splits and consolidates audio files using a [JSONL](https://jsonlines.org/) manifest file as input. It extracts segments specified in the manifest, consolidates them, and returns the result as a tarball.
 
-## **How It Works**
-1. **Input Manifest**: Provide a JSONL file where each JSON object specifies:
-   - **`id`**: Identifier for the audio file.
-   - **`part`**: Part number for the segment.
-   - **`start_time`** and **`end_time`**: Duration (in seconds) to extract.
+This transformer consists of two components:
 
-2. **Environment Variables**:
-   - Configure where the audio files are stored using the following environment variables:
-     - **`AIS_ENDPOINT`**: Endpoint of the audio storage.
-     - **`AIS_BUCKET`**: Bucket containing audio files.
-     - **`AIS_PREFIX`**: Prefix path to the audio files.
-     - **`AIS_EXTENSION`**: File extension of the audio files (e.g., `wav`).
+1. **Audio Manager** – Processes the manifest and dispatches splitting tasks.
+2. **Audio Splitter** – Splits individual audio files based on instructions from the Audio Manager.
 
-3. **Output**: The transformer processes the JSONL manifest, trims the specified segments, and consolidates the output into a tarball.
+---
 
-## **Example**
+## Why two separate transformers?
 
-### Input Manifest (`shard1.jsonl`)
+Using separate transformers ensures scalability through distributed processing. A single transformer combining both roles would not scale efficiently, as audio files might not reside on the same node, causing performance issues due to unnecessary data movement between nodes. Separating the roles allows efficient distributed processing across the AIStore cluster.
+
+![Audio Split Consolidate Overview](audio_split_consolidate_diagram.png)
+
+---
+
+## Example Input Manifest
+
+`manifest.jsonl`:
 ```json
-{"id": "youtube_vid_id_1", "part": 1, "start_time": 0.36, "end_time": 2.36}
-{"id": "youtube_vid_id_1", "part": 2, "start_time": 3.36, "end_time": 9.36}
-{"id": "youtube_vid_id_2", "part": 1, "start_time": 0.00, "end_time": 4.00}
+{"id": "youtube_vid_id_1", "part": 1, "from_time": 0.36, "to_time": 2.36}
+{"id": "youtube_vid_id_1", "part": 2, "from_time": 3.36, "to_time": 9.36}
+{"id": "youtube_vid_id_2", "part": 1, "from_time": 0.0, "to_time": 4.0}
 ```
 
-### Output Tarball (`shard1.tar`)
-The tarball will contain the following trimmed audio files:
-- `youtube_vid_id_1_1.wav`  
-- `youtube_vid_id_1_2.wav`  
-- `youtube_vid_id_2_1.wav`  
+Output:
+- A tarball (`manifest.tar`) containing:
+  - `youtube_vid_id_1_1`
+  - `youtube_vid_id_1_2`
+  - `youtube_vid_id_2_1`
 
-These files will contain audio trimmed to the specified durations.
+Each file will contain audio trimmed to the specified duration.
+
+---
+
+## How to Get Started
+
+### Step 1: Prepare the Manifest
+
+Create a JSON Lines (`.jsonl`) file where each line contains:
+- `id`: Identifier of the audio file.
+- `part`: Part number.
+- `from_time` and `to_time`: Segment duration.
+
+---
+
+## Deploy ETLs
+
+### Audio Splitter ETL
+
+Review and edit the configuration ([`audio_splitter/pod.yaml`](audio_splitter/pod.yaml)) as needed.
+
+```bash
+ais etl init spec --from-file audio_splitter/pod.yaml --comm-type hpush --name audio-splitter
+```
+
+### Audio Manager ETL
+
+Review and edit the configuration ([`audio_manager/pod.yaml`](audio_manager/pod.yaml)), ensuring settings match your environment.
+
+```bash
+ais etl init spec --from-file audio_manager/pod.yaml --comm-type hpush --name audio-manager
+```
+
+Ensure the manifest file is accessible by the Audio Manager.
+
+---
+
+## Run Transformations
+
+### Single Manifest File
+
+```bash
+ais etl object audio-manager ais://manifests/manifest.jsonl manifest.tar
+```
+
+### Batch Operation (Multiple Manifest Files - Bucket Transform)
+
+```bash
+ais etl bucket audio-manager ais://bench_manifests ais://output_bucket --ext "{jsonl:tar}"
+```
+
+This will process each `.jsonl` file in the source bucket and output consolidated audio tarballs (`.tar`) into the specified output bucket.
+
+
+## Performance  
+
+Our [benchmark](../../benchmarks/audio_split_consolidate.py) demonstrates that using our ETL can accelerate data processing by **up to 13x** compared to single-threaded local execution. Performance scales **linearly** with the number of targets and disks in the AIStore cluster.
