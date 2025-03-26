@@ -14,10 +14,29 @@ Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 import os
 import urllib.parse
 
-from fastapi import FastAPI, Request, Depends, Response, HTTPException
+from fastapi import FastAPI, Request, Depends, Response, HTTPException, WebSocket, WebSocketDisconnect
 import aiohttp  # async
+import logging
+import sys
+from typing import List
+
+from fastapi.middleware.cors import CORSMiddleware
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 host_target = os.environ["AIS_TARGET_URL"]
 
 
@@ -91,3 +110,34 @@ async def put_handler(request: Request):
         media_type="application/octet-stream",
         headers={"Content-Length": str(len(content))},  # Set Content-Length
     )
+
+# =======================
+# WebSocket Endpoint
+# =======================
+
+active_connections: List[WebSocket] = []
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint to handle live data transformations.
+    Clients can send text or binary data, and the transformed output is sent back.
+    """
+    logger.info(f"New WebSocket connection attempt from: {websocket.client}")
+
+    try:
+        await websocket.accept()
+        logger.info(f"WebSocket connection established: {websocket.client}")
+        active_connections.append(websocket)
+
+        while True:
+            data = await websocket.receive_bytes()
+            logger.info(f"Received message of length: {len(data)}")
+            await websocket.send_bytes(data)
+
+    except WebSocketDisconnect:
+        logger.warning(f"WebSocket disconnected: {websocket.client}")
+        active_connections.remove(websocket)
+
+    except Exception as e:
+        logger.error(f"Unexpected WebSocket error from {websocket.client}: {e}")
+        await websocket.close()
