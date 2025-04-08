@@ -34,6 +34,12 @@ stages:
         DOCKER_TLS_CERTDIR: ""
     before_script:
         - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+    rules:
+        - if: '$CI_COMMIT_BRANCH == "main"'
+          when: on_success
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+          when: on_success
+        - when: never
 
 # Common setup for all test stages
 .test_template:
