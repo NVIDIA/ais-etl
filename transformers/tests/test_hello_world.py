@@ -3,7 +3,7 @@
 #
 
 import logging
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import HELLO_WORLD
 from aistore.sdk.etl import ETLConfig
 
@@ -66,7 +66,7 @@ class TestHelloWorldTransformer(TestBase):
         Runs the Hello World ETL test for a given communication type.
 
         Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH, HREV).
+            communication_type (str): The ETL communication type (HPULL, HPUSH).
             arg_type (str, optional): Argument type ("fqn" for fully qualified names). Defaults to "".
         """
         # Generate a unique ETL name
@@ -100,7 +100,6 @@ class TestHelloWorldTransformer(TestBase):
     @cases(
         (ETL_COMM_HPULL, ""),
         (ETL_COMM_HPUSH, ""),
-        (ETL_COMM_HREV, ""),
         (ETL_COMM_HPULL, "fqn"),
         (ETL_COMM_HPUSH, "fqn"),
     )

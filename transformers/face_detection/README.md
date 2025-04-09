@@ -12,7 +12,7 @@ The image formats (`jpeg`, `png`, etc.) for processing or storage are defined in
 
 ## Transformer Communication Mechanisms
 
-The transformer is compatible with `hpull`, `hpush`, and `hrev` for seamless integration. Detailed information about these communication mechanisms can be found [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
+The transformer is compatible with `hpull` and `hpush` for seamless integration. Detailed information about these communication mechanisms can be found [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
 ## Recommended Parameter Setting
 

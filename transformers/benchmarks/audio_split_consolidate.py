@@ -272,7 +272,12 @@ def execute_transformation(client: Client, cfg: BenchmarkConfig) -> None:
 def trim_audio(cfg: BenchmarkConfig, data: dict, client: Client) -> Optional[bytes]:
     """Trim audio bytes from start_time to end_time."""
     # Get audio file from AIStore
-    audio_bytes = client.bucket(cfg.audio_bucket).object(data["id"]+".wav").get_reader().read_all()
+    audio_bytes = (
+        client.bucket(cfg.audio_bucket)
+        .object(data["id"] + ".wav")
+        .get_reader()
+        .read_all()
+    )
     if not audio_bytes:
         logger.error("No audio data found for trimming.")
     try:
@@ -318,7 +323,9 @@ def process_json_line(line: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def create_tar_archive(cfg: BenchmarkConfig, input_bytes: bytes, client: Client) -> bytes:
+def create_tar_archive(
+    cfg: BenchmarkConfig, input_bytes: bytes, client: Client
+) -> bytes:
     """Create tar archive from JSONL input containing audio processing instructions."""
     output_tar = BytesIO()
 
@@ -358,7 +365,9 @@ def run_local_transformation(cfg: BenchmarkConfig, client: Client) -> None:
             manifest_content = manifest_bucket.object(obj_name).get_reader().read_all()
             tar_bytes = create_tar_archive(cfg, manifest_content, client)
             base_obj_name, _ = os.path.splitext(obj_name)
-            client.bucket(cfg.dest_bucket).object(f"{base_obj_name}.tar").get_writer().put_content(tar_bytes)
+            client.bucket(cfg.dest_bucket).object(
+                f"{base_obj_name}.tar"
+            ).get_writer().put_content(tar_bytes)
 
     mins, secs = divmod(timer.elapsed, 60)
     logger.info("Local transformation completed in %d:%05.2f", int(mins), secs)
@@ -383,7 +392,7 @@ def main() -> None:
     # Setup test data
     setup_benchmark_data(client, cfg)
 
-    for comm_type in ["hpull", "hpush", "hrev"]:
+    for comm_type in ["hpull", "hpush"]:
         initialize_bucket(client, cfg.dest_bucket)
         logger.info("Running benchmark with communication type: %s", comm_type)
         benchmark(client, cfg, comm_type)

@@ -2,7 +2,7 @@
 
 A simple echo transformer that takes objects (bytes) and simply echoes or repeats those bytes back as output. It's a simple and straightforward way to demonstrate or test the functionality of your container pod. An echo transformer might be used for debugging, understanding how data flows through a system, or verifying that certain processes are functioning as expected.
 
-The transformer supports both `hpull`, `hpush` and `hrev` communication mechanisms for seamless integration.
+The transformer supports both `hpull` and `hpush` communication mechanisms for seamless integration.
 
 > **Note:** This transformer is using [`FastAPI`](https://fastapi.tiangolo.com/) as framework and [`Gunicorn`](https://gunicorn.org/) + [Uvicorn](https://www.uvicorn.org/) as webserver, multithreaded HTTP server for the same implmentation under [`http-multithreaded-server`](/http-multithreaded-server/) folder.
 

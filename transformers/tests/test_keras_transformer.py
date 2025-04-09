@@ -10,7 +10,7 @@ from tensorflow.keras.preprocessing.image import (
     array_to_img,
     img_to_array,
 )
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import KERAS_TRANSFORMER
 from aistore.sdk.etl import ETLConfig
 
@@ -70,7 +70,7 @@ class TestKerasTransformer(TestBase):
         Generates the transformation template for AIStore ETL.
 
         Args:
-            comm_type (str): The ETL communication type (HPULL, HPUSH, HREV).
+            comm_type (str): The ETL communication type (HPULL, HPUSH).
             arg_type (str): Argument type (`"fqn"` for fully qualified names).
 
         Returns:
@@ -124,7 +124,6 @@ class TestKerasTransformer(TestBase):
 
     @cases(
         (ETL_COMM_HPULL, False),
-        (ETL_COMM_HREV, False),
         (ETL_COMM_HPUSH, False),
         (ETL_COMM_HPUSH, True),
         (ETL_COMM_HPULL, True),

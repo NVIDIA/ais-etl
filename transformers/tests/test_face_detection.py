@@ -5,7 +5,7 @@
 import logging
 import cv2
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import FACE_DETECTION_TRANSFORMER
 from aistore.sdk.etl import ETLConfig
 
@@ -138,7 +138,6 @@ class TestFaceDetectionTransformer(TestBase):
 
     @cases(
         (ETL_COMM_HPULL, False),
-        (ETL_COMM_HREV, False),
         (ETL_COMM_HPUSH, False),
         (ETL_COMM_HPUSH, True),
         (ETL_COMM_HPULL, True),

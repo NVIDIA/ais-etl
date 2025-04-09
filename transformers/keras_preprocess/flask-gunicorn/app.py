@@ -78,12 +78,14 @@ def image_handler(path: str):  # pylint: disable=unused-argument
                 query_path = request.args.get("url")
                 result = transform_image(requests.get(query_path, timeout=5).content)
             else:
-                # normal GET - hpull and hrev
+                # normal GET - hpull
                 object_path = urllib.parse.quote(path, safe="@")
                 object_url = f"{host_target}/{object_path}"
                 resp = requests.get(object_url, timeout=5)
                 if resp.status_code != 200:
-                    raise FileNotFoundError(f"Error getting '{path}' from '{host_target}'")
+                    raise FileNotFoundError(
+                        f"Error getting '{path}' from '{host_target}'"
+                    )
                 result = transform_image(resp.content)
 
             if result is not None:
@@ -92,4 +94,3 @@ def image_handler(path: str):  # pylint: disable=unused-argument
     except Exception as exp:
         logging.error("Error processing request: %s", str(exp))
         return "Data processing failed", 500
-

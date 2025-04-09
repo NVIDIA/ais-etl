@@ -125,9 +125,11 @@ def main():
         sys.argv[2] (str): Output directory for transformed files.
         sys.argv[3] (int, optional): Number of iterations (default: 300).
     """
-    
+
     if len(sys.argv) < 3:
-        print("Usage: python benchmark_audio.py <input_audio> <output_dir> [num_iterations]")
+        print(
+            "Usage: python benchmark_audio.py <input_audio> <output_dir> [num_iterations]"
+        )
         sys.exit(1)
 
     input_file = sys.argv[1]

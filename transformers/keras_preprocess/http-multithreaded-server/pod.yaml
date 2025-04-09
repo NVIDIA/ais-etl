@@ -4,7 +4,7 @@ kind: Pod
 metadata:
   name: transformer-keras
   annotations:
-    # Values `communication_type` can take are ["hpull://", "hrev://", "hpush://", "io://"].
+    # Values `communication_type` can take are ["hpull://", "hpush://"].
     # Visit https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms 
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
     wait_timeout: 5m

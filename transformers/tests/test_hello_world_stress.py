@@ -7,7 +7,7 @@ Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 import logging
 from datetime import datetime
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import HELLO_WORLD
 
 from tests.base import TestBase
@@ -38,7 +38,7 @@ class TestHelloWorldStress(TestBase):
         Runs a Hello World transformation stress test using AIStore ETL.
 
         Args:
-            comm_type (str): ETL communication type (HPULL, HPUSH, HREV).
+            comm_type (str): ETL communication type (HPULL, HPUSH).
             test_name (str): Name of the test case for logging.
             arg_type (str, optional): Whether to use fully qualified names (FQN). Defaults to "".
         """
@@ -101,7 +101,6 @@ class TestHelloWorldStress(TestBase):
     @cases(
         (ETL_COMM_HPUSH, "test_hello_world_hpush_fastapi", ""),
         (ETL_COMM_HPULL, "test_hello_world_hpull_fastapi", ""),
-        (ETL_COMM_HREV, "test_hello_world_hrev_fastapi", ""),
         (ETL_COMM_HPULL, "test_hello_world_hpull_fastapi_fqn", "fqn"),
         (ETL_COMM_HPUSH, "test_hello_world_hpush_fastapi_fqn", "fqn"),
     )

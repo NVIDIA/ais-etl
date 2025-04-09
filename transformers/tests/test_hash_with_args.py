@@ -6,7 +6,7 @@
 import xxhash
 import random
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl import ETLConfig
 
 from tests.utils import (
@@ -22,7 +22,7 @@ kind: Pod
 metadata:
   name: transformer-hash-with-args
   annotations:
-    # Values it can take ["hpull://","hrev://","hpush://"]
+    # Values it can take ["hpull://","hpush://"]
     communication_type: "{communication_type}://"
     wait_timeout: 5m
 spec:
@@ -114,7 +114,7 @@ class TestHashWithArgsTransformer(TestBase):
                 use_args,
             )
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_seeded_hash(self, communication_type):
         """Tests seeded hash transformation for different ETL communication types."""
         self.run_seeded_hash_test(communication_type, use_args=False)

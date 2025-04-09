@@ -2,7 +2,7 @@
 
 The Torchvision Image Pre-Processing Transformer leverages [torchvision](https://pytorch.org/vision/stable/index.html)'s extensive suite of transformations to process images. By accepting a JSON string of parameter-value pairs, it allows users to define a series of image transformations that correspond directly to [torchvision](https://pytorch.org/vision/stable/index.html)'s native functions. For those already familiar with [torchvision](https://pytorch.org/vision/stable/index.html) and [PyTorch](https://pytorch.org/), this transformer offers a sense of familiarity and ease of use.
 
-This sample transformer supports `hpull`, `hpush`, and `hrev` communication mechanisms.
+This sample transformer supports `hpull`and `hpush` communication mechanisms.
 
 > For more information on communication mechanisms, please refer [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 

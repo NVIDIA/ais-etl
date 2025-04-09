@@ -13,7 +13,7 @@ import tensorflow as tf
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
 from aistore.sdk.etl.etl_templates import TAR2TF
 from aistore.sdk.etl import ETLConfig
 
@@ -52,7 +52,7 @@ class TestTar2TFTransformer(TestBase):
             spec (dict, optional): JSON spec for transformations. Defaults to None.
         """
         template = TAR2TF.format(
-            communication_type=ETL_COMM_HREV,
+            communication_type=ETL_COMM_HPULL,
             arg="-spec" if spec else "",
             val=json.dumps(spec) if spec else "",
         )
@@ -64,7 +64,7 @@ class TestTar2TFTransformer(TestBase):
         etl_name = f"tar2tf-{generate_random_string(5)}"
         self.etls.append(etl_name)
         self.client.etl(etl_name).init_spec(
-            communication_type=ETL_COMM_HREV, template=template
+            communication_type=ETL_COMM_HPULL, template=template
         )
 
         # Retrieve transformed TFRecord bytes

@@ -5,7 +5,7 @@
 
 import hashlib
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import MD5
 from aistore.sdk.etl import ETLConfig
 
@@ -66,7 +66,7 @@ class TestMD5Transformer(TestBase):
         Runs an MD5 transformation test using a specified communication type.
 
         Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH, HREV).
+            communication_type (str): The ETL communication type (HPULL, HPUSH).
         """
         etl_name = f"md5-transformer-{generate_random_string(5)}"
         self.etls.append(etl_name)
@@ -90,7 +90,6 @@ class TestMD5Transformer(TestBase):
     @cases(
         ETL_COMM_HPULL,
         ETL_COMM_HPUSH,
-        ETL_COMM_HREV,
     )
     def test_md5_transform(self, communication_type):
         """Runs the MD5 ETL transformation for different communication types."""

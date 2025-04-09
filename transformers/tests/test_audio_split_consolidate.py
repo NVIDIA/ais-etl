@@ -10,7 +10,7 @@ import tarfile
 import json
 from typing import Optional, Dict, Any
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl import ETLConfig
 
 from tests.utils import (
@@ -55,7 +55,7 @@ kind: Pod
 metadata:
   name: transformer-audio-manager
   annotations:
-    # Values it can take ["hpull://","hrev://","hpush://"]
+    # Values it can take ["hpull://","hpush://"]
     communication_type: "hpull://"
     wait_timeout: 10m
 spec:
@@ -248,7 +248,7 @@ class TestAudioSplitConsolidate(TestBase):
         Run an Audio Split Consolidate transformation test using a specified communication type.
 
         Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH, HREV).
+            communication_type (str): The ETL communication type (HPULL, HPUSH).
         """
         # Create audio splitter ETL
         audio_split_etl_name = f"audio-split-transformer-{generate_random_string(5)}"
@@ -301,7 +301,7 @@ class TestAudioSplitConsolidate(TestBase):
             audio_split_etl_name,
         )
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_audio_split_consolidate(self, communication_type: str):
         """Run the Audio Split ETL transformation for different communication types."""
         logging.info(

@@ -14,7 +14,15 @@ Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 import os
 import urllib.parse
 
-from fastapi import FastAPI, Request, Depends, Response, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    Request,
+    Depends,
+    Response,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+)
 import aiohttp  # async
 import logging
 import sys
@@ -111,11 +119,14 @@ async def put_handler(request: Request):
         headers={"Content-Length": str(len(content))},  # Set Content-Length
     )
 
+
 # =======================
 # WebSocket Endpoint
 # =======================
 
 active_connections: List[WebSocket] = []
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """

@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: transformer-face-detection
   annotations:
-    # Values it can take ["hpull://","hrev://","hpush://"]
+    # Values it can take ["hpull://","hpush://"]
     communication_type: "${COMMUNICATION_TYPE}"
     wait_timeout: 5m
 spec:

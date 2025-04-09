@@ -1,14 +1,15 @@
 """
 A simple hello world transformation using FastAPI framework and Gunicorn and Uvicorn webserver.
 
-Steps to run: 
+Steps to run:
 $ # with uvicorn
-$ uvicorn main:app --reload 
+$ uvicorn main:app --reload
 $ # with multiple uvicorn processes managed by gunicorn
-$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 
+$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 
 Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 """
+
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring, broad-exception-caught
 import os
 import urllib.parse
@@ -60,7 +61,7 @@ async def get_handler(
     full_path: str, client: aiohttp.ClientSession = Depends(http_client)
 ):
     """
-    Handles `hpull://` and `hrev://` requests.
+    Handles `hpull://` requests.
     Retrieves the destination/name of the object from the URL or the full_path variable,
     fetches the object from the AIS target based on the destination/name,
     transforms the bytes, and returns the modified bytes.

@@ -6,7 +6,7 @@ import bz2
 import gzip
 import json
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import COMPRESS
 from aistore.sdk.etl import ETLConfig
 
@@ -132,7 +132,7 @@ class TestCompressTransformer(TestBase):
             else:
                 self.assertEqual(original_content, etl_decompressed)
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_default_compress(self, communication_type):
         """Tests default compression for all communication types."""
         etl_name = f"test-etl-{generate_random_string(5)}"
@@ -140,7 +140,7 @@ class TestCompressTransformer(TestBase):
 
         self._compress_test_helper(communication_type, {}, etl_name)
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_gzip_compress(self, communication_type):
         """Tests Gzip compression for all communication types."""
         etl_name = f"test-etl-{generate_random_string(5)}"
@@ -150,7 +150,7 @@ class TestCompressTransformer(TestBase):
             communication_type, {"compression": "gzip"}, etl_name
         )
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_bz2_compress(self, communication_type):
         """Tests BZ2 compression for all communication types."""
         etl_name = f"test-etl-{generate_random_string(5)}"
@@ -158,7 +158,7 @@ class TestCompressTransformer(TestBase):
 
         self._compress_test_helper(communication_type, {"compression": "bz2"}, etl_name)
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_gzip_decompress(self, communication_type):
         """Tests Gzip decompression for all communication types."""
         etl_name = f"test-etl-{generate_random_string(5)}"
@@ -168,7 +168,7 @@ class TestCompressTransformer(TestBase):
             communication_type, {"mode": "decompress", "compression": "gzip"}, etl_name
         )
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_bz2_decompress(self, communication_type):
         """Tests BZ2 decompression for all communication types."""
         etl_name = f"test-etl-{generate_random_string(5)}"

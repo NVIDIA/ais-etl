@@ -9,7 +9,7 @@ from urllib.parse import urlparse, parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-host_target = os.environ['AIS_TARGET_URL']
+host_target = os.environ["AIS_TARGET_URL"]
 seed_default = int(os.getenv("SEED_DEFAULT", "0"))
 
 # Configure logging
@@ -18,8 +18,9 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+
 class Handler(BaseHTTPRequestHandler):
-    def log_request(self, code='-', size='-'):
+    def log_request(self, code="-", size="-"):
         # Don't log successful requests info. Unsuccessful logged by log_error().
         pass
 
@@ -30,9 +31,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         try:
-            content_length = int(self.headers['Content-Length'])
+            content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
-            parsed_url = urlparse(self.path)        
+            parsed_url = urlparse(self.path)
             seed = seed_default
             logging.info("PUT request received")
             params = parse_qs(parsed_url.query)

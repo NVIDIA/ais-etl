@@ -4,7 +4,7 @@
 
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import ECHO
 from aistore.sdk.etl import ETLConfig
 
@@ -61,7 +61,7 @@ class TestEchoTransformer(TestBase):
 
         self.assertEqual(transformed_bytes, original_content)
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_echo(self, communication_type):
         """Tests Echo transformer for all communication types."""
         etl_name = f"test-etl-{generate_random_string(5)}"

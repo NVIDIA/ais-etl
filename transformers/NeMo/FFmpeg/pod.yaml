@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: transformer-nemo-ffmpeg
   annotations:
-    # Values it can take ["hpull://","hrev://","hpush://"]
+    # Values it can take ["hpull://","hpush://"]
     communication_type: "hpull://"
     wait_timeout: 5m
 spec:

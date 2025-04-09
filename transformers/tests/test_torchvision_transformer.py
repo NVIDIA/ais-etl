@@ -12,7 +12,7 @@ from tests.utils import (
     cases,
     generate_random_string,
 )
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import TORCHVISION_TRANSFORMER
 from aistore.sdk.etl import ETLConfig
 
@@ -35,7 +35,7 @@ class TestTorchVisionTransformer(TestBase):
         Compares AIStore ETL-transformed images with locally transformed images.
 
         Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH, HREV).
+            communication_type (str): The ETL communication type (HPULL, HPUSH).
         """
         etl_name = f"torchvision-transformer-{generate_random_string(5)}"
         self.etls.append(etl_name)
@@ -93,7 +93,6 @@ class TestTorchVisionTransformer(TestBase):
     @cases(
         ETL_COMM_HPULL,
         ETL_COMM_HPUSH,
-        ETL_COMM_HREV,
     )
     def test_torchvision_transform(self, communication_type):
         """Runs the TorchVision ETL transformation for different communication types."""

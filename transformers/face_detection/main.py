@@ -1,15 +1,16 @@
 """
-Detecting Faces w/ SSD model (SSD: Single Shot MultiBox Detector) using FastAPI framework 
+Detecting Faces w/ SSD model (SSD: Single Shot MultiBox Detector) using FastAPI framework
 and Gunicorn and Uvicorn webserver.
 
-Steps to run: 
+Steps to run:
 $ # with uvicorn
-$ uvicorn main:app --reload 
+$ uvicorn main:app --reload
 $ # with multiple uvicorn processes managed by gunicorn
-$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 
+$ gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 
 Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 """
+
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring, broad-exception-caught, unused-import
 import os
 import urllib.parse

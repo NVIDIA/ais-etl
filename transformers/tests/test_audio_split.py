@@ -9,7 +9,7 @@ from typing import Optional
 
 import soundfile as sf
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl import ETLConfig
 
 from tests.utils import (
@@ -146,7 +146,7 @@ class TestAudioSplitTransformer(TestBase):
         Run an Audio Split transformation test using a specified communication type.
 
         Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH, HREV).
+            communication_type (str): The ETL communication type (HPULL, HPUSH).
         """
         etl_name = f"audio-split-transformer-{generate_random_string(5)}"
         self.etls.append(etl_name)
@@ -173,7 +173,7 @@ class TestAudioSplitTransformer(TestBase):
             self.test_file_name, self.test_file_source, etl_name
         )
 
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV)
+    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
     def test_audio_split_transform(self, communication_type: str):
         """Run the Audio Split ETL transformation for different communication types."""
         logging.info(

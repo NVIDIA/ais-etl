@@ -17,7 +17,7 @@ The Keras Transformer is a powerful tool designed for image data preprocessing a
 
 The image format (JPEG, PNG, etc.) of the images to be processed or stored is specified in the `spec.yaml`.
 
-The transformer supports both `hpull`, `hpush` and `hrev` communication mechanisms for seamless integration.
+The transformer supports both `hpull` and `hpush` communication mechanisms for seamless integration.
 
 **Please Note:** This transformer utilizes the [`FastAPI`](https://fastapi.tiangolo.com/) framework alongside the [`Gunicorn`](https://gunicorn.org/) + [Uvicorn](https://www.uvicorn.org/) combination as its web server. Alternate implementations of the same functionality are provided using [`Flask`](https://flask.palletsprojects.com/en/2.3.x/) and [`Gunicorn`](https://gunicorn.org/) within the [`flask-gunicorn`](/flask-gunicorn) directory. Additionally, there's a version that employs a multithreaded HTTP server, which can be found in the [`http-multithreaded-server`](/http-multithreaded-server/) folder.
 

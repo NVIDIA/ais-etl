@@ -6,7 +6,7 @@ Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 
 import logging
 from datetime import datetime
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_HREV
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from aistore.sdk.etl.etl_templates import KERAS_TRANSFORMER
 
 from tests.base import TestBase
@@ -33,7 +33,7 @@ class TestKerasStress(TestBase):
         Runs a Keras transformation stress test using AIStore ETL.
 
         Args:
-            comm_type (str): ETL communication type (HPULL, HPUSH, HREV).
+            comm_type (str): ETL communication type (HPULL, HPUSH).
             test_name (str): Name of the test case for logging.
             fqn_flag (bool, optional): Whether to use fully qualified names (FQN). Defaults to False.
         """
@@ -99,7 +99,6 @@ class TestKerasStress(TestBase):
     @cases(
         (ETL_COMM_HPUSH, "test_keras_hpush_fastapi", False),
         (ETL_COMM_HPULL, "test_keras_hpull_fastapi", False),
-        (ETL_COMM_HREV, "test_keras_hrev_fastapi", False),
         (ETL_COMM_HPULL, "test_keras_hpull_fastapi_fqn", True),
         (ETL_COMM_HPUSH, "test_keras_hpush_fastapi_fqn", True),
     )

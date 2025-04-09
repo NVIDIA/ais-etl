@@ -6,11 +6,11 @@ import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-host_target = os.environ['AIS_TARGET_URL']
+host_target = os.environ["AIS_TARGET_URL"]
 
 
 class Handler(BaseHTTPRequestHandler):
-    def log_request(self, code='-', size='-'):
+    def log_request(self, code="-", size="-"):
         # Don't log successful requests info. Unsuccessful logged by log_error().
         pass
 
@@ -20,7 +20,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_PUT(self):
-        content_length = int(self.headers['Content-Length'])
+        content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
         self._set_headers()
         self.wfile.write(post_data)
