@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: transformer-md5
   annotations:
-    # Values it can take ["hpull://","hpush://"]
+    # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
     wait_timeout: 5m
 spec:
@@ -19,3 +19,11 @@ spec:
         httpGet:
           path: /health
           port: default
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/
+        type: Directory

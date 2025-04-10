@@ -211,7 +211,7 @@ test:md5:
     extends: .test_template
     needs: ["build:md5"]
     script:
-        - cd transformers/tests && pytest -v test_md5.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_md5.py
 
 test:hash_with_args:
     extends: .test_template

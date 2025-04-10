@@ -4,17 +4,54 @@
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 import hashlib
-
+import logging
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import MD5
 from aistore.sdk.etl import ETLConfig
 
-from tests.utils import (
+from .utils import (
     format_image_tag_for_git_test_mode,
     cases,
     generate_random_string,
 )
 from tests.base import TestBase
+
+
+logging.basicConfig(level=logging.INFO)
+MD5_TEMPLATE = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-md5
+  annotations:
+    # Values it can take ["hpull://","hrev://","hpush://"]
+    communication_type: "{communication_type}://"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_md5:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: ["python", "/code/md5_server.py"]
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/
+        type: Directory
+"""
 
 
 class TestMD5Transformer(TestBase):
@@ -61,7 +98,7 @@ class TestMD5Transformer(TestBase):
         original_file_hash = self.md5_hash_file(original_filepath)
         self.assertEqual(transformed_data_bytes.decode("utf-8"), original_file_hash)
 
-    def run_md5_test(self, communication_type):
+    def run_md5_test(self, communication_type, fqn):
         """
         Runs an MD5 transformation test using a specified communication type.
 
@@ -70,15 +107,15 @@ class TestMD5Transformer(TestBase):
         """
         etl_name = f"md5-transformer-{generate_random_string(5)}"
         self.etls.append(etl_name)
-
-        template = MD5.format(communication_type=communication_type)
+        arg_type = "fqn" if fqn else ""
+        template = MD5_TEMPLATE.format(communication_type=communication_type)
 
         if self.git_test_mode == "true":
             template = format_image_tag_for_git_test_mode(template, "md5")
 
         # Initialize ETL transformation
         self.client.etl(etl_name).init_spec(
-            template=template, communication_type=communication_type
+            template=template, communication_type=communication_type, arg_type=arg_type
         )
 
         # Validate MD5 hashes for all test files
@@ -88,9 +125,17 @@ class TestMD5Transformer(TestBase):
             )
 
     @cases(
-        ETL_COMM_HPULL,
-        ETL_COMM_HPUSH,
+        (ETL_COMM_HPULL, True),
+        (ETL_COMM_HPUSH, True),
+        (ETL_COMM_HPULL, False),
+        (ETL_COMM_HPUSH, False),
     )
-    def test_md5_transform(self, communication_type):
+    def test_md5_transform(self, test_case):
         """Runs the MD5 ETL transformation for different communication types."""
-        self.run_md5_test(communication_type)
+        communication_type, fqn = test_case
+        logging.info(
+            "Running MD5 transformation test with communication type: %s, fqn: %s",
+            communication_type,
+            fqn,
+        )
+        self.run_md5_test(communication_type, fqn)
