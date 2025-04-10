@@ -14,22 +14,18 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command:
-        - "gunicorn"
-        - "main:app"
-        - "--worker-class"
-        - "uvicorn.workers.UvicornWorker"
-        - "--workers"
-        - "16"
-        - "--bind"
-        - "0.0.0.0:8000"
-        - "--log-level"
-        - "info"
-        - "--env"
-        - "UVICORN_CMD_ARGS=--ws-max-size=17179869184"
+      command: ["python", "/code/echo_server.py"]
       # This is a health check endpoint which one should specify
       # for aistore to determine the health of the ETL container.
       readinessProbe:
         httpGet:
           path: /health
           port: default
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/
+        type: Directory

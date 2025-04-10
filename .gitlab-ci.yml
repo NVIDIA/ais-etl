@@ -199,7 +199,7 @@ test:echo:
     extends: .test_template
     needs: ["build:echo"]
     script:
-        - cd transformers/tests && pytest -v test_echo.py test_go_echo.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_echo.py test_go_echo.py
 
 test:hello_world:
     extends: .test_template

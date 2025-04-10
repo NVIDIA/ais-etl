@@ -1,4 +1,1 @@
-fastapi>=0.109.1
-uvicorn[standard]
-gunicorn
-aiohttp>=3.9.2
+aistore[etl]>=1.13.1

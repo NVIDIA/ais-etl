@@ -1,13 +1,18 @@
-FROM python:3.11-alpine
+FROM python:3.13-alpine
 
-WORKDIR /
-
-COPY ./requirements.txt requirements.txt
-
+# Install dependencies
+COPY requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
 
-COPY main.py main.py
+# Set working directory
+RUN mkdir /code
+WORKDIR /code
 
-ENV PYTHONUNBUFFERED 1
+# Copy app code
+COPY echo_server.py echo_server.py
 
+# Environment setup
+ENV PYTHONUNBUFFERED=1
+
+# Expose the default port
 EXPOSE 8000
