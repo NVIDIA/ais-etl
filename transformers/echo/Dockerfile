@@ -1,8 +1,7 @@
 FROM python:3.13-alpine
 
 # Install dependencies
-COPY requirements.txt requirements.txt
-RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
+RUN pip3 install --no-cache-dir --upgrade aistore[etl]>=1.13.2
 
 # Set working directory
 RUN mkdir /code
