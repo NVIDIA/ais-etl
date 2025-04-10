@@ -1,13 +1,17 @@
-FROM python:3.11-alpine
+FROM python:3.13-alpine
 
-WORKDIR /
+# Install dependencies
+RUN pip3 install aistore[etl]>=1.13.1
 
-COPY ./requirements.txt requirements.txt
+# Set working directory
+RUN mkdir /code
+WORKDIR /code
 
-RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
+# Copy app code
+COPY hello_world_server.py hello_world_server.py
 
-COPY main.py main.py
+# Environment setup
+ENV PYTHONUNBUFFERED=1
 
-ENV PYTHONUNBUFFERED 1
-
+# Expose the default port
 EXPOSE 8000

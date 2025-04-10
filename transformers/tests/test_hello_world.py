@@ -4,7 +4,6 @@
 
 import logging
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import HELLO_WORLD
 from aistore.sdk.etl import ETLConfig
 
 from tests.base import TestBase
@@ -13,6 +12,38 @@ from tests.utils import (
     cases,
     generate_random_string,
 )
+
+
+HELLO_WORLD = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-hello-world
+  annotations:
+    communication_type: {communication_type}://
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_hello_world:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: ["python", "/code/hello_world_server.py"]
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      volumeMounts: # mounts the `arg_type="fqn"`
+        - name: ais
+          mountPath: /tmp/ais
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/ais
+        type: Directory
+"""
 
 # Configure logging
 logging.basicConfig(
@@ -74,9 +105,7 @@ class TestHelloWorldTransformer(TestBase):
         self.etls.append(etl_name)
 
         # Format the ETL template
-        template = HELLO_WORLD.format(
-            communication_type=communication_type, arg_type=arg_type
-        )
+        template = HELLO_WORLD.format(communication_type=communication_type)
 
         if self.git_test_mode == "true":
             template = format_image_tag_for_git_test_mode(template, "hello_world")

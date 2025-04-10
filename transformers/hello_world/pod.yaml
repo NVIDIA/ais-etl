@@ -13,18 +13,14 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command: ["gunicorn", "main:app", "--workers", "8", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      command: ["python", "/code/hello_world_server.py"]
       readinessProbe:
         httpGet:
           path: /health
           port: default
-      volumeMounts:
+      volumeMounts: # mounts the `arg_type="fqn"`
         - name: ais
           mountPath: /tmp/ais
-      env:
-        # ARG_TYPE can be "fqn", "", "url"
-        - name: ARG_TYPE
-          value: ${ARG_TYPE:-""}
   volumes:
     - name: ais
       hostPath:
