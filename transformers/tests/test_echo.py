@@ -5,9 +5,10 @@
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 import logging
+from itertools import product
+import json
 
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import ECHO
 from aistore.sdk.etl import ETLConfig
 
 from tests.base import TestBase
@@ -19,13 +20,37 @@ from tests.utils import (
 
 logging.basicConfig(level=logging.INFO)
 
+
+SERVER_COMMANDS = {
+    "flask": [
+        "gunicorn",
+        "flask_server:flask_app",
+        "--bind",
+        "0.0.0.0:8000",
+        "--workers",
+        "4",
+        "--log-level",
+        "debug",
+    ],
+    "fastapi": [
+        "uvicorn",
+        "fastapi_server:fastapi_app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--workers",
+        "4",
+    ],
+    "http": ["python", "http_server.py"],
+}
+
 ECHO_TEMPLATE = """
 apiVersion: v1
 kind: Pod
 metadata:
   name: transformer-echo
   annotations:
-    # Values it can take ["hpull://","hrev://","hpush://"]
     communication_type: "{communication_type}://"
     wait_timeout: 5m
 spec:
@@ -36,7 +61,7 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command: ["python", "/code/echo_server.py"]
+      command: {command}
       readinessProbe:
         httpGet:
           path: /health
@@ -102,25 +127,42 @@ class TestEchoTransformer(TestBase):
         self.assertEqual(transformed_bytes, original_content)
 
     @cases(
-        (ETL_COMM_HPULL, True),
-        (ETL_COMM_HPUSH, True),
-        (ETL_COMM_HPULL, False),
-        (ETL_COMM_HPUSH, False),
+        *product(
+            ["flask", "fastapi", "http"],
+            [ETL_COMM_HPULL, ETL_COMM_HPUSH],
+            [True, False],
+        )
     )
     def test_echo(self, test_case):
-        """Tests Echo transformer for all communication types."""
-        communication_type, arg_is_fqn = test_case
+        server_type, communication_type, arg_is_fqn = test_case
+
+        logging.info(test_case)
 
         logging.info(
-            "Testing ETL with communication type: %s and FQN: %s",
+            "Testing ETL with server: %s, communication: %s, FQN: %s",
+            server_type,
             communication_type,
             arg_is_fqn,
         )
 
-        etl_name = f"test-etl-{generate_random_string(5)}"
+        etl_name = f"test-etl-{server_type}-{generate_random_string(5)}"
         self.etls.append(etl_name)
 
-        self.initialize_template(communication_type, etl_name, arg_is_fqn)
+        command = json.dumps(SERVER_COMMANDS[server_type])
+        template = ECHO_TEMPLATE.format(
+            communication_type=communication_type, command=command
+        )
+
+        logging.info("Template: %s", template)
+
+        if self.git_test_mode == "true":
+            template = format_image_tag_for_git_test_mode(template, "echo")
+
+        arg_type = "fqn" if arg_is_fqn else ""
+
+        self.client.etl(etl_name).init_spec(
+            template=template, communication_type=communication_type, arg_type=arg_type
+        )
 
         for file in self.files.values():
             self.compare_transformed_data(file["filename"], file["source"], etl_name)
