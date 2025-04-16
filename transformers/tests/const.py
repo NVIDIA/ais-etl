@@ -58,3 +58,34 @@ spec:
         path: /tmp/
         type: Directory
 """
+
+HELLO_WORLD = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-hello-world
+  annotations:
+    communication_type: {communication_type}://
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_hello_world:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {command}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/ais
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/ais
+        type: Directory
+"""

@@ -98,21 +98,6 @@ class TestEchoTransformer(TestBase):
         for file in self.files.values():
             self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
 
-    def initialize_template(
-        self, communication_type: str, etl_name: str, arg_is_fqn: bool
-    ):
-        """Initializes the ETL template for a given communication type."""
-        template = ECHO_TEMPLATE.format(communication_type=communication_type)
-
-        if self.git_test_mode == "true":
-            template = format_image_tag_for_git_test_mode(template, "echo")
-
-        arg_type = "fqn" if arg_is_fqn else ""
-
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=communication_type, arg_type=arg_type
-        )
-
     def compare_transformed_data(self, filename: str, source: str, etl_name: str):
         """Compares transformed data with the original source file."""
         transformed_bytes = (

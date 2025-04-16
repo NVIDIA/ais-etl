@@ -4,8 +4,6 @@ A simple hello world transformer that reads objects stored in AIStore and return
 
 The transformer supports both `hpull` and `hpush` communication mechanisms for seamless integration.
 
-> **Note:** This transformer is using [`FastAPI`](https://fastapi.tiangolo.com/) as framework and [`Gunicorn`](https://gunicorn.org/) + [Uvicorn](https://www.uvicorn.org/) as webserver, multithreaded HTTP server for the same implmentation under [`http-multithreaded-server`](/http-multithreaded-server/) folder.
-
 > For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
 ### Initializing ETL with AIStore CLI

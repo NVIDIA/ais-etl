@@ -3,49 +3,19 @@
 #
 
 import logging
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl import ETLConfig
+import json
+from itertools import product
 
-from tests.base import TestBase
-from tests.utils import (
+from aistore.sdk.etl import ETLConfig
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
+from .base import TestBase
+from .utils import (
+    generate_random_string,
     format_image_tag_for_git_test_mode,
     cases,
-    generate_random_string,
 )
+from .const import SERVER_COMMANDS, HELLO_WORLD
 
-
-HELLO_WORLD = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-hello-world
-  annotations:
-    communication_type: {communication_type}://
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_hello_world:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 8000
-      command: ["python", "/code/hello_world_server.py"]
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      volumeMounts: # mounts the `arg_type="fqn"`
-        - name: ais
-          mountPath: /tmp/ais
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/ais
-        type: Directory
-"""
-
-# Configure logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -54,10 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 class TestHelloWorldTransformer(TestBase):
-    """Unit tests for the Hello World AIStore ETL Transformer."""
+    """Unit tests for Hello World AIStore ETL Transformer."""
 
     def setUp(self):
-        """Sets up the test environment by uploading test files to the bucket."""
         super().setUp()
         self.test_files = {
             "image": {
@@ -73,66 +42,47 @@ class TestHelloWorldTransformer(TestBase):
         for file in self.test_files.values():
             self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
 
-    def compare_transformed_data_with_hello_world(self, filename: str, etl_name: str):
-        """
-        Fetches the transformed file and asserts that the output is "Hello World!".
+    def _assert_transformed_hello_world(self, filename: str, etl_name: str):
+        """Asserts that the transformed file contains 'Hello World!'"""
+        data = self.test_bck.object(filename).get_reader(etl=ETLConfig(etl_name)).read_all()
+        self.assertEqual(data, b"Hello World!", f"Unexpected output for {filename}")
 
-        Args:
-            filename (str): Name of the file to fetch and verify.
-            etl_name (str): The ETL instance name.
-        """
-        transformed_data_bytes = (
-            self.test_bck.object(filename)
-            .get_reader(etl=ETLConfig(etl_name))
-            .read_all()
-        )
-        self.assertEqual(
-            b"Hello World!",
-            transformed_data_bytes,
-            f"File contents after transformation differ for {filename}",
-        )
-
-    def run_hello_world_test(self, communication_type: str, arg_type: str = ""):
-        """
-        Runs the Hello World ETL test for a given communication type.
-
-        Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH).
-            arg_type (str, optional): Argument type ("fqn" for fully qualified names). Defaults to "".
-        """
-        # Generate a unique ETL name
-        etl_name = f"hello-world-{generate_random_string(5)}"
-        self.etls.append(etl_name)
-
-        # Format the ETL template
-        template = HELLO_WORLD.format(communication_type=communication_type)
+    def _init_etl(self, etl_name, server_type, communication_type, arg_type):
+        """Initializes the ETL spec based on provided parameters."""
+        command = json.dumps(SERVER_COMMANDS[server_type])
+        template = HELLO_WORLD.format(communication_type=communication_type, command=command)
 
         if self.git_test_mode == "true":
             template = format_image_tag_for_git_test_mode(template, "hello_world")
 
-        # Initialize ETL transformation
         self.client.etl(etl_name).init_spec(
-            template=template, communication_type=communication_type, arg_type=arg_type
+            template=template,
+            communication_type=communication_type,
+            arg_type=arg_type,
         )
 
-        logger.info(
-            "ETL Spec for %s (ETL: %s):\n%s",
-            communication_type,
-            etl_name,
-            self.client.etl(etl_name).view(),
-        )
+        logger.info("Initialized ETL '%s':\n%s", etl_name, self.client.etl(etl_name).view())
 
-        # Compare the transformed output with "Hello World!"
+    def run_hello_world_test(self, server_type, communication_type, arg_is_fqn):
+        """Runs Hello World transformer test for the given parameters."""
+        etl_name = f"hello-world-{server_type}-{generate_random_string(5)}"
+        self.etls.append(etl_name)
+
+        arg_type = "fqn" if arg_is_fqn else ""
+        self._init_etl(etl_name, server_type, communication_type, arg_type)
+
         for file in self.test_files.values():
-            self.compare_transformed_data_with_hello_world(file["filename"], etl_name)
+            self._assert_transformed_hello_world(file["filename"], etl_name)
 
     @cases(
-        (ETL_COMM_HPULL, ""),
-        (ETL_COMM_HPUSH, ""),
-        (ETL_COMM_HPULL, "fqn"),
-        (ETL_COMM_HPUSH, "fqn"),
+        *product(
+            ["flask", "fastapi", "http"],
+            [ETL_COMM_HPULL, ETL_COMM_HPUSH],
+            [True, False],
+        )
     )
     def test_hello_world_transformer(self, test_case):
-        """Tests Hello World ETL transformation with different communication types and argument types."""
-        communication_type, arg_type = test_case
-        self.run_hello_world_test(communication_type, arg_type)
+        """Validates the Hello World ETL transformer across servers and communication types."""
+        server_type, communication_type, arg_is_fqn = test_case
+        logger.info("Running test: server=%s, comm=%s, fqn=%s", server_type, communication_type, arg_is_fqn)
+        self.run_hello_world_test(server_type, communication_type, arg_is_fqn)

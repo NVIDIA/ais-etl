@@ -1,14 +1,13 @@
 FROM python:3.13-alpine
 
-# Install dependencies
-RUN pip3 install --no-cache-dir --upgrade aistore[etl]>=1.13.2
+RUN pip3 install --upgrade aistore[etl]>=1.13.3
 
 # Set working directory
 RUN mkdir /code
 WORKDIR /code
 
 # Copy app code
-COPY hello_world_server.py hello_world_server.py
+COPY flask_server.py fastapi_server.py http_server.py ./
 
 # Environment setup
 ENV PYTHONUNBUFFERED=1
