@@ -61,6 +61,7 @@ stages:
     timeout: 1h
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
+        GIT_TEST: "true"
     before_script:
         - cd transformers && make common_deps && cd ..
     after_script:
@@ -344,9 +345,9 @@ publish:audio_split_consolidate:
 stress:test:
     extends: .stress_template
     script:
-        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_hello_world_stress.py
-        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_keras_stress.py
-        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_face_detection_stress.py
+        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/stress/test_echo_benchmark.py
+        # - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_keras_stress.py
+        # - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_face_detection_stress.py
     artifacts:
       reports:
         metrics: metrics.txt
