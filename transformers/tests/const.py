@@ -11,7 +11,7 @@ SERVER_COMMANDS = {
         "--bind",
         "0.0.0.0:8000",
         "--workers",
-        "24",
+        "6",
         "--log-level",
         "debug",
     ],
@@ -23,7 +23,7 @@ SERVER_COMMANDS = {
         "--port",
         "8000",
         "--workers",
-        "24",
+        "6",
     ],
     "http": ["python", "http_server.py"],
 }

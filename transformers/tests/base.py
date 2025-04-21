@@ -6,7 +6,7 @@
 import os
 import unittest
 from tests.utils import generate_random_string
-
+from aistore.sdk.errors import ErrETLNotFound
 from aistore import Client
 
 
@@ -23,5 +23,9 @@ class TestBase(unittest.TestCase):
     def tearDown(self):
         self.test_bck.delete()
         for etl_name in self.etls:
-            self.client.etl(etl_name).stop()
-            self.client.etl(etl_name).delete()
+            try:
+                self.client.etl(etl_name).stop()
+                self.client.etl(etl_name).delete()
+            except ErrETLNotFound:
+                # ETL might be already deleted
+                pass

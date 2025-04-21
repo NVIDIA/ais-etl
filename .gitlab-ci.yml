@@ -67,6 +67,9 @@ stages:
     after_script:
         - echo "Test Results"
         - cat metrics.txt
+    artifacts:
+        paths: [ metrics.txt ]
+        expire_in: 1 week
 
 build:echo:
     extends: .build_template
@@ -342,12 +345,18 @@ publish:audio_split_consolidate:
         - make -C audio_manager all
         - make -C audio_splitter all
 
-stress:test:
+stress:echo:
     extends: .stress_template
     script:
-        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/stress/test_echo_benchmark.py
-        # - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_keras_stress.py
-        # - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/test_face_detection_stress.py
-    artifacts:
-      reports:
-        metrics: metrics.txt
+        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/stress/test_echo_stress.py
+
+stress:hello-world:
+    extends: .stress_template
+    script:
+        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/stress/test_hello_world_stress.py
+
+stress:all:
+    extends: .stress_template
+    script:
+        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/stress/test_echo_stress.py
+        - pytest -o log_cli=true --log-cli-level=INFO transformers/tests/stress/test_hello_world_stress.py
