@@ -3,8 +3,8 @@ kind: Pod
 metadata:
   name: transformer-md5
   annotations:
-    # Values it can take ["hpull://","hpush://"]
-    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
+    # Values it can take ["hpull://", "hpush://"]
+    communication_type: ${COMMUNICATION_TYPE:-"\"hpush://\""}
     wait_timeout: 5m
 spec:
   containers:
@@ -14,8 +14,24 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command: ["python", "/code/md5_server.py"]
+      # for flask based app
+      # command: ["gunicorn", "flask_server:flask_app", "--bind", "0.0.0.0:8000", "--workers", "4", "--log-level", "debug"]
+      # for http based app
+      # command: ["python", "http_server.py"]
+      # for fastapi based app
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
       readinessProbe:
         httpGet:
           path: /health
           port: default
+      # If using `arg_type=fqn`, ensure the `mountPath` matches the file system path 
+      # where the objects are stored on AIStore targets. This allows the ETL container 
+      # to access the files directly by absolute path.
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/ais
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/ais
+        type: Directory

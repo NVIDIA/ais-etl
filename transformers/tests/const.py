@@ -89,3 +89,34 @@ spec:
         path: /tmp/ais
         type: Directory
 """
+
+MD5_TEMPLATE = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-md5
+  annotations:
+    communication_type: "{communication_type}://"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_md5:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {command}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      volumeMounts:
+        - name: ais
+          mountPath: /tmp/
+  volumes:
+    - name: ais
+      hostPath:
+        path: /tmp/
+        type: Directory
+"""
