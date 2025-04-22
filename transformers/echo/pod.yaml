@@ -24,11 +24,11 @@ spec:
         httpGet:
           path: /health
           port: default
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/
-        type: Directory
+  #     volumeMounts:
+  #       - name: ais
+  #         mountPath: /tmp/
+  # volumes:
+  #   - name: ais
+  #     hostPath:
+  #       path: /tmp/
+  #       type: Directory

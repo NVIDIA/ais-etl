@@ -27,11 +27,11 @@ spec:
       # If using `arg_type=fqn`, ensure the `mountPath` matches the file system path 
       # where the objects are stored on AIStore targets. This allows the ETL container 
       # to access the files directly by absolute path.
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/ais
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/ais
-        type: Directory
+  #     volumeMounts:
+  #       - name: ais
+  #         mountPath: /tmp/ais
+  # volumes:
+  #   - name: ais
+  #     hostPath:
+  #       path: /tmp/ais
+  #       type: Directory
