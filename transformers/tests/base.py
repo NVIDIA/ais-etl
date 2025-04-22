@@ -1,11 +1,11 @@
 #
-# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 #
 # pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
 
 import os
 import unittest
-from tests.utils import generate_random_string
+from tests.utils import generate_random_string, log_etl
 from aistore.sdk.errors import ErrETLNotFound
 from aistore import Client
 
@@ -24,6 +24,7 @@ class TestBase(unittest.TestCase):
         self.test_bck.delete()
         for etl_name in self.etls:
             try:
+                log_etl(self.client, etl_name)
                 self.client.etl(etl_name).stop()
                 self.client.etl(etl_name).delete()
             except ErrETLNotFound:

@@ -13,7 +13,7 @@ from tests.utils import (
     generate_random_string,
     cases,
 )
-from tests.const import HELLO_WORLD
+from tests.const import HELLO_WORLD_TEMPLATE
 
 
 class TestHelloWorldStress(TestBaseStress):
@@ -45,7 +45,7 @@ class TestHelloWorldStress(TestBaseStress):
 
         # 2) Initialize the ETL spec
         self._init_etl(
-            etl_name, server_type, comm_type, arg_type, HELLO_WORLD, "hello_world"
+            etl_name, server_type, comm_type, arg_type, HELLO_WORLD_TEMPLATE, "hello_world"
         )
 
         # 3) Run the transform job

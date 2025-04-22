@@ -1,5 +1,5 @@
 """
-Base class for transformer stress tests. 
+Base class for transformer stress tests.
 Initialized a bucket with 10,000 random 1MB objects in AIStore for offline transforms.
 
 Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.

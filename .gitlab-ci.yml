@@ -52,6 +52,11 @@ stages:
         GIT_TEST: "true"
     before_script:
         - cd transformers && make common_deps && cd ..
+    artifacts:
+        when: always
+        paths:
+        - transformers/tests/logs/
+        expire_in: 1 week
 
 .stress_template:
     when: manual
@@ -68,8 +73,11 @@ stages:
         - echo "Test Results"
         - cat metrics.txt
     artifacts:
-        paths: [ metrics.txt ]
-        expire_in: 1 week
+        when: always
+        paths:
+        - metrics.txt
+        - logs/
+        expire_in: 1 month
 
 build:echo:
     extends: .build_template
@@ -221,32 +229,32 @@ test:hash_with_args:
     extends: .test_template
     needs: ["build:hash_with_args"]
     script:
-        - cd transformers/tests && pytest -v test_hash_with_args.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_hash_with_args.py
 
 test:tar2tf:
     extends: .test_template
     needs: ["build:tar2tf"]
     script:
-        - cd transformers/tests && pytest -v test_tar2tf.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_tar2tf.py
 
 test:compress:
     extends: .test_template
     needs: ["build:compress"]
     script:
-        - cd transformers/tests && pytest -v test_compress.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_compress.py
 
 test:torchvision:
     extends: .test_template
     needs: ["build:torchvision"]
     script:
         - pip install torchvision==0.21.0
-        - cd transformers/tests && pytest -v test_torchvision_transformer.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_torchvision_transformer.py
 
 test:keras:
     extends: .test_template
     needs: ["build:keras"]
     script:
-        - cd transformers/tests && pytest -v test_keras_transformer.py
+        - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_keras_transformer.py
 
 test:face_detection:
     extends: .test_template
