@@ -142,3 +142,4 @@ cython_debug/
 .idea/
 transformers/face_detection/model/weights.caffemodel
 transformers/face_detection/model/architecture.txt
+transformers/tests/metrics.txt

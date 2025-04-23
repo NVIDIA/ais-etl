@@ -5,6 +5,9 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
 import os
+from itertools import product
+
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 
 # -----------------------------------------------------------------------------
 # Volume‐mount blocks
@@ -148,6 +151,29 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+ECHO_GO_TEMPLATE = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: echo-go
+  annotations:
+    communication_type: "{communication_type}://"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_echo_go:latest
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: default
+          containerPort: 80
+      command: ['./echo', '-l', '0.0.0.0', '-p', '80']
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+"""
+
 HELLO_WORLD_TEMPLATE = f"""
 apiVersion: v1
 kind: Pod
@@ -195,3 +221,11 @@ spec:
           port: default
 {VOLUME_MOUNTS}
 """
+
+# -----------------------------------------------------------------------------
+# Parameter grids
+# -----------------------------------------------------------------------------
+SERVER_TYPES = ["flask", "fastapi", "http"]
+COMM_TYPES = [ETL_COMM_HPULL, ETL_COMM_HPUSH]
+FQN_OPTIONS = [True, False]
+PARAM_COMBINATIONS = list(product(SERVER_TYPES, COMM_TYPES, FQN_OPTIONS))

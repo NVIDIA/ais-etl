@@ -1,101 +1,78 @@
-#
-# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
-#
+"""
+Pytest suite for the Hello-World ETL transformer.
+
+For each combination of server framework (Flask, FastAPI, HTTP), communication mode (hpull/hpush),
+and argument style (FQN vs relative), this test:
+  1. Uploads two sample files into a fresh bucket.
+  2. Creates an ETL job via `etl_factory`.
+  3. Transforms each file and asserts the output equals `b"Hello World!"`.
+
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+"""
 
 import logging
-import json
-from itertools import product
+from pathlib import Path
 
+import pytest
 from aistore.sdk.etl import ETLConfig
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from tests.base import TestBase
-from tests.utils import (
-    generate_random_string,
-    format_image_tag_for_git_test_mode,
-    cases,
-)
-from tests.const import SERVER_COMMANDS, HELLO_WORLD_TEMPLATE
+from aistore.sdk import Bucket
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+from tests.const import HELLO_WORLD_TEMPLATE, PARAM_COMBINATIONS
+
+# Configure module-level logger
 logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 
 
-class TestHelloWorldTransformer(TestBase):
-    """Unit tests for Hello World AIStore ETL Transformer."""
+# pylint: disable=too-many-arguments
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+def test_hello_world_transformer(
+    test_bck: Bucket,
+    local_files: dict[str, Path],
+    etl_factory: callable,
+    server_type: str,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    Transform local_files via the Hello-World ETL and verify output.
 
-    def setUp(self):
-        super().setUp()
-        self.test_files = {
-            "image": {
-                "filename": "test-image.jpg",
-                "source": "./resources/test-image.jpg",
-            },
-            "text": {
-                "filename": "test-text.txt",
-                "source": "./resources/test-text.txt",
-            },
-        }
+    Args:
+        client: AIS cluster client (session-scoped fixture).
+        test_bck: fresh bucket for this test (function-scoped).
+        local_files: mapping filename -> local Path of sample inputs.
+        etl_factory: fixture to create+cleanup ETL jobs.
+        server_type: framework to use ('flask', 'fastapi', 'http').
+        comm_type: ETL_COMM_HPULL or ETL_COMM_HPUSH.
+        use_fqn: whether to pass objects by fully-qualified name.
+    """
+    # Upload sample files
+    for filename, path in local_files.items():
+        logger.debug("Uploading %s to bucket %s", filename, test_bck.name)
+        test_bck.object(filename).get_writer().put_file(path)
 
-        for file in self.test_files.values():
-            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
-
-    def _assert_transformed_hello_world(self, filename: str, etl_name: str):
-        """Asserts that the transformed file contains 'Hello World!'"""
-        data = (
-            self.test_bck.object(filename)
-            .get_reader(etl=ETLConfig(etl_name))
-            .read_all()
-        )
-        self.assertEqual(data, b"Hello World!", f"Unexpected output for {filename}")
-
-    def _init_etl(self, etl_name, server_type, communication_type, arg_type):
-        """Initializes the ETL spec based on provided parameters."""
-        command = json.dumps(SERVER_COMMANDS[server_type])
-        template = HELLO_WORLD_TEMPLATE.format(
-            communication_type=communication_type, command=command
-        )
-
-        if self.git_test_mode == "true":
-            template = format_image_tag_for_git_test_mode(template, "hello_world")
-
-        self.client.etl(etl_name).init_spec(
-            template=template,
-            communication_type=communication_type,
-            arg_type=arg_type,
-        )
-
-        logger.info(
-            "Initialized ETL '%s':\n%s", etl_name, self.client.etl(etl_name).view()
-        )
-
-    def run_hello_world_test(self, server_type, communication_type, arg_is_fqn):
-        """Runs Hello World transformer test for the given parameters."""
-        etl_name = f"hello-world-{server_type}-{generate_random_string(5)}"
-        self.etls.append(etl_name)
-
-        arg_type = "fqn" if arg_is_fqn else ""
-        self._init_etl(etl_name, server_type, communication_type, arg_type)
-
-        for file in self.test_files.values():
-            self._assert_transformed_hello_world(file["filename"], etl_name)
-
-    @cases(
-        *product(
-            ["flask", "fastapi", "http"],
-            [ETL_COMM_HPULL, ETL_COMM_HPUSH],
-            [True, False],
-        )
+    # Build and initialize ETL
+    etl_name = etl_factory(
+        tag="hello-world",
+        server_type=server_type,
+        template=HELLO_WORLD_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
     )
-    def test_hello_world_transformer(self, test_case):
-        """Validates the Hello World ETL transformer across servers and communication types."""
-        server_type, communication_type, arg_is_fqn = test_case
-        logger.info(
-            "Running test: server=%s, comm=%s, fqn=%s",
-            server_type,
-            communication_type,
-            arg_is_fqn,
-        )
-        self.run_hello_world_test(server_type, communication_type, arg_is_fqn)
+    logger.info(
+        "Initialized Hello-World ETL '%s' (server=%s, comm=%s, fqn=%s)",
+        etl_name,
+        server_type,
+        comm_type,
+        use_fqn,
+    )
+
+    # Execute transform and assert on each file
+    for filename in local_files:
+        reader = test_bck.object(filename).get_reader(etl=ETLConfig(etl_name))
+        output = reader.read_all()
+        assert (
+            output == b"Hello World!"
+        ), f"ETL {etl_name} produced unexpected output for '{filename}': {output!r}"

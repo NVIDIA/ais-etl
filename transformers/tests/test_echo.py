@@ -1,153 +1,132 @@
-#
-# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
-#
+"""
+Pytest suite for the Echo and Go Echo ETL transformers.
 
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
+This module runs two parameterized test functions:
 
-import logging
-from itertools import product
-import json
+1. `test_echo_transformer` covers the Python-based Echo transformer across:
+   - server frameworks: Flask, FastAPI, HTTP
+   - communication modes: hpull/hpush
+   - argument styles: FQN vs ""
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl import ETLConfig
+2. `test_go_echo_transformer` covers the Go-based Echo transformer for both image and text files.
 
-from tests.base import TestBase
-from tests.utils import (
-    format_image_tag_for_git_test_mode,
-    cases,
-    generate_random_string,
-)
-
-logging.basicConfig(level=logging.INFO)
-
-
-SERVER_COMMANDS = {
-    "flask": [
-        "gunicorn",
-        "flask_server:flask_app",
-        "--bind",
-        "0.0.0.0:8000",
-        "--workers",
-        "4",
-        "--log-level",
-        "debug",
-    ],
-    "fastapi": [
-        "uvicorn",
-        "fastapi_server:fastapi_app",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000",
-        "--workers",
-        "4",
-    ],
-    "http": ["python", "http_server.py"],
-}
-
-ECHO_TEMPLATE = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-echo
-  annotations:
-    communication_type: "{communication_type}://"
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_echo:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 8000
-      command: {command}
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/
-        type: Directory
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
+import logging
+from pathlib import Path
+from typing import Dict
 
-class TestEchoTransformer(TestBase):
-    """Unit tests for AIStore ETL Echo transformer."""
+import pytest
+from aistore.sdk.etl import ETLConfig
+from aistore.sdk import Bucket
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
 
-    def setUp(self):
-        """Sets up test files and initializes the test bucket."""
-        super().setUp()
-        self.files = {
-            "image": {
-                "filename": "test-image.jpg",
-                "source": "./resources/test-image.jpg",
-            },
-            "text": {
-                "filename": "test-text.txt",
-                "source": "./resources/test-text.txt",
-            },
-        }
+from tests.const import (
+    ECHO_TEMPLATE,
+    ECHO_GO_TEMPLATE,
+    PARAM_COMBINATIONS,
+)
 
-        # Upload test files
-        for file in self.files.values():
-            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
+# Configure module-level logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 
-    def compare_transformed_data(self, filename: str, source: str, etl_name: str):
-        """Compares transformed data with the original source file."""
-        transformed_bytes = (
-            self.test_bck.object(filename)
-            .get_reader(etl=ETLConfig(etl_name))
-            .read_all()
-        )
 
-        with open(source, "rb") as file:
-            original_content = file.read()
+def _upload_test_files(test_bck: Bucket, local_files: Dict[str, Path]) -> None:
+    """
+    Upload files to the specified bucket.
+    """
+    for filename, path in local_files.items():
+        logger.debug("Uploading %s to bucket %s", filename, test_bck.name)
+        test_bck.object(filename).get_writer().put_file(str(path))
 
-        self.assertEqual(transformed_bytes, original_content)
 
-    @cases(
-        *product(
-            ["flask", "fastapi", "http"],
-            [ETL_COMM_HPULL, ETL_COMM_HPUSH],
-            [True, False],
-        )
+def _verify_test_files(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_name: str,
+) -> None:
+    """
+    Verify that the files in the bucket match the original files.
+    """
+    for filename, path in local_files.items():
+        reader = test_bck.object(filename).get_reader(etl=ETLConfig(etl_name))
+        output = reader.read_all()
+        original = Path(path).read_bytes()
+        assert (
+            output == original
+        ), f"ETL {etl_name} did not echo back {filename} correctly"
+
+
+# pylint: disable=too-many-arguments
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+def test_echo_transformer(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_factory,
+    server_type: str,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    Validate the Python-based Echo ETL transformer.
+    Upload sample files, initialize the ETL, then assert round-trip equality.
+    """
+    # Upload inputs
+    _upload_test_files(test_bck, local_files)
+
+    # Build and initialize ETL
+    etl_name = etl_factory(
+        tag="echo",
+        server_type=server_type,
+        template=ECHO_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
     )
-    def test_echo(self, test_case):
-        server_type, communication_type, arg_is_fqn = test_case
+    logger.info(
+        "Initialized Echo ETL '%s' (server=%s, comm=%s, fqn=%s)",
+        etl_name,
+        server_type,
+        comm_type,
+        use_fqn,
+    )
 
-        logging.info(test_case)
+    _verify_test_files(
+        test_bck,
+        local_files,
+        etl_name,
+    )
 
-        logging.info(
-            "Testing ETL with server: %s, communication: %s, FQN: %s",
-            server_type,
-            communication_type,
-            arg_is_fqn,
-        )
 
-        etl_name = f"test-etl-{server_type}-{generate_random_string(5)}"
-        self.etls.append(etl_name)
+# pylint: disable=fixme
+# TODO: Implement HPUSH in Go Echo Transformer
+# @pytest.mark.parametrize("comm_type", COMM_TYPES)
+def test_go_echo_transformer(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_factory,
+) -> None:
+    """
+    Validate the Go-based Echo ETL transformer for both image and text.
+    """
+    # Upload inputs
+    _upload_test_files(test_bck, local_files)
 
-        command = json.dumps(SERVER_COMMANDS[server_type])
-        template = ECHO_TEMPLATE.format(
-            communication_type=communication_type, command=command
-        )
+    # Initialize Go Echo ETL
+    etl_name = etl_factory(
+        tag="echo-go",
+        server_type="go-http",
+        template=ECHO_GO_TEMPLATE,
+        communication_type=ETL_COMM_HPULL,
+        use_fqn=False,
+    )
 
-        logging.info("Template: %s", template)
-
-        if self.git_test_mode == "true":
-            template = format_image_tag_for_git_test_mode(template, "echo")
-
-        arg_type = "fqn" if arg_is_fqn else ""
-
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=communication_type, arg_type=arg_type
-        )
-
-        for file in self.files.values():
-            self.compare_transformed_data(file["filename"], file["source"], etl_name)
+    # Execute transform and assert on each file
+    _verify_test_files(
+        test_bck,
+        local_files,
+        etl_name,
+    )

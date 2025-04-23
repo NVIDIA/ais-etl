@@ -1,10 +1,10 @@
 """
-Pytest-based stress suite for the Hello-World ETL transformer.
+Pytest-based stress suite for the Echo ETL transformer.
 
 This module:
   - Uses a pre-populated `stress_bucket` with 10,000 objects (session-scoped fixture).
   - Creates a fresh `test_bck` destination bucket per test.
-  - Runs the Hello-World ETL across all server/comm/FQN combinations in parallel.
+  - Runs the Echo ETL across all server/comm/FQN combinations.
   - Verifies object counts and payload correctness on a random sample.
   - Records per-test durations into `metrics.txt`.
 
@@ -17,7 +17,7 @@ import logging
 import pytest
 from aistore.sdk import Bucket
 
-from tests.const import PARAM_COMBINATIONS, HELLO_WORLD_TEMPLATE
+from tests.const import PARAM_COMBINATIONS, ECHO_TEMPLATE
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -28,7 +28,7 @@ logging.basicConfig(
 # pylint: disable=too-many-arguments, too-many-locals
 @pytest.mark.stress
 @pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
-def test_hello_world_stress(
+def test_echo_stress(
     stress_client,
     stress_bucket: Bucket,
     test_bck: Bucket,
@@ -40,14 +40,14 @@ def test_hello_world_stress(
     use_fqn: bool,
 ):
     """
-    Stress test for Hello-World ETL: copy 10k objects with transformation.
+    Stress test for Echo ETL: copy 10k objects with transformation.
     """
     # 1) Initialize ETL
-    label = f"HELLO WORLD | {server_type:<8} | {comm_type:<6} | {'fqn' if use_fqn else '':<4}"
+    label = f"ECHO | {server_type:<8} | {comm_type:<6} | {'fqn' if use_fqn else '':<4}"
     etl_name = etl_factory(
-        tag="hello-world",
+        tag="echo",
         server_type=server_type,
-        template=HELLO_WORLD_TEMPLATE,
+        template=ECHO_TEMPLATE,
         communication_type=comm_type,
         use_fqn=use_fqn,
     )
@@ -82,7 +82,9 @@ def test_hello_world_stress(
     samples = random.sample(objs, 10)
     for entry in samples:
         data = test_bck.object(entry.name).get_reader().read_all()
-        assert data == b"Hello World!", f"Mismatch in object {entry.name}"
+        actual = stress_bucket.object(entry.name).get_reader().read_all()
+
+        assert data == actual, f"Echo'd object didn't match for {entry.name}"
 
     # 5) Record metric
     stress_metrics.append((label, duration))

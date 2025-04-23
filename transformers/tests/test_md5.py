@@ -1,115 +1,84 @@
-#
-# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
-#
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
+"""
+Pytest suite for the MD5 ETL transformer.
 
-import json
-import hashlib
+For each combination of server backend (Flask, FastAPI, HTTP),
+communication mode (HPULL/HPUSH), and argument style (FQN vs relative), this test:
+  1. Uploads sample image and text files into a fresh bucket.
+  2. Creates an MD5 ETL job via `etl_factory`.
+  3. Transforms each file and asserts the output matches the MD5 checksum.
+
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+"""
+
 import logging
-from itertools import product
+import hashlib
+from pathlib import Path
+from typing import Dict
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
+import pytest
 from aistore.sdk.etl import ETLConfig
+from aistore.sdk import Bucket
 
-from tests.utils import (
-    format_image_tag_for_git_test_mode,
-    cases,
-    generate_random_string,
+from tests.const import MD5_TEMPLATE, PARAM_COMBINATIONS
+
+# Configure module‐level logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
-from tests.base import TestBase
-from tests.const import MD5_TEMPLATE, SERVER_COMMANDS
 
 
-logging.basicConfig(level=logging.INFO)
+# pylint: disable=too-many-arguments
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+def test_md5_transformer(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_factory,
+    server_type: str,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    Validate the MD5 ETL transformer across runtimes and communication modes.
 
+    Args:
+        test_bck:    fresh bucket fixture
+        local_files: mapping of filename -> Path for inputs
+        etl_factory: factory fixture to create ETL jobs
+        server_type: 'flask' | 'fastapi' | 'http'
+        comm_type:   ETL_COMM_HPULL | ETL_COMM_HPUSH
+        use_fqn:     whether to pass FQN or relative paths
+    """
+    # 1) Upload inputs
+    for filename, path in local_files.items():
+        logging.debug("Uploading %s to %s", filename, test_bck.name)
+        test_bck.object(filename).get_writer().put_file(str(path))
 
-class TestMD5Transformer(TestBase):
-    """Unit tests for AIStore MD5 ETL transformation."""
-
-    def setUp(self):
-        """Sets up test files and uploads them to the AIStore bucket."""
-        super().setUp()
-        self.test_files = {
-            "image": {
-                "filename": "test-image.jpg",
-                "source": "./resources/test-image.jpg",
-            },
-            "text": {
-                "filename": "test-text.txt",
-                "source": "./resources/test-text.txt",
-            },
-        }
-
-        for file in self.test_files.values():
-            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
-
-    def md5_hash_file(self, filepath):
-        """Computes the MD5 hash of a given file."""
-        with open(filepath, "rb") as file:
-            return hashlib.md5(file.read()).hexdigest()
-
-    def compare_transformed_data_with_md5_hash(
-        self, filename, original_filepath, etl_name
-    ):
-        """
-        Fetches the transformed file and compares it against the expected MD5 hash.
-
-        Args:
-            filename (str): Name of the transformed file.
-            original_filepath (str): Path to the original file.
-            etl_name (str): Name of the ETL job.
-        """
-        transformed_data_bytes = (
-            self.test_bck.object(filename)
-            .get_reader(etl=ETLConfig(etl_name))
-            .read_all()
-        )
-        original_file_hash = self.md5_hash_file(original_filepath)
-        self.assertEqual(transformed_data_bytes.decode("utf-8"), original_file_hash)
-
-    def run_md5_test(self, server_type, comm_type, arg_is_fqn):
-        """
-        Runs an MD5 transformation test using a specified communication type.
-
-        Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH).
-        """
-        etl_name = f"md5-{server_type}-{comm_type}-{generate_random_string(5)}"
-        self.etls.append(etl_name)
-        arg_type = "fqn" if arg_is_fqn else ""
-        command = json.dumps(SERVER_COMMANDS[server_type])
-
-        template = MD5_TEMPLATE.format(communication_type=comm_type, command=command)
-
-        if self.git_test_mode == "true":
-            template = format_image_tag_for_git_test_mode(template, "md5")
-
-        # Initialize ETL transformation
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=comm_type, arg_type=arg_type
-        )
-
-        # Validate MD5 hashes for all test files
-        for file in self.test_files.values():
-            self.compare_transformed_data_with_md5_hash(
-                file["filename"], file["source"], etl_name
-            )
-
-    @cases(
-        *product(
-            ["flask", "fastapi", "http"],
-            [ETL_COMM_HPULL, ETL_COMM_HPUSH],
-            [True, False],
-        )
+    # 2) Initialize ETL
+    etl_name = etl_factory(
+        tag="md5",
+        server_type=server_type,
+        template=MD5_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
     )
-    def test_md5_transform(self, test_case):
-        """Runs the MD5 ETL transformation for different communication types."""
-        server_type, communication_type, arg_is_fqn = test_case
+    logging.info(
+        "Initialized MD5 ETL '%s' (server=%s, comm=%s, fqn=%s)",
+        etl_name,
+        server_type,
+        comm_type,
+        use_fqn,
+    )
 
-        logging.info(
-            "Testing ETL with server: %s, communication: %s, FQN: %s",
-            server_type,
-            communication_type,
-            arg_is_fqn,
+    # 3) Run transform and assert checksum
+    for filename, path in local_files.items():
+        # compute expected MD5 of original file
+        expected = hashlib.md5(Path(path).read_bytes()).hexdigest().encode()
+
+        # fetch transformed result
+        result_bytes = (
+            test_bck.object(filename).get_reader(etl=ETLConfig(etl_name)).read_all()
         )
-        self.run_md5_test(server_type, communication_type, arg_is_fqn)
+
+        assert (
+            result_bytes == expected
+        ), f"ETL {etl_name} MD5 mismatch for {filename}: expected {expected!r}, got {result_bytes!r}"
