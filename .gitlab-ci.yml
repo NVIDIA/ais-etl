@@ -364,8 +364,14 @@ stress:hello-world:
         - cd transformers/tests
         - pytest -o log_cli=true --log-cli-level=INFO test_hello_world_stress.py
 
+stress:md5:
+    extends: .stress_template
+    script:
+        - cd transformers/tests
+        - pytest -o log_cli=true --log-cli-level=INFO test_md5_stress.py
+
 stress:all:
     extends: .stress_template
     script:
         - cd transformers/tests
-        - pytest -o log_cli=true --log-cli-level=INFO test_echo_stress.py test_hello_world_stress.py
+        - pytest -o log_cli=true --log-cli-level=INFO test_md5_stress.py test_echo_stress.py test_hello_world_stress.py

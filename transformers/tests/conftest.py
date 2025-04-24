@@ -175,7 +175,7 @@ def stress_client() -> Client:
     Create a singleton Client for stress tests.
     """
     endpoint = os.environ.get("AIS_ENDPOINT", DEFAULT_ENDPOINT)
-    return Client(endpoint, max_pool_size=50)
+    return Client(endpoint, max_pool_size=100)
 
 
 @pytest.fixture(scope="session")
