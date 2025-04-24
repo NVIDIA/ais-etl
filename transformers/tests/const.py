@@ -7,7 +7,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 import os
 from itertools import product
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_WS
 
 # -----------------------------------------------------------------------------
 # Volume‐mount blocks
@@ -125,6 +125,13 @@ SERVER_COMMANDS = {
         str(NUM_WORKERS),
         "--log-level",
         "info",
+        # WebSocket tuning:
+        "--ws-max-size",
+        "17179869184",  # ~16 GiB
+        "--ws-ping-interval",
+        "0",  # disable automatic pings
+        "--ws-ping-timeout",
+        "86400",  # 24 h before timing out a missing pong
     ],
     "http": [
         "python",
@@ -143,6 +150,7 @@ metadata:
   annotations:
     communication_type: "{{communication_type}}://"
     wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
 spec:
   containers:
     - name: server
@@ -190,6 +198,7 @@ metadata:
   annotations:
     communication_type: "{{communication_type}}://"
     wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
 spec:
   containers:
     - name: server
@@ -214,6 +223,7 @@ metadata:
   annotations:
     communication_type: "{{communication_type}}://"
     wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
 spec:
   containers:
     - name: server
@@ -234,6 +244,32 @@ spec:
 # Parameter grids
 # -----------------------------------------------------------------------------
 SERVER_TYPES = ["flask", "fastapi", "http"]
-COMM_TYPES = [ETL_COMM_HPULL, ETL_COMM_HPUSH]
+COMM_TYPES = [ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_WS]
 FQN_OPTIONS = [True, False]
-PARAM_COMBINATIONS = list(product(SERVER_TYPES, COMM_TYPES, FQN_OPTIONS))
+DIRECT_PUT_OPTIONS = ["true", "false"]
+PARAM_COMBINATIONS = [
+    (srv, comm, fqn, direct_put)
+    for srv, comm, fqn, direct_put in product(
+        SERVER_TYPES, COMM_TYPES, FQN_OPTIONS, DIRECT_PUT_OPTIONS
+    )
+    # Cannot run ws communication with flask or http servers
+    # Cannot run ws communication without direct put
+    if not (
+        (comm == "ws" and (srv in ["http", "flask"]))
+        or (comm == "ws" and direct_put == "false")
+    )
+]
+
+INLINE_PARAM_COMBINATIONS = [
+    (srv, comm, fqn)
+    for srv, comm, fqn in product(SERVER_TYPES, COMM_TYPES, FQN_OPTIONS)
+    # Cannot run ws communication for inline transformations
+    # Direct put only works on offline tranformations
+    if not (comm == "ws")
+]
+
+# -----------------------------------------------------------------------------
+# Label Format
+# -----------------------------------------------------------------------------
+
+LABEL_FMT = "{name:<12} | {server:<9} | {comm:<6} | {arg:<4} | {direct:<12} | "

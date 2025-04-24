@@ -6,6 +6,7 @@ metadata:
     # Values it can take ["hpull://", "hpush://"]
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
     wait_timeout: 5m
+    support_direct_put: "true"
 spec:
   containers:
     - name: server

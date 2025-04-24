@@ -17,7 +17,7 @@ import logging
 import pytest
 from aistore.sdk import Bucket
 
-from tests.const import PARAM_COMBINATIONS, ECHO_TEMPLATE
+from tests.const import PARAM_COMBINATIONS, ECHO_TEMPLATE, LABEL_FMT
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -27,7 +27,9 @@ logging.basicConfig(
 
 # pylint: disable=too-many-arguments, too-many-locals
 @pytest.mark.stress
-@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+@pytest.mark.parametrize(
+    "server_type, comm_type, use_fqn, direct_put", PARAM_COMBINATIONS
+)
 def test_echo_stress(
     stress_client,
     stress_bucket: Bucket,
@@ -38,18 +40,27 @@ def test_echo_stress(
     server_type: str,
     comm_type: str,
     use_fqn: bool,
+    direct_put: str,
 ):
     """
     Stress test for Echo ETL: copy 10k objects with transformation.
     """
     # 1) Initialize ETL
-    label = f"{'ECHO':<12} | {server_type:<9} | {comm_type:<6} | {'fqn' if use_fqn else '':<4} | "
+    label = LABEL_FMT.format(
+        name="ECHO",
+        server=server_type,
+        comm=comm_type,
+        arg="fqn" if use_fqn else "",
+        direct=direct_put,
+    )
+
     etl_name = etl_factory(
         tag="echo",
         server_type=server_type,
         template=ECHO_TEMPLATE,
         communication_type=comm_type,
         use_fqn=use_fqn,
+        direct_put=direct_put,
     )
 
     # 2) Run transform job

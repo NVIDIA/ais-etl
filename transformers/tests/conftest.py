@@ -95,12 +95,14 @@ def etl_factory(client: Client):
     """
     created: list[str] = []
 
+    # pylint: disable=too-many-arguments
     def _create(
         tag: str,
         server_type: str,
         template: str,
         communication_type: str,
         use_fqn: bool,
+        direct_put: str = "false",
     ) -> str:
         """
         Initialize one ETL spec.
@@ -111,6 +113,7 @@ def etl_factory(client: Client):
             template: Pod-spec YAML template string
             communication_type: ETL_COMM_HPULL or ETL_COMM_HPUSH
             use_fqn: if True, sets arg_type="fqn", else ""
+            direct_put: if "true", sets direct_put=true in the template
         Returns:
             The unique ETL name created.
         """
@@ -124,6 +127,7 @@ def etl_factory(client: Client):
             tmpl = template.format(
                 communication_type=communication_type,
                 command=cmd,
+                direct_put=direct_put,
             )
         except KeyError:
             # Other types of servers, like "go", let the template handle it
@@ -133,6 +137,8 @@ def etl_factory(client: Client):
 
         if os.getenv("GIT_TEST", "false").lower() == "true":
             tmpl = format_image_tag_for_git_test_mode(tmpl, tag.replace("-", "_"))
+
+        logger.debug("Template for ETL %s:\n%s", name, tmpl)
 
         # Init the ETL on the cluster
         client.etl(name).init_spec(
@@ -245,14 +251,17 @@ def stress_metrics():
     # Teardown: write sorted metrics
     metrics.sort(key=lambda x: x[1])
     with open("metrics.txt", "a", encoding="utf-8") as f:
-        f.write("-" * 60 + "\n")
-        f.write(
-            f"{'Name':<12} | {'Webserver':<9} | {'Comm':<6} | {'Arg':<4} | Duration\n"
+        f.write("-" * 72 + "\n")
+        header = (
+            f"{'Name':<12} | {'Webserver':<9} | "
+            f"{'Comm':<6} | {'Arg':<4} | "
+            f"{'Direct Put':<12} | Duration\n"
         )
-        f.write("-" * 60 + "\n")
+        f.write(header)
+        f.write("-" * 72 + "\n")
         for label, dur in metrics:
-            line = f"{label:<40}{dur}"
+            line = f"{label}{dur}"
             logger.info(line)
             f.write(line + "\n")
-        f.write("-" * 60 + "\n")
+        f.write("-" * 72 + "\n")
         f.write("\n\n")

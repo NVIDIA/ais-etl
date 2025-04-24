@@ -25,7 +25,7 @@ from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
 from tests.const import (
     ECHO_TEMPLATE,
     ECHO_GO_TEMPLATE,
-    PARAM_COMBINATIONS,
+    INLINE_PARAM_COMBINATIONS,
 )
 
 # Configure module-level logger
@@ -62,7 +62,7 @@ def _verify_test_files(
 
 
 # pylint: disable=too-many-arguments
-@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", INLINE_PARAM_COMBINATIONS)
 def test_echo_transformer(
     test_bck: Bucket,
     local_files: Dict[str, Path],

@@ -1,6 +1,6 @@
 FROM python:3.13-alpine
 
-RUN pip3 install --upgrade aistore[etl]>=1.13.3
+RUN pip3 install --upgrade aistore[etl]>=1.13.5
 
 # Set working directory
 RUN mkdir /code

@@ -19,7 +19,7 @@ import pytest
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
-from tests.const import MD5_TEMPLATE, PARAM_COMBINATIONS
+from tests.const import MD5_TEMPLATE, INLINE_PARAM_COMBINATIONS
 
 # Configure module‐level logging
 logging.basicConfig(
@@ -28,7 +28,7 @@ logging.basicConfig(
 
 
 # pylint: disable=too-many-arguments
-@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", INLINE_PARAM_COMBINATIONS)
 def test_md5_transformer(
     test_bck: Bucket,
     local_files: Dict[str, Path],

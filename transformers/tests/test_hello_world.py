@@ -17,7 +17,7 @@ import pytest
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
-from tests.const import HELLO_WORLD_TEMPLATE, PARAM_COMBINATIONS
+from tests.const import HELLO_WORLD_TEMPLATE, INLINE_PARAM_COMBINATIONS
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ logging.basicConfig(
 
 
 # pylint: disable=too-many-arguments
-@pytest.mark.parametrize("server_type, comm_type, use_fqn", PARAM_COMBINATIONS)
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", INLINE_PARAM_COMBINATIONS)
 def test_hello_world_transformer(
     test_bck: Bucket,
     local_files: dict[str, Path],
