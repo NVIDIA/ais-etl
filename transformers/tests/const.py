@@ -89,13 +89,16 @@ PROD_VOLUME_MOUNTS = """
 """
 
 # -----------------------------------------------------------------------------
+# Environment
 # Pick the correct block based on DEPLOY_ENV (defaults to 'minikube')
 # -----------------------------------------------------------------------------
-DEPLOY_ENV = os.environ.get("DEPLOY_ENV", "minikube").lower()
+DEPLOY_ENV = os.getenv("DEPLOY_ENV", "minikube").lower()
 if DEPLOY_ENV == "prod":
     VOLUME_MOUNTS = PROD_VOLUME_MOUNTS
+    NUM_WORKERS = 24
 else:
     VOLUME_MOUNTS = MINIKUBE_VOLUME_MOUNTS
+    NUM_WORKERS = 4
 
 # -----------------------------------------------------------------------------
 # Shared command definitions
@@ -107,7 +110,7 @@ SERVER_COMMANDS = {
         "--bind",
         "0.0.0.0:8000",
         "--workers",
-        "6",
+        str(NUM_WORKERS),
         "--log-level",
         "debug",
     ],
@@ -119,9 +122,14 @@ SERVER_COMMANDS = {
         "--port",
         "8000",
         "--workers",
-        "6",
+        str(NUM_WORKERS),
+        "--log-level",
+        "info",
     ],
-    "http": ["python", "http_server.py"],
+    "http": [
+        "python",
+        "http_server.py",
+    ],
 }
 
 # -----------------------------------------------------------------------------

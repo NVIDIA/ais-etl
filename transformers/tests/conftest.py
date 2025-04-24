@@ -244,8 +244,15 @@ def stress_metrics():
     yield metrics
     # Teardown: write sorted metrics
     metrics.sort(key=lambda x: x[1])
-    with open("metrics.txt", "w", encoding="utf-8") as f:
+    with open("metrics.txt", "a", encoding="utf-8") as f:
+        f.write("-" * 60 + "\n")
+        f.write(
+            f"{'Name':<12} | {'Webserver':<9} | {'Comm':<6} | {'Arg':<4} | Duration\n"
+        )
+        f.write("-" * 60 + "\n")
         for label, dur in metrics:
-            line = f"{label:<40} {dur}"
+            line = f"{label:<40}{dur}"
             logger.info(line)
             f.write(line + "\n")
+        f.write("-" * 60 + "\n")
+        f.write("\n\n")

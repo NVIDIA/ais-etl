@@ -44,7 +44,7 @@ def test_md5_stress(
     Stress test for MD5 ETL: copy 10k objects with transformation.
     """
     # 1) Initialize ETL
-    label = f"MD5 | {server_type:<8} | {comm_type:<6} | {'fqn' if use_fqn else '':<4}"
+    label = f"{'MD5':<12} | {server_type:<9} | {comm_type:<6} | {'fqn' if use_fqn else '':<4} | "
     etl_name = etl_factory(
         tag="md5",
         server_type=server_type,

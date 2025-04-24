@@ -43,7 +43,7 @@ def test_hello_world_stress(
     Stress test for Hello-World ETL: copy 10k objects with transformation.
     """
     # 1) Initialize ETL
-    label = f"HELLO WORLD | {server_type:<8} | {comm_type:<6} | {'fqn' if use_fqn else '':<4}"
+    label = f"{'HELLO WORLD':<12} | {server_type:<9} | {comm_type:<6} | {'fqn' if use_fqn else '':<4} | "
     etl_name = etl_factory(
         tag="hello-world",
         server_type=server_type,
