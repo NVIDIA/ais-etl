@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-nemo-ffmpeg
+  annotations:
+    # Values it can take ["hpull://","hpush://"]
+    communication_type: "hpull://"
+    wait_timeout: 5m
+    support_direct_put: "true"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_nemo_ffmpeg:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      # for flask based app
+      # command: ["gunicorn", "flask_server:flask_app", "--bind", "0.0.0.0:8000", "--workers", "4", "--log-level", "debug"]
+      # for http based app
+      # command: ["python", "http_server.py"]
+      # for fastapi based app
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: AR
+          value: "16000"
+        - name: AC
+          value: "1"
+      # If using `arg_type=fqn`, ensure the `mountPath` matches the file system path 
+      # where the objects are stored on AIStore targets. This allows the ETL container 
+      # to access the files directly by absolute path.
+  #     volumeMounts:
+  #       - name: sda
+  #         mountPath: /ais/sda
+  #       - name: sdb
+  #         mountPath: /ais/sdb
+  #       ...
+  # volumes:
+  #   - name: sda
+  #     hostPath:
+  #       path: /ais/sda
+  #       type: Directory
+  #   - name: sdb
+  #     hostPath:
+  #       path: /ais/sdb
+  #       type
+  #   ...

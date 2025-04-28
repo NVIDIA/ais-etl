@@ -240,6 +240,36 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+FFMPEG_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-nemo-ffmpeg
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_ffmpeg:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {{command}}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: AR
+          value: "16000"
+        - name: AC
+          value: "1"
+{VOLUME_MOUNTS}
+"""
+
 # -----------------------------------------------------------------------------
 # Parameter grids
 # -----------------------------------------------------------------------------

@@ -205,6 +205,18 @@ build:audio_split_consolidate:
           - transformers/tests/test_audio_split_consolidate.py
           - transformers/tests/test_audio_split.py
         when: always
+      - when: manual
+
+build:ffmpeg:
+    extends: .build_template
+    script:
+        - cd transformers/FFmpeg
+        - make all
+    rules:
+      - changes:
+          - transformers/FFmpeg/**/*
+          - transformers/tests/test_ffmpeg.py
+        when: always
       - when: manual 
 
 test:echo:
@@ -278,6 +290,14 @@ test:audio_split_consolidate:
         - cd transformers/tests
         - pytest -v --log-cli-level=INFO test_audio_split.py
         - pytest -v --log-cli-level=INFO test_audio_split_consolidate.py
+
+test:ffmpeg:
+    extends: .test_template
+    needs: ["build:ffmpeg"]
+    script:
+        - pip install --upgrade soundfile
+        - cd transformers/tests
+        - pytest -v --log-cli-level=INFO test_ffmpeg.py
 
 publish:echo:
     extends: .publish_template

@@ -76,6 +76,20 @@ def local_files() -> Dict[str, Path]:
 
 
 @pytest.fixture
+def local_audio_files() -> Dict[str, Path]:
+    """
+    Provide a mapping of test filenames to local file paths.
+    Tests can iterate over these to upload inputs.
+    """
+    base = Path(__file__).parent / "resources"
+    return {
+        "test-audio-flac.flac": base / "test-audio-flac.flac",
+        "test-audio-mp3.mp3": base / "test-audio-mp3.mp3",
+        "test-audio-wav.wav": base / "test-audio-wav.wav",
+    }
+
+
+@pytest.fixture
 def etl_factory(client: Client):
     """
     Return a factory that initializes an ETL on the cluster and
