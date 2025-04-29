@@ -167,19 +167,20 @@ spec:
 {VOLUME_MOUNTS}
 """
 
-ECHO_GO_TEMPLATE = """
+ECHO_GO_TEMPLATE = f"""
 apiVersion: v1
 kind: Pod
 metadata:
   name: echo-go
   annotations:
-    communication_type: "{communication_type}://"
+    communication_type: "{{communication_type}}://"
     wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
 spec:
   containers:
     - name: server
       image: aistorage/transformer_echo_go:latest
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 80
@@ -188,6 +189,7 @@ spec:
         httpGet:
           path: /health
           port: default
+{VOLUME_MOUNTS}
 """
 
 HELLO_WORLD_TEMPLATE = f"""

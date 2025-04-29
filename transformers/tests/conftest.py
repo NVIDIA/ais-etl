@@ -147,6 +147,7 @@ def etl_factory(client: Client):
             # Other types of servers, like "go", let the template handle it
             tmpl = template.format(
                 communication_type=communication_type,
+                direct_put=direct_put,
             )
 
         if os.getenv("GIT_TEST", "false").lower() == "true":

@@ -16,8 +16,9 @@ import logging
 
 import pytest
 from aistore.sdk import Bucket
+from itertools import product
 
-from tests.const import PARAM_COMBINATIONS, ECHO_TEMPLATE, LABEL_FMT
+from tests.const import PARAM_COMBINATIONS, ECHO_TEMPLATE, ECHO_GO_TEMPLATE, LABEL_FMT, ETL_COMM_HPULL, ETL_COMM_HPUSH
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -79,6 +80,79 @@ def test_echo_stress(
         etl_name,
         duration,
         server_type,
+        comm_type,
+        use_fqn,
+    )
+
+    # 3) Verify counts
+    objs = list(test_bck.list_all_objects())
+    assert (
+        len(objs) == stress_object_count
+    ), f"Expected {stress_object_count} objects, got {len(objs)}"
+
+    # 4) Sample and verify payload
+    samples = random.sample(objs, 10)
+    for entry in samples:
+        data = test_bck.object(entry.name).get_reader().read_all()
+        actual = stress_bucket.object(entry.name).get_reader().read_all()
+
+        assert data == actual, f"Echo'd object didn't match for {entry.name}"
+
+    # 5) Record metric
+    stress_metrics.append((label, duration))
+
+# pylint: disable=too-many-arguments, too-many-locals
+@pytest.mark.stress
+@pytest.mark.parametrize(
+    "comm_type, use_fqn, direct_put", product([ETL_COMM_HPUSH, ETL_COMM_HPULL], [True, False], ["true", "false"])
+)
+def test_go_echo_stress(
+    stress_client,
+    stress_bucket: Bucket,
+    test_bck: Bucket,
+    etl_factory,
+    stress_metrics,
+    stress_object_count,
+    comm_type: str,
+    use_fqn: bool,
+    direct_put: str,
+):
+    """
+    Stress test for Echo ETL: copy 10k objects with transformation.
+    """
+    # 1) Initialize ETL
+    label = LABEL_FMT.format(
+        name="ECHO-GO",
+        server="go-http",
+        comm=comm_type,
+        arg="fqn" if use_fqn else "",
+        direct=direct_put,
+    )
+
+    etl_name = etl_factory(
+        tag="echo-go",
+        server_type="go-http",
+        template=ECHO_GO_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+        direct_put=direct_put,
+    )
+
+    # 2) Run transform job
+    job_id = stress_bucket.transform(
+        etl_name=etl_name,
+        to_bck=test_bck,
+        num_workers=24,
+        timeout="10m",
+    )
+    job = stress_client.job(job_id)
+    job.wait(timeout=600)
+    duration = job.get_total_time()
+
+    logger.info(
+        "ETL '%s' completed in %ss (comm=%s, fqn=%s)",
+        etl_name,
+        duration,
         comm_type,
         use_fqn,
     )

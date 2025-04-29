@@ -7,7 +7,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -17,8 +17,13 @@ import (
 const (
 	HeaderContentLength = "Content-Length"
 	HeaderContentType   = "Content-Type"
+	HeaderNodeURL       = "Ais-Node-Url"
 
 	GetContentType = "binary/octet-stream"
+
+	ArgTypeDefault = ""
+	ArgTypeURL     = "url"
+	ArgTypeFQN     = "fqn"
 )
 
 func invalidMsgHandler(w http.ResponseWriter, errCode int, format string, a ...interface{}) {
@@ -39,11 +44,11 @@ func wrapHttpError(resp *http.Response, err error) (*http.Response, error) {
 		return resp, err
 	}
 
-	if resp.StatusCode > http.StatusOK {
+	if resp.StatusCode > http.StatusNoContent {
 		if resp.Body == nil {
 			return resp, errors.New(resp.Status)
 		}
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, err
 		}

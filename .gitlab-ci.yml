@@ -224,6 +224,7 @@ test:echo:
     needs: ["build:echo"]
     script:
         - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_echo.py
+        - cd ../go_echo/src && go test -v
 
 test:hello_world:
     extends: .test_template

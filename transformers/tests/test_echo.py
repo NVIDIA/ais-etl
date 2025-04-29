@@ -14,18 +14,20 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
 import logging
+from itertools import product
 from pathlib import Path
 from typing import Dict
 
 import pytest
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 
 from tests.const import (
     ECHO_TEMPLATE,
     ECHO_GO_TEMPLATE,
     INLINE_PARAM_COMBINATIONS,
+    FQN_OPTIONS,
 )
 
 # Configure module-level logger
@@ -56,6 +58,7 @@ def _verify_test_files(
         reader = test_bck.object(filename).get_reader(etl=ETLConfig(etl_name))
         output = reader.read_all()
         original = Path(path).read_bytes()
+        logger.debug("len(output): %d v.s. len(original): %d", len(output), len(original))
         assert (
             output == original
         ), f"ETL {etl_name} did not echo back {filename} correctly"
@@ -101,13 +104,13 @@ def test_echo_transformer(
     )
 
 
-# pylint: disable=fixme
-# TODO: Implement HPUSH in Go Echo Transformer
-# @pytest.mark.parametrize("comm_type", COMM_TYPES)
+@pytest.mark.parametrize("comm_type, use_fqn", product([ETL_COMM_HPUSH, ETL_COMM_HPULL], FQN_OPTIONS))
 def test_go_echo_transformer(
     test_bck: Bucket,
     local_files: Dict[str, Path],
     etl_factory,
+    comm_type: str,
+    use_fqn: bool,
 ) -> None:
     """
     Validate the Go-based Echo ETL transformer for both image and text.
@@ -120,8 +123,8 @@ def test_go_echo_transformer(
         tag="echo-go",
         server_type="go-http",
         template=ECHO_GO_TEMPLATE,
-        communication_type=ETL_COMM_HPULL,
-        use_fqn=False,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
     )
 
     # Execute transform and assert on each file
