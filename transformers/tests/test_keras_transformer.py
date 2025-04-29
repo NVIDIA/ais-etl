@@ -11,7 +11,6 @@ from tensorflow.keras.preprocessing.image import (
     img_to_array,
 )
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import KERAS_TRANSFORMER
 from aistore.sdk.etl import ETLConfig
 
 from tests.utils import (
@@ -20,6 +19,7 @@ from tests.utils import (
     generate_random_string,
 )
 from tests.base import TestBase
+from tests.const import KERAS_TRANSFORMER
 
 # Configure logging
 logging.basicConfig(

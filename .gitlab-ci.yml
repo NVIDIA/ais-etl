@@ -1,4 +1,10 @@
-image: aistorage/ci:latest
+variables:
+    CI_IMAGE: aistorage/gitlab-ci:latest
+    RUNNER_TAG: ais-etl-ci
+    RUNNER_TAG_K8S: ais-etl-ci-k8s
+    RUNNER_TAG_STRESS: ais-etl-ci-stress
+
+image: $CI_IMAGE
 
 workflow:
   rules:
@@ -16,19 +22,19 @@ stages:
     when: manual
     stage: build
     tags: 
-        - ais
+        - $RUNNER_TAG
     variables:
         GIT_TEST: "true"
         DOCKER_TLS_CERTDIR: ""
     before_script:
-        - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+        - echo "$DOCKERHUB_TOKEN" | podman login docker.io --username "$DOCKERHUB_USERNAME" --password-stdin
 
 # Common setup for all publish stages
 .publish_template:
     when: on_success
     stage: publish
     tags: 
-        - ais
+        - $RUNNER_TAG
     variables:
         GIT_TEST: "false"
         DOCKER_TLS_CERTDIR: ""
@@ -46,7 +52,7 @@ stages:
     when: on_success
     stage: test
     tags: 
-        - ais-k8s
+        - $RUNNER_TAG_K8S
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
         GIT_TEST: "true"
@@ -62,7 +68,7 @@ stages:
     when: manual
     stage: stress
     tags: 
-        - ais-k8s-stress
+        - $RUNNER_TAG_STRESS
     timeout: 1h
     variables:
         AIS_ENDPOINT: $SJC4_DEV_CLUSTER
@@ -277,10 +283,10 @@ test:face_detection:
         - echo ${KAGGLE_CREDS_JSON} > /root/.kaggle/kaggle.json
         - chmod 600 /root/.kaggle/kaggle.json
         - mkdir -p transformers/face_detection/model
-        - apt-get update -y && apt-get install unzip -y
+        - dnf update -y && dnf install unzip -y
         - kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretrained-model
         - unzip caffe-face-detector-opencv-pretrained-model.zip -d transformers/face_detection/model/
-        - apt-get install ffmpeg libsm6 libxext6 -y
+        - dnf install ffmpeg libSM libXext -y
         - cd transformers/tests && pytest -v test_face_detection.py
 
 test:audio_split_consolidate:

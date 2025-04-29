@@ -32,9 +32,9 @@ spec:
       # volume mounts and volumes are needed if you are planning to use ARG_TYPE = `fqn`
       volumeMounts:
         - name: ais
-          mountPath: /tmp/ais
+          mountPath: /mnt/data/ais
   volumes:
     - name: ais
       hostPath:
-        path: /tmp/ais
+        path: /mnt/data/ais
         type: Directory

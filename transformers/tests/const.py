@@ -15,11 +15,11 @@ from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_W
 MINIKUBE_VOLUME_MOUNTS = """
       volumeMounts:
         - name: ais
-          mountPath: /tmp/
+          mountPath: /mnt/data
   volumes:
     - name: ais
       hostPath:
-        path: /tmp/
+        path: /mnt/data
         type: Directory
 """
 
@@ -270,6 +270,82 @@ spec:
         - name: AC
           value: "1"
 {VOLUME_MOUNTS}
+"""
+
+# TODO: Fix template
+FACE_DETECTION_TRANSFORMER = """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-face-detection
+  annotations:
+    communication_type: "{communication_type}://"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_face_detection:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command:  ["gunicorn", "main:app", "--workers", "5", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: FORMAT
+          value: "{format}"
+        - name: ARG_TYPE
+          value: "{arg_type}"
+      volumeMounts:
+        - name: ais
+          mountPath: /mnt/data
+  volumes:
+    - name: ais
+      hostPath:
+        path: /mnt/data
+        type: Directory
+"""
+
+# TODO: Fix template
+KERAS_TRANSFORMER = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-keras
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_keras:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: ["gunicorn", "main:app", "--workers", "20", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"] 
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: FORMAT
+          value: "{{format}}"
+        - name: TRANSFORM
+          value: '{{transform}}'
+        - name: ARG_TYPE
+          value: "{{arg_type}}"
+      volumeMounts:
+        - name: ais
+          mountPath: /mnt/data
+  volumes:
+    - name: ais
+      hostPath:
+        path: /mnt/data
+        type: Directory
 """
 
 # -----------------------------------------------------------------------------

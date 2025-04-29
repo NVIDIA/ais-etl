@@ -1,6 +1,6 @@
 # Prior to building this image make you own kaggle_creds.json file
 # containing kaggle keys to download dataset
-FROM python:3.8-slim
+FROM docker.io/library/python:3.8-slim
 
 WORKDIR /
 

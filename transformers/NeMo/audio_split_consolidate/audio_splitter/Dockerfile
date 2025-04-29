@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM docker.io/library/python:3.11-alpine
 
 # need this for soundfile
 RUN apk add --no-cache libsndfile-dev

@@ -1,4 +1,4 @@
-FROM python:slim
+FROM docker.io/library/python:slim
 
 COPY requirements.txt requirements.txt
 RUN pip3 install --upgrade -r requirements.txt
