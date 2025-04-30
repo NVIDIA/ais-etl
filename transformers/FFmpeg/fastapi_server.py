@@ -42,12 +42,18 @@ class FFmpegServer(FastAPIServer):
             "wav",
             "pipe:1",
         ]
+        self.audio_exts = {".wav", ".flac", ".mp3", ".m4a", ".opus", ".ogg"}
 
     def transform(self, data: bytes, path: str) -> bytes:
         """
         Run FFmpeg to convert raw audio into WAV format.
         Raises an RuntimeError on FFmpeg failure.
         """
+        ext = os.path.splitext(path)[1].lower()
+        # If it doesn’t look like audio, just pass it back without processing it
+        if ext not in self.audio_exts:
+            return data
+
         with subprocess.Popen(
             self.ffmpeg_cmd,
             stdin=subprocess.PIPE,
