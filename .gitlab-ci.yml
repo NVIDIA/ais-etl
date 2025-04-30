@@ -287,7 +287,7 @@ test:audio_split_consolidate:
     extends: .test_template
     needs: ["build:audio_split_consolidate"]
     script:
-        - pip install --upgrade soundfile aistore
+        - pip install --upgrade soundfile
         - cd transformers/tests
         - pytest -v --log-cli-level=INFO test_audio_split.py
         - pytest -v --log-cli-level=INFO test_audio_split_consolidate.py
@@ -298,7 +298,7 @@ test:ffmpeg:
     script:
         - pip install --upgrade soundfile
         - cd transformers/tests
-        - pytest -v --log-cli-level=INFO test_ffmpeg.py
+        - pytest -v --log-cli-level=INFO test_ffmpeg.py -m "not stress"
 
 publish:echo:
     extends: .publish_template
@@ -399,8 +399,17 @@ stress:md5:
         - cd transformers/tests
         - pytest -o log_cli=true --log-cli-level=INFO test_md5_stress.py
 
+stress:ffmpeg:
+    extends: .stress_template
+    script:
+        - cd transformers/tests
+        - pip install --upgrade soundfile
+        - pytest -v --log-cli-level=INFO test_ffmpeg.py -m "stress"
+
 stress:all:
     extends: .stress_template
     script:
         - cd transformers/tests
+        - pip install --upgrade soundfile
         - pytest -o log_cli=true --log-cli-level=INFO test_md5_stress.py test_echo_stress.py test_hello_world_stress.py
+        - pytest -v --log-cli-level=INFO test_ffmpeg.py -m "stress"

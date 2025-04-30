@@ -255,6 +255,29 @@ def stress_bucket(stress_client: Client, stress_object_count: int) -> Client.buc
     # No teardown: we want to keep the stress data around for the entire session
 
 
+# pylint: disable=fixme
+@pytest.fixture(scope="session")
+def stress_audio_bucket(stress_client: Client) -> Client.bucket:
+    """
+    Stress test bucket for audio files.
+
+    Contains the LibriSpeech dataset, which is a large corpus of
+    read English speech. The dataset is used for training and evaluating
+    automatic speech recognition (ASR) systems.
+    The dataset is available at: http://www.openslr.org/12/
+
+    For this test, we use a subset of the dataset, which is
+    training set of 100 hours "clean" speech
+    https://www.openslr.org/resources/12/train-clean-100.tar.gz
+    """
+    name = "LibriSpeech"
+    bck = stress_client.bucket(name)
+    # TODO: create bucket and download the dataset if it doesn't exist
+    yield bck
+
+    # No teardown: we want to keep the stress data around for the entire session
+
+
 # Duration recorder fixture
 @pytest.fixture(scope="module")
 def stress_metrics():
