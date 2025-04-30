@@ -374,6 +374,13 @@ publish:audio_split_consolidate:
         - make -C audio_manager all
         - make -C audio_splitter all
 
+publish:ffmpeg:
+    extends: .publish_template
+    needs: ["test:ffmpeg"]
+    script:
+        - cd transformers/FFmpeg
+        - make all
+
 stress:echo:
     extends: .stress_template
     script:
