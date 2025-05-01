@@ -58,7 +58,9 @@ def _verify_test_files(
         reader = test_bck.object(filename).get_reader(etl=ETLConfig(etl_name))
         output = reader.read_all()
         original = Path(path).read_bytes()
-        logger.debug("len(output): %d v.s. len(original): %d", len(output), len(original))
+        logger.debug(
+            "len(output): %d v.s. len(original): %d", len(output), len(original)
+        )
         assert (
             output == original
         ), f"ETL {etl_name} did not echo back {filename} correctly"
@@ -104,7 +106,9 @@ def test_echo_transformer(
     )
 
 
-@pytest.mark.parametrize("comm_type, use_fqn", product([ETL_COMM_HPUSH, ETL_COMM_HPULL], FQN_OPTIONS))
+@pytest.mark.parametrize(
+    "comm_type, use_fqn", product([ETL_COMM_HPUSH, ETL_COMM_HPULL], FQN_OPTIONS)
+)
 def test_go_echo_transformer(
     test_bck: Bucket,
     local_files: Dict[str, Path],

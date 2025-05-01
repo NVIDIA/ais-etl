@@ -18,12 +18,55 @@ import pytest
 from aistore.sdk import Bucket
 from itertools import product
 
-from tests.const import PARAM_COMBINATIONS, ECHO_TEMPLATE, ECHO_GO_TEMPLATE, LABEL_FMT, ETL_COMM_HPULL, ETL_COMM_HPUSH
+from tests.const import (
+    PARAM_COMBINATIONS,
+    ECHO_TEMPLATE,
+    ECHO_GO_TEMPLATE,
+    LABEL_FMT,
+    ETL_COMM_HPULL,
+    ETL_COMM_HPUSH,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
+
+
+def _assert_objects_count_and_content(
+    test_bck: Bucket, stress_bucket: Bucket, stress_object_count: int
+):
+    """
+    Assert that the object count in the test bucket matches the expected count.
+    """
+    test_bck_summary = test_bck.summary()
+    stress_bucket_summary = stress_bucket.summary()
+
+    assert (
+        test_bck_summary["ObjCount"] == stress_bucket_summary["ObjCount"]
+    ), f"Expected {stress_bucket_summary['ObjCount']} objects, got {test_bck_summary['ObjCount']}"
+
+    assert (
+        test_bck_summary["ObjSize"] == stress_bucket_summary["ObjSize"]
+    ), f"Expected {stress_bucket_summary['ObjSize']} object size, got {test_bck_summary['ObjSize']}"
+
+    assert (
+        test_bck_summary["TotalSize"]["size_all_present_objs"]
+        == stress_bucket_summary["TotalSize"]["size_all_present_objs"]
+    ), f"Expected {stress_bucket_summary['TotalSize']['size_all_present_objs']} total object size, got {test_bck_summary['TotalSize']['size_all_present_objs']}"
+
+    objs = list(test_bck.list_all_objects())
+    assert (
+        len(objs) == stress_object_count
+    ), f"Expected {stress_object_count} objects, got {len(objs)}"
+
+    # Sample and verify payload
+    samples = random.sample(objs, 10)
+    for entry in samples:
+        data = test_bck.object(entry.name).get_reader().read_all()
+        actual = stress_bucket.object(entry.name).get_reader().read_all()
+
+        assert data == actual, f"Echo'd object didn't match for {entry.name}"
 
 
 # pylint: disable=too-many-arguments, too-many-locals
@@ -72,7 +115,7 @@ def test_echo_stress(
         timeout="10m",
     )
     job = stress_client.job(job_id)
-    job.wait(timeout=600)
+    job.wait(timeout=600, verbose=False)
     duration = job.get_total_time()
 
     logger.info(
@@ -84,27 +127,18 @@ def test_echo_stress(
         use_fqn,
     )
 
-    # 3) Verify counts
-    objs = list(test_bck.list_all_objects())
-    assert (
-        len(objs) == stress_object_count
-    ), f"Expected {stress_object_count} objects, got {len(objs)}"
+    # 3) Verify counts and content
+    _assert_objects_count_and_content(test_bck, stress_bucket, stress_object_count)
 
-    # 4) Sample and verify payload
-    samples = random.sample(objs, 10)
-    for entry in samples:
-        data = test_bck.object(entry.name).get_reader().read_all()
-        actual = stress_bucket.object(entry.name).get_reader().read_all()
-
-        assert data == actual, f"Echo'd object didn't match for {entry.name}"
-
-    # 5) Record metric
+    # 4) Record metric
     stress_metrics.append((label, duration))
+
 
 # pylint: disable=too-many-arguments, too-many-locals
 @pytest.mark.stress
 @pytest.mark.parametrize(
-    "comm_type, use_fqn, direct_put", product([ETL_COMM_HPUSH, ETL_COMM_HPULL], [True, False], ["true", "false"])
+    "comm_type, use_fqn, direct_put",
+    product([ETL_COMM_HPUSH, ETL_COMM_HPULL], [True, False], ["true", "false"]),
 )
 def test_go_echo_stress(
     stress_client,
@@ -146,7 +180,7 @@ def test_go_echo_stress(
         timeout="10m",
     )
     job = stress_client.job(job_id)
-    job.wait(timeout=600)
+    job.wait(timeout=600, verbose=False)
     duration = job.get_total_time()
 
     logger.info(
@@ -157,19 +191,8 @@ def test_go_echo_stress(
         use_fqn,
     )
 
-    # 3) Verify counts
-    objs = list(test_bck.list_all_objects())
-    assert (
-        len(objs) == stress_object_count
-    ), f"Expected {stress_object_count} objects, got {len(objs)}"
+    # 3) Verify counts and content
+    _assert_objects_count_and_content(test_bck, stress_bucket, stress_object_count)
 
-    # 4) Sample and verify payload
-    samples = random.sample(objs, 10)
-    for entry in samples:
-        data = test_bck.object(entry.name).get_reader().read_all()
-        actual = stress_bucket.object(entry.name).get_reader().read_all()
-
-        assert data == actual, f"Echo'd object didn't match for {entry.name}"
-
-    # 5) Record metric
+    # 4) Record metric
     stress_metrics.append((label, duration))
