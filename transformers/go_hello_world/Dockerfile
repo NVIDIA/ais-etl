@@ -1,10 +1,21 @@
-FROM golang:1.21-alpine3.18
+# Stage 1: Build the binary
+FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git
 
-RUN mkdir $GOPATH/hello_world
-WORKDIR $GOPATH/hello_world
+WORKDIR /app
+
+COPY src/go.mod src/go.sum ./
+RUN go mod download
+
 COPY src/ ./
 RUN go build -o hello_world
 
+# Stage 2: Minimal runtime image
+FROM alpine:3.19
+
+WORKDIR /app
+COPY --from=builder /app/hello_world .
+
 EXPOSE 80
+CMD ["./hello_world"]
