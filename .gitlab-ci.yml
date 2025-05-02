@@ -39,7 +39,7 @@ stages:
         GIT_TEST: "false"
         DOCKER_TLS_CERTDIR: ""
     before_script:
-        - echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+        - echo "$DOCKERHUB_TOKEN" | podman login docker.io --username "$DOCKERHUB_USERNAME" --password-stdin
     rules:
         - if: '$CI_COMMIT_BRANCH == "main"'
           when: on_success
