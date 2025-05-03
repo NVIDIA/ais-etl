@@ -16,7 +16,7 @@ class HelloWorldHTTPServer(HTTPMultiThreadedServer):
     for any incoming data, regardless of the request path or content.
     """
 
-    def transform(self, data, path):
+    def transform(self, *_args) -> bytes:
         return b"Hello World!"
 
 

@@ -15,7 +15,7 @@ class HelloWorldServerFastAPI(FastAPIServer):
     for any incoming data, regardless of the request path or content.
     """
 
-    def transform(self, data, path) -> bytes:
+    def transform(self, *_args) -> bytes:
         return b"Hello World!"
 
 

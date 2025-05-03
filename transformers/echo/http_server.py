@@ -12,7 +12,7 @@ class EchoServer(HTTPMultiThreadedServer):
     A simple echo server that returns the input data as output.
     """
 
-    def transform(self, data, _path):
+    def transform(self, data, *_args):
         return data
 
 

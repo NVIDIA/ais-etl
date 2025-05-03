@@ -24,7 +24,7 @@ class Md5Server(FlaskServer):
         # Placeholder MD5 object (not reused across requests)
         self.md5_hash = hashlib.md5()
 
-    def transform(self, data: bytes, path: str) -> bytes:
+    def transform(self, data: bytes, *_args) -> bytes:
         """
         Compute the MD5 digest of the request payload.
         """

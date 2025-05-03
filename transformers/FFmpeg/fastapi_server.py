@@ -44,7 +44,7 @@ class FFmpegServer(FastAPIServer):
         ]
         self.audio_exts = {".wav", ".flac", ".mp3", ".m4a", ".opus", ".ogg"}
 
-    def transform(self, data: bytes, path: str) -> bytes:
+    def transform(self, data: bytes, path: str, _etl_args: str) -> bytes:
         """
         Run FFmpeg to convert raw audio into WAV format.
         Raises an RuntimeError on FFmpeg failure.
