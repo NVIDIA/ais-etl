@@ -1,14 +1,26 @@
-FROM docker.io/library/python:3.11-alpine
+FROM python:3.13-alpine
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+# Install git and build dependencies
+RUN apk update && apk add --no-cache git gcc musl-dev libffi-dev
 
-RUN mkdir /code
+# Set working directory
 WORKDIR /code
-COPY server.py server.py
 
-ENV PYTHONUNBUFFERED 1
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade \
+    "git+https://github.com/NVIDIA/aistore.git@etl-args-webserver#subdirectory=python" \
+    "fastapi>=0.109.1" \
+    "httpx>=0.28.0" \
+    "aiofiles>=23.2.1" \
+    "uvicorn[standard]>=0.32.0" \
+    "flask>=2.3.0" \
+    "gunicorn>=23.0.0"
 
-EXPOSE 80
+# Copy application code
+COPY flask_server.py fastapi_server.py http_server.py ./
 
-ENTRYPOINT [ "/code/server.py", "--listen", "0.0.0.0", "--port", "80" ]
+# Environment setup
+ENV PYTHONUNBUFFERED=1
+
+# Expose default port
+EXPOSE 8000

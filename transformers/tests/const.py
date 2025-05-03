@@ -272,6 +272,34 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+HASH_WITH_ARGS_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-hash-with-args
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_hash_with_args:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {{command}}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: SEED_DEFAULT
+          value: "0"
+{VOLUME_MOUNTS}
+"""
+
 # TODO: Fix template
 FACE_DETECTION_TRANSFORMER = """
 apiVersion: v1
@@ -279,8 +307,9 @@ kind: Pod
 metadata:
   name: transformer-face-detection
   annotations:
-    communication_type: "{communication_type}://"
+    communication_type: "{{communication_type}}://"
     wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
 spec:
   containers:
     - name: server
@@ -299,14 +328,7 @@ spec:
           value: "{format}"
         - name: ARG_TYPE
           value: "{arg_type}"
-      volumeMounts:
-        - name: ais
-          mountPath: /mnt/data
-  volumes:
-    - name: ais
-      hostPath:
-        path: /mnt/data
-        type: Directory
+{VOLUME_MOUNTS}
 """
 
 # TODO: Fix template
@@ -338,14 +360,7 @@ spec:
           value: '{{transform}}'
         - name: ARG_TYPE
           value: "{{arg_type}}"
-      volumeMounts:
-        - name: ais
-          mountPath: /mnt/data
-  volumes:
-    - name: ais
-      hostPath:
-        path: /mnt/data
-        type: Directory
+{VOLUME_MOUNTS}
 """
 
 # -----------------------------------------------------------------------------

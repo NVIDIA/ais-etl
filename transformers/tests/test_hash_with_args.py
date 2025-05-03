@@ -1,121 +1,103 @@
-#
-# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
-#
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
+"""
+Pytest suite for the HashWithArgs ETL transformer.
 
-import xxhash
-import random
-
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl import ETLConfig
-
-from tests.utils import (
-    format_image_tag_for_git_test_mode,
-    cases,
-    generate_random_string,
-)
-from tests.base import TestBase
-
-HASH_WITH_ARGS_SPEC_TEMPLATE = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-hash-with-args
-  annotations:
-    # Values it can take ["hpull://","hpush://"]
-    communication_type: "{communication_type}://"
-    wait_timeout: 5m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_hash_with_args:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 80
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      env:
-        - name: SEED_DEFAULT
-          value: "{seed_default}"
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
+import random
+import logging
+from pathlib import Path
+from typing import Dict
 
-class TestHashWithArgsTransformer(TestBase):
-    """Unit tests for AIStore ETL Hash With Args transformation."""
+import pytest
+import xxhash
+from aistore.sdk.etl import ETLConfig
+from aistore.sdk import Bucket
 
-    def setUp(self):
-        """Sets up the test environment by uploading test image and text files."""
-        super().setUp()
-        self.test_files = {
-            "image": {
-                "filename": "test-image.jpg",
-                "source": "./resources/test-image.jpg",
-            },
-            "text": {
-                "filename": "test-text.txt",
-                "source": "./resources/test-text.txt",
-            },
-        }
+from tests.const import (
+    INLINE_PARAM_COMBINATIONS,
+    HASH_WITH_ARGS_TEMPLATE,
+)
 
-        # Upload test files
-        for file in self.test_files.values():
-            self.test_bck.object(file["filename"]).get_writer().put_file(file["source"])
+# Configure module-level logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 
-    def seeded_hash_file(self, filepath, seed):
-        """Computes the seeded hash of a given file."""
-        with open(filepath, "rb") as file:
-            file_content = file.read()
-            hasher = xxhash.xxh64(seed=seed)
-            hasher.update(file_content)
-            return hasher.hexdigest()
 
-    def compare_transformed_data_with_seeded_hash(
-        self, filename, original_filepath, seed, etl_name, use_args=False
-    ):
-        """Compares transformed data against the expected seeded hash."""
-        etl_conf = ETLConfig(name=etl_name)
-        if use_args:
-            seed = random.randint(0, 1000)
-            etl_conf.args = str(seed)
+def _upload_test_files(test_bck: Bucket, local_files: Dict[str, Path]) -> None:
+    """
+    Upload files to the specified bucket.
+    """
+    for filename, path in local_files.items():
+        logger.debug("Uploading %s to bucket %s", filename, test_bck.name)
+        test_bck.object(filename).get_writer().put_file(str(path))
 
-        transformed_data_bytes = (
-            self.test_bck.object(filename).get_reader(etl=etl_conf).read_all()
+
+def _calculate_hash(data, seed):
+    """Computes the seeded hash of a given file."""
+    hasher = xxhash.xxh64(seed=seed)
+    hasher.update(data)
+    return hasher.hexdigest().encode()
+
+
+def _verify_test_files(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_name: str,
+) -> None:
+    """
+    Verify that the files in the bucket match the hash.
+    """
+    for filename, path in local_files.items():
+        seed = random.randint(0, 1000)
+        reader = test_bck.object(filename).get_reader(
+            etl=ETLConfig(etl_name, args=str(seed))
         )
-        original_file_hash = self.seeded_hash_file(original_filepath, seed)
-        self.assertEqual(transformed_data_bytes.decode("utf-8"), original_file_hash)
+        transformed = reader.read_all()
+        original = Path(path).read_bytes()
+        original_hash = _calculate_hash(original, seed)
+        assert (
+            transformed == original_hash
+        ), f"Hash mismatch for {filename}: expected {original_hash}, got {transformed}"
 
-    def run_seeded_hash_test(self, communication_type, use_args=False):
-        """Executes a seeded hash test for a given communication type."""
-        seed_default = random.randint(0, 1000)
-        etl_name = f"hash-with-args-{generate_random_string(5)}"
-        self.etls.append(etl_name)
 
-        template = HASH_WITH_ARGS_SPEC_TEMPLATE.format(
-            communication_type=communication_type, seed_default=seed_default
-        )
+# pylint: disable=too-many-arguments
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", INLINE_PARAM_COMBINATIONS)
+def test_echo_transformer(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_factory,
+    server_type: str,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    Validate the Python-based Hash With Args ETL transformer.
+    Upload sample files, initialize the ETL, then assert hash.
+    """
+    # Upload inputs
+    _upload_test_files(test_bck, local_files)
 
-        if self.git_test_mode == "true":
-            template = format_image_tag_for_git_test_mode(template, "hash_with_args")
+    # Build and initialize ETL
+    etl_name = etl_factory(
+        tag="hash-with-args",
+        server_type=server_type,
+        template=HASH_WITH_ARGS_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+    )
+    logger.info(
+        "Initialized HashWithArgs ETL '%s' (server=%s, comm=%s, fqn=%s)",
+        etl_name,
+        server_type,
+        comm_type,
+        use_fqn,
+    )
 
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=communication_type
-        )
-
-        for file_info in self.test_files.values():
-            self.compare_transformed_data_with_seeded_hash(
-                file_info["filename"],
-                file_info["source"],
-                seed_default,
-                etl_name,
-                use_args,
-            )
-
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
-    def test_seeded_hash(self, communication_type):
-        """Tests seeded hash transformation for different ETL communication types."""
-        self.run_seeded_hash_test(communication_type, use_args=False)
-        self.run_seeded_hash_test(communication_type, use_args=True)
+    _verify_test_files(
+        test_bck,
+        local_files,
+        etl_name,
+    )

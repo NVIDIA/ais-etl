@@ -132,7 +132,7 @@ def etl_factory(client: Client):
             The unique ETL name created.
         """
         suffix = generate_random_string(6)
-        name = f"{tag}-{server_type}-{communication_type}-{suffix}"
+        name = f"{tag[:10]}-{server_type}-{communication_type}-{suffix}"
         created.append(name)
 
         try:
