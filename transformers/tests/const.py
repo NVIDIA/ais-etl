@@ -300,6 +300,31 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+AUDIO_SPLITTER_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-audio-splitter
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_audio_splitter:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {{command}}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+{VOLUME_MOUNTS}
+"""
+
 # TODO: Fix template
 FACE_DETECTION_TRANSFORMER = """
 apiVersion: v1

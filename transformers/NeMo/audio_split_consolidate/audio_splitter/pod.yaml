@@ -13,9 +13,20 @@ spec:
       imagePullPolicy: Always
       ports:
         - name: default
-          containerPort: 80
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
+          containerPort: 8000
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
       readinessProbe:
         httpGet:
           path: /health
           port: default
+      # If using `arg_type=fqn`, ensure the `mountPath` matches the file system path 
+      # where the objects are stored on AIStore targets. This allows the ETL container 
+      # to access the files directly by absolute path.
+  #     volumeMounts:
+  #       - name: ais
+  #         mountPath: /tmp/
+  # volumes:
+  #   - name: ais
+  #     hostPath:
+  #       path: /tmp/
+  #       type: Directory
