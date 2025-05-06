@@ -38,15 +38,14 @@ def trim_audio_bytes(buf: bytes, audio_format: str, start: float, end: float) ->
         frames = src.read(end_frame - start_frame)
 
     out = BytesIO()
-    with sf.SoundFile(out, mode="w", samplerate=sr, channels=ch, format=audio_format) as dst:
+    with sf.SoundFile(
+        out, mode="w", samplerate=sr, channels=ch, format=audio_format
+    ) as dst:
         dst.write(frames)
     return out.getvalue()
 
 
-@pytest.mark.parametrize(
-    "comm_type,use_fqn",
-    product(COMM_TYPES, FQN_OPTIONS)
-)
+@pytest.mark.parametrize("comm_type,use_fqn", product(COMM_TYPES, FQN_OPTIONS))
 def test_audio_splitter_transform(
     test_bck: Bucket,
     local_audio_files: Dict[str, Path],
@@ -83,13 +82,9 @@ def test_audio_splitter_transform(
     logger.info("Initialized ETL %s (comm=%s, fqn=%s)", etl_name, comm_type, use_fqn)
 
     # 3) fetch & compare
-    reader = test_bck.object(file_name).get_reader(
-        etl=ETLConfig(etl_name, args=args)
-    )
+    reader = test_bck.object(file_name).get_reader(etl=ETLConfig(etl_name, args=args))
     transformed = reader.read_all()
     original = Path(path).read_bytes()
     expected = trim_audio_bytes(original, "wav", from_t, to_t)
 
-    assert transformed == expected, (
-        f"{file_name}: payload mismatch (ETL={etl_name})"
-    )
+    assert transformed == expected, f"{file_name}: payload mismatch (ETL={etl_name})"

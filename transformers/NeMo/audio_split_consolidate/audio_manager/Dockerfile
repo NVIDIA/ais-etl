@@ -1,13 +1,16 @@
-FROM docker.io/library/python:3.11-alpine
+FROM docker.io/library/python:3.13-alpine
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+RUN pip3 install --upgrade aistore[etl]>=1.13.6
 
+# Set working directory
 RUN mkdir /code
 WORKDIR /code
-COPY server.py server.py
 
-ENV PYTHONUNBUFFERED 1
+# Copy app code
+COPY fastapi_server.py ./
 
-EXPOSE 80
-ENTRYPOINT [ "/code/server.py", "--listen", "0.0.0.0", "--port", "80" ]
+# Environment setup
+ENV PYTHONUNBUFFERED=1
+
+# Expose the default port
+EXPOSE 8000

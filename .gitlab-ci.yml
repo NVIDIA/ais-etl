@@ -296,8 +296,7 @@ test:audio_split_consolidate:
         - pip install --upgrade soundfile
         - cd transformers/tests
         - pytest -v --log-cli-level=INFO test_audio_split.py
-        # TODO: Uncomment the following line when the test is ready
-        # - pytest -v --log-cli-level=INFO test_audio_split_consolidate.py
+        - pytest -v --log-cli-level=INFO test_audio_split_consolidate.py
 
 test:ffmpeg:
     extends: .test_template

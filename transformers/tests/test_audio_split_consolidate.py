@@ -1,311 +1,178 @@
-#
-# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
-#
-# pylint: disable=missing-class-docstring, missing-function-docstring, missing-module-docstring
+"""
+Pytest suite for the Audio Splitter ETL Transformer.
+
+For each combination of communication mode and FQN-flag, this test:
+  1. Uploads sample audio files into a fresh bucket.
+  2. Initializes the Audio Splitter ETL with fixed from/to times.
+  3. Fetches each transformed segment and compares it
+     against a locally-trimmed version for bitwise equality.
+"""
 
 import logging
 from io import BytesIO
-
+from itertools import product
+from pathlib import Path
+from typing import Dict
 import tarfile
 import json
-from typing import Optional, Dict, Any
 
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
+import pytest
+from aistore.sdk import Bucket
 from aistore.sdk.etl import ETLConfig
 
-from tests.utils import (
-    format_image_tag_for_git_test_mode,
-    cases,
-    generate_random_string,
-)
-from tests.base import TestBase
-
-# Configure logging for the tests
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+from tests.const import (
+    AUDIO_SPLITTER_TEMPLATE,
+    AUDIO_MANAGER_TEMPLATE,
+    COMM_TYPES,
+    FQN_OPTIONS,
 )
 
-AUDIO_SPLIT_SPEC = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-audio-splitter
-  annotations:
-    wait_timeout: 10m
-    communication_type: "{communication_type}://"
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_audio_splitter:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 80
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-"""
-
-AUDIO_MANAGER_SPEC = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: transformer-audio-manager
-  annotations:
-    # Values it can take ["hpull://","hpush://"]
-    communication_type: "hpull://"
-    wait_timeout: 10m
-spec:
-  containers:
-    - name: server
-      image: aistorage/transformer_audio_manager:latest
-      imagePullPolicy: Always
-      ports:
-        - name: default
-          containerPort: 80
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      env:
-        - name: AIS_ENDPOINT
-          value: "{ais_endpoint}"
-        - name: SRC_BUCKET
-          value: "{bck_name}"
-        - name: SRC_PROVIDER
-          value: "ais"  
-        - name: OBJ_PREFIX
-          value: ""
-        - name: OBJ_EXTENSION
-          value: "wav"
-        - name: ETL_NAME
-          value: "{etl_name}"
-"""
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
 
-class TestAudioSplitConsolidate(TestBase):
-    """Unit tests for AIStore Audio Manager ETL transformation."""
+def fetch_etl_audio(
+    bucket: Bucket, object_key: str, etl_name: str, args: Dict[str, str]
+) -> bytes:
+    """
+    Fetch a single transformed object via ETL and return its raw bytes.
+    """
+    reader = bucket.object(object_key).get_reader(
+        etl=ETLConfig(name=etl_name, args=args), direct=True
+    )
+    return reader.read_all()
 
-    def setUp(self):
-        """Set up test files and upload them to the AIStore bucket."""
-        super().setUp()
-        self.test_file_name = "test-audio.wav"
-        self.test_file_source = "./resources/test-audio-wav.wav"
-        self.test_manifest_name = "test-manifest.jsonl"
-        self.test_manifest_source = "./resources/test-manifest.jsonl"
 
-        logging.info(
-            "Uploading test file '%s' from '%s'",
-            self.test_file_name,
-            self.test_file_source,
-        )
-        self.test_bck.object(self.test_file_name).get_writer().put_file(
-            self.test_file_source
-        )
-        logging.info(
-            "Uploading test manifest file '%s' from '%s'",
-            self.test_manifest_name,
-            self.test_manifest_source,
-        )
-        self.test_bck.object(self.test_manifest_name).get_writer().put_file(
-            self.test_manifest_source
-        )
+def parse_manifest_line(line: str) -> Dict[str, str] | None:
+    """
+    Parse one JSONL line into a dict if it contains the keys
+    id, part, from_time, to_time; else return None.
+    """
+    try:
+        entry = json.loads(line)
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON: %s", line)
+        return None
 
-    def fetch_transformed_audio(self, data: dict, split_etl_name: str) -> bytes:
-        """Retrieve transformed audio file from AIS using ETL."""
-        try:
-            audio_id = data.get("id")
-            obj_path = f"{audio_id}.wav"
+    required = {"id", "part", "from_time", "to_time"}
+    if not required.issubset(entry):
+        logger.warning("Missing fields in manifest: %s", line)
+        return None
 
-            obj = self.test_bck.object(obj_path)
-            return obj.get_reader(
-                etl=ETLConfig(name=split_etl_name, args=data), direct=True
-            ).read_all()
-        except Exception as e:
-            logging.exception(
-                "Error fetching transformed audio for ID %s: %s", audio_id, str(e)
-            )
-            raise
+    return entry  # type: ignore[return-value]
 
-    def process_json_line(self, line: str) -> Optional[Dict[str, Any]]:
-        """Process a single JSON line and return parsed data."""
-        try:
-            data = json.loads(line.strip())
-            if not all(key in data for key in ("id", "part", "from_time", "to_time")):
-                logging.warning("Missing required fields in JSON line: %s", line)
-                return None
-            return data
-        except json.JSONDecodeError as e:
-            logging.error("Invalid JSON line: %s - Error: %s", line, e)
-            return None
 
-    def create_tar_archive(self, input_bytes: bytes, split_etl_name: str) -> bytes:
-        """Create tar archive from JSONL input containing audio processing instructions."""
-        output_tar = BytesIO()
-        processed_count = 0
+def build_expected_tar(
+    bucket: Bucket, manifest_bytes: bytes, splitter_etl: str
+) -> bytes:
+    """
+    Locally replay the splitter ETL for each line in `manifest_bytes`
+    and bundle the results into a tar archive, returning it as bytes.
+    """
+    buf = BytesIO()
+    with tarfile.open(fileobj=buf, mode="w") as tar:
+        for _, raw in enumerate(manifest_bytes.splitlines(), start=1):
+            if not raw.strip():
+                continue
 
-        try:
-            with tarfile.open(fileobj=output_tar, mode="w") as tar:
-                for line_number, line in enumerate(
-                    input_bytes.decode().splitlines(), 1
-                ):
-                    if not line.strip():
-                        continue
+            entry = parse_manifest_line(raw)
+            if entry is None:
+                continue
 
-                    if (data := self.process_json_line(line)) is None:
-                        logging.info("Skipping invalid line %d : %s", line_number, line)
-                        continue
+            # fetch and trim
+            obj_key = f"{entry['id']}.wav"
+            segment = fetch_etl_audio(bucket, obj_key, splitter_etl, entry)
 
-                    try:
-                        audio_content = self.fetch_transformed_audio(
-                            data, split_etl_name
-                        )
-                        tar_info = tarfile.TarInfo(
-                            name=f"{data['id']}_{data['part']}.wav"
-                        )
-                        tar_info.size = len(audio_content)
-                        tar.addfile(tar_info, BytesIO(audio_content))
-                        processed_count += 1
+            member = tarfile.TarInfo(name=f"{entry['id']}_{entry['part']}.wav")
+            member.size = len(segment)
+            tar.addfile(member, BytesIO(segment))
 
-                    except Exception as e:
-                        logging.error("Failed to process line %d: %s", line_number, e)
+    return buf.getvalue()
 
-            logging.info("Created tar archive with %d audio files", processed_count)
-            return output_tar.getvalue()
-        except Exception as e:
-            logging.error("Tar creation failed: %s", e)
-            raise
 
-    def compare_transformed_data_with_local(
-        self,
-        filename: str,
-        original_filepath: str,
-        manager_etl_name: str,
-        split_etl_name: str,
-    ):
-        """
-        Fetch the transformed file and compare it against the expected tar file.
+def compare_tar_contents(actual: bytes, expected: bytes) -> None:
+    """
+    Assert that two tar archives contain the same members with identical bytes.
+    """
 
-        Args:
-            filename (str): Name of the transformed file.
-            original_filepath (str): Path to the original file.
-            manager_etl_name (str): Name of the Audio Manager ETL.
-            split_etl_name (str): Name of the Audio Splitter ETL.
-        """
-        # Transformed tar bytes
-        transformed_tar_bytes = (
-            self.test_bck.object(filename)
-            .get_reader(etl=ETLConfig(name=manager_etl_name))
-            .read_all()
-        )
+    def extract_all(tar_bytes: bytes) -> Dict[str, bytes]:
+        d: Dict[str, bytes] = {}
+        with tarfile.open(fileobj=BytesIO(tar_bytes), mode="r") as t:
+            for m in t.getmembers():
+                if m.isfile():
+                    d[m.name] = t.extractfile(m).read()  # type: ignore[union-attr]
+        return d
 
-        # Generate expected tar bytes from original manifest
-        with open(original_filepath, "rb") as f:
-            original_file_bytes = f.read()
-        original_tar_bytes = self.create_tar_archive(
-            original_file_bytes, split_etl_name
-        )
+    act = extract_all(actual)
+    exp = extract_all(expected)
 
-        # Compare tar structure and content
-        with tarfile.open(
-            fileobj=BytesIO(transformed_tar_bytes), mode="r"
-        ) as transformed_tar:
-            transformed_files = {
-                member.name: transformed_tar.extractfile(member).read()
-                for member in transformed_tar.getmembers()
-                if member.isfile()
-            }
+    assert act.keys() == exp.keys(), "Tar member sets differ"
+    for name, content in act.items():
+        assert content == exp[name], f"Content mismatch for {name}"
 
-        with tarfile.open(
-            fileobj=BytesIO(original_tar_bytes), mode="r"
-        ) as original_tar:
-            original_files = {
-                member.name: original_tar.extractfile(member).read()
-                for member in original_tar.getmembers()
-                if member.isfile()
-            }
 
-        # Validate file count
-        self.assertEqual(
-            len(transformed_files),
-            len(original_files),
-            f"File count mismatch: Transformed has {len(transformed_files)}, expected {len(original_files)}",
-        )
+@pytest.mark.parametrize("comm_type,use_fqn", product(COMM_TYPES, FQN_OPTIONS))
+def test_audio_split_consolidate_transform(
+    endpoint: str,
+    test_bck: Bucket,
+    etl_factory,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    - Upload one WAV + one JSONL manifest.
+    - Create splitter ETL that chops WAV → segments.
+    - Create manager ETL that bundles segments into a tar.
+    - Fetch manager ETL output and compare vs our local tar.
+    """
+    # 1) prepare resource paths
+    res_dir = Path(__file__).parent / "resources"
+    wav_name = "test-audio-wav.wav"
+    manifest_name = "test-manifest.jsonl"
+    wav_path = res_dir / wav_name
+    manifest_path = res_dir / manifest_name
 
-        # Validate each file's existence and content
-        self.assertDictEqual(original_files, transformed_files)
+    test_bck.object(wav_name).get_writer().put_file(wav_path)
+    test_bck.object(manifest_name).get_writer().put_file(manifest_path)
 
-        logging.info(
-            "Successfully validated %d files with matching content", len(original_files)
-        )
+    # 2) init ETLs
 
-    def run_audio_split_consolidate_test(self, communication_type: str):
-        """
-        Run an Audio Split Consolidate transformation test using a specified communication type.
+    splitter_etl = etl_factory(
+        tag="audio-splitter",
+        server_type="fastapi",
+        template=AUDIO_SPLITTER_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+        direct_put=True,
+    )
 
-        Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH).
-        """
-        # Create audio splitter ETL
-        audio_split_etl_name = f"audio-split-transformer-{generate_random_string(5)}"
-        self.etls.append(audio_split_etl_name)
-        logging.info(
-            "Starting audio split test with ETL '%s' using communication type '%s'",
-            audio_split_etl_name,
-            communication_type,
-        )
+    manager_tmpl = AUDIO_MANAGER_TEMPLATE.format(
+        communication_type="{communication_type}",
+        direct_put="{direct_put}",
+        command="{command}",
+        ais_endpoint=endpoint,
+        bck_name=test_bck.name,
+        etl_name=splitter_etl,
+    )
+    logger.info("template: %s", manager_tmpl)
 
-        template = AUDIO_SPLIT_SPEC.format(communication_type=communication_type)
-        if self.git_test_mode == "true":
-            logging.info("Git test mode enabled; updating image tag for pod spec")
-            template = format_image_tag_for_git_test_mode(template, "audio_splitter")
-        logging.info("Initializing ETL transformation with spec:\n%s", template)
-        self.client.etl(audio_split_etl_name).init_spec(
-            template=template, communication_type=communication_type
-        )
+    manager_etl = etl_factory(
+        tag="audio-manager",
+        server_type="fastapi",
+        template=manager_tmpl,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+        direct_put=True,
+    )
 
-        # Create audio manager ETL
-        audio_manager_etl_name = f"audio-manager-{generate_random_string(5)}"
-        self.etls.append(audio_manager_etl_name)
-        logging.info(
-            "Starting audio manager test with ETL '%s' using communication type '%s'",
-            audio_manager_etl_name,
-            communication_type,
-        )
-        template = AUDIO_MANAGER_SPEC.format(
-            communication_type=communication_type,
-            ais_endpoint=self.endpoint,
-            bck_name=self.test_bck.name,
-            etl_name=audio_split_etl_name,
-        )
-        if self.git_test_mode == "true":
-            logging.info("Git test mode enabled; updating image tag for pod spec")
-            template = format_image_tag_for_git_test_mode(template, "audio_manager")
-        logging.info("Initializing ETL transformation with spec:\n%s", template)
-        self.client.etl(audio_manager_etl_name).init_spec(
-            template=template, communication_type=communication_type
-        )
+    # Fetch actual tar from manager ETL
+    actual_tar = (
+        test_bck.object(manifest_name)
+        .get_reader(etl=ETLConfig(name=manager_etl))
+        .read_all()
+    )
 
-        # compare transformed data with local
-        logging.info(
-            "Running transformed data comparison for file '%s'", self.test_manifest_name
-        )
-        self.compare_transformed_data_with_local(
-            self.test_manifest_name,
-            self.test_manifest_source,
-            audio_manager_etl_name,
-            audio_split_etl_name,
-        )
-
-    @cases(ETL_COMM_HPULL, ETL_COMM_HPUSH)
-    def test_audio_split_consolidate(self, communication_type: str):
-        """Run the Audio Split ETL transformation for different communication types."""
-        logging.info(
-            "Starting test for audio split consolidate transformer with communication type: %s",
-            communication_type,
-        )
-        self.run_audio_split_consolidate_test(communication_type)
+    # Build expected tar locally & compare
+    manifest_bytes = manifest_path.read_bytes()
+    expected_tar = build_expected_tar(test_bck, manifest_bytes, splitter_etl)
+    compare_tar_contents(actual_tar, expected_tar)

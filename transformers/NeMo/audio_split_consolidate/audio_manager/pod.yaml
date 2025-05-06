@@ -12,8 +12,8 @@ spec:
       imagePullPolicy: Always
       ports:
         - name: default
-          containerPort: 80
-      command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
+          containerPort: 8000
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
       readinessProbe:
         httpGet:
           path: /health
@@ -24,7 +24,7 @@ spec:
           value: "http://<ais-proxy>:51080"
         # Bucket name of the audio files
         - name: SRC_BUCKET
-          value: "audio_files"
+          value: "<bucket-name>"
         # Provider of the audio files (ais, gcp, aws) 
         - name: SRC_PROVIDER
           value: "ais"
@@ -37,3 +37,14 @@ spec:
         # ETL Name of the Audio Splitter ETL you previously initialised
         - name: ETL_NAME
           value: "<etl-name>"
+      # If using `arg_type=fqn`, ensure the `mountPath` matches the file system path 
+      # where the objects are stored on AIStore targets. This allows the ETL container 
+      # to access the files directly by absolute path.
+  #     volumeMounts:
+  #       - name: ais
+  #         mountPath: /tmp/
+  # volumes:
+  #   - name: ais
+  #     hostPath:
+  #       path: /tmp/
+  #       type: Directory

@@ -325,6 +325,44 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+AUDIO_MANAGER_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-audio-manager
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_audio_manager:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {{command}}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: AIS_ENDPOINT
+          value: "{{ais_endpoint}}"
+        - name: SRC_BUCKET
+          value: "{{bck_name}}"
+        - name: SRC_PROVIDER
+          value: "ais"  
+        - name: OBJ_PREFIX
+          value: ""
+        - name: OBJ_EXTENSION
+          value: "wav"
+        - name: ETL_NAME
+          value: "{{etl_name}}"
+{VOLUME_MOUNTS}
+"""
+
 # TODO: Fix template
 FACE_DETECTION_TRANSFORMER = """
 apiVersion: v1
