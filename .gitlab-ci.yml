@@ -225,6 +225,18 @@ build:ffmpeg:
         when: always
       - when: manual 
 
+build:batch_rename:
+    extends: .build_template
+    script:
+        - cd transformers/batch_rename
+        - make all
+    rules:
+      - changes:
+          - transformers/batch_rename/**/*
+          - transformers/tests/test_batch_rename.py
+        when: always
+      - when: manual 
+
 test:echo:
     extends: .test_template
     needs: ["build:echo"]
@@ -306,6 +318,13 @@ test:ffmpeg:
         - cd transformers/tests
         - pytest -v --log-cli-level=INFO test_ffmpeg.py -m "not stress"
 
+test:batch_rename:
+    extends: .test_template
+    needs: ["build:batch_rename"]
+    script:
+        - cd transformers/tests
+        - pytest -v --log-cli-level=INFO test_batch_rename.py
+
 publish:echo:
     extends: .publish_template
     needs: ["test:echo"]
@@ -385,6 +404,13 @@ publish:ffmpeg:
     needs: ["test:ffmpeg"]
     script:
         - cd transformers/FFmpeg
+        - make all
+
+publish:batch_rename:
+    extends: .publish_template
+    needs: ["test:batch_rename"]
+    script:
+        - cd transformers/batch_rename
         - make all
 
 stress:echo:

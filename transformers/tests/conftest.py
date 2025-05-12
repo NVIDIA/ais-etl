@@ -36,12 +36,14 @@ DEFAULT_ENDPOINT = "http://192.168.49.2:8080"
 STRESS_OBJECT_SIZE = 1 * 1024 * 1024  # 1 MiB
 NUM_THREADS = 64
 
+
 @pytest.fixture(scope="session")
 def endpoint() -> str:
     """
     Return the AIS endpoint from the environment variable or default to localhost.
     """
     return os.environ.get("AIS_ENDPOINT", DEFAULT_ENDPOINT)
+
 
 @pytest.fixture(scope="session")
 def client(endpoint) -> Client:

@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-batch-rename
+  annotations:
+    # Values it can take ["hpull://", "hpush://"]
+    communication_type: "hpull://"
+    wait_timeout: 5m
+    support_direct_put: "true"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_batch_rename:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      # Adjust the num of workers based on the number of CPU cores available
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        # Required: AIStore endpoint
+        - name: AIS_ENDPOINT
+          value: "http://<proxy-lb-ip>:51080"
+
+        # Required: Destination bucket to write renamed objects
+        - name: DST_BUCKET
+          value: "<dst-bucket-name>"
+
+        # Optional: Provider for the destination bucket (default: ais)
+        - name: DST_BUCKET_PROVIDER
+          value: "ais"
+
+        # Required: Regex pattern to match files
+        - name: FILE_PATTERN
+        # all .flac files
+          value: '.*\.flac$'
+
+        # Required: Prefix to apply to renamed files
+        - name: DST_PREFIX
+          value: "renamed/"

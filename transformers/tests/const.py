@@ -426,6 +426,42 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+BATCH_RENAME_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-batch-rename
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: gaikwadabhishek/transformer_batch_rename:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: AIS_ENDPOINT
+          value: "{{ais_endpoint}}"
+        - name: DST_BUCKET
+          value: "{{bck_name}}"
+        - name: DST_BUCKET_PROVIDER
+          value: "ais"
+        - name: FILE_PATTERN
+          value: '{{regex_pattern}}'
+        - name: DST_PREFIX
+          value: "{{dst_prefix}}"
+{VOLUME_MOUNTS}
+"""
+
 # -----------------------------------------------------------------------------
 # Parameter grids
 # -----------------------------------------------------------------------------
