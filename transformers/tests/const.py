@@ -132,6 +132,7 @@ SERVER_COMMANDS = {
         "0",  # disable automatic pings
         "--ws-ping-timeout",
         "86400",  # 24 h before timing out a missing pong
+        "--no-access-log",
     ],
     "http": [
         "python",
@@ -438,12 +439,12 @@ metadata:
 spec:
   containers:
     - name: server
-      image: gaikwadabhishek/transformer_batch_rename:latest
+      image: aistorage/transformer_batch_rename:latest
       imagePullPolicy: Always
       ports:
         - name: default
           containerPort: 8000
-      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--no-access-log"]
       readinessProbe:
         httpGet:
           path: /health

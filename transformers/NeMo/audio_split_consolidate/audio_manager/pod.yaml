@@ -13,7 +13,7 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--no-access-log"]
       readinessProbe:
         httpGet:
           path: /health
