@@ -59,7 +59,7 @@ class AudioManagerServer(FastAPIServer):
         self.max_pool_size = int(os.getenv("MAX_POOL_SIZE", "50"))
 
         # Initialize AIS SDK client and source bucket
-        self.ais_client = Client(self.ais_endpoint, max_pool_size=self.max_pool_size)
+        self.ais_client = Client(self.ais_endpoint, max_pool_size=self.max_pool_size, timeout=None)
         self.src_bucket = self.ais_client.bucket(
             bck_name=self.bucket_name, provider=self.provider
         )
