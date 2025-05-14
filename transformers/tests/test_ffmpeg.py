@@ -5,6 +5,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
 import logging
+from itertools import product
 from pathlib import Path
 from typing import Dict
 import io
@@ -19,9 +20,13 @@ from aistore.sdk.errors import ErrBckNotFound
 
 from tests.const import (
     FFMPEG_TEMPLATE,
+    FFMPEG_GO_TEMPLATE,
     INLINE_PARAM_COMBINATIONS,
     PARAM_COMBINATIONS,
     LABEL_FMT,
+    GO_PARAM_COMBINATIONS,
+    COMM_TYPES,
+    FQN_OPTIONS,
 )
 
 # Configure module-level logger
@@ -144,6 +149,44 @@ def test_ffmpeg_transformer(
         etl_name,
     )
 
+# pylint: disable=too-many-arguments
+@pytest.mark.parametrize("comm_type, use_fqn", product(COMM_TYPES, FQN_OPTIONS))
+def test_ffmpeg_go_transformer(
+    test_bck: Bucket,
+    local_audio_files: Dict[str, Path],
+    etl_factory,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    Validate the Python-based FFmpeg ETL transformer.
+    """
+    # Upload inputs
+    for filename, path in local_audio_files.items():
+        test_bck.object(filename).get_writer().put_file(str(path))
+
+    # Build and initialize ETL
+    etl_name = etl_factory(
+        tag="ffmpeg-go",
+        server_type="go-http",
+        template=FFMPEG_GO_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+        direct_put="true", # doesn't matter for inline transform tests, but required to enable ws
+    )
+    logger.info(
+        "Initialized Go FFmpeg ETL '%s' (comm=%s, fqn=%s)",
+        etl_name,
+        comm_type,
+        use_fqn,
+    )
+
+    _verify_test_files(
+        test_bck,
+        local_audio_files,
+        etl_name,
+    )
+
 
 # pylint: disable=too-many-arguments, too-many-locals
 @pytest.mark.stress
@@ -227,4 +270,78 @@ def test_ffmpeg_stress(
         _assert_transformed_file(transformed_data, orig_data, entry.name, etl_name)
 
     # Record metric
+    stress_metrics.append((label, duration))
+
+# pylint: disable=too-many-arguments, too-many-locals
+@pytest.mark.stress
+@pytest.mark.parametrize("comm_type, use_fqn, direct_put", GO_PARAM_COMBINATIONS)
+def test_go_ffmpeg_stress(
+    stress_client: Client,
+    stress_audio_bucket: Bucket,
+    test_bck: Bucket,
+    etl_factory,
+    stress_metrics,
+    comm_type: str,
+    use_fqn: bool,
+    direct_put: str,
+):
+    # 1) Initialize ETL
+    label = LABEL_FMT.format(
+        name="FFMPEG-GO",
+        server="go-http",
+        comm=comm_type,
+        arg="fqn" if use_fqn else "",
+        direct=direct_put,
+    )
+
+    etl_name = etl_factory(
+        tag="ffmpeg-go",
+        server_type="go-http",
+        template=FFMPEG_GO_TEMPLATE,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+        direct_put=direct_put,
+    )
+
+    # 2) Run transform job
+    job_id = stress_audio_bucket.transform(
+        etl_name=etl_name,
+        to_bck=test_bck,
+        num_workers=24,
+        timeout="10m",
+    )
+    job = stress_client.job(job_id)
+    job.wait(timeout=600, verbose=False)
+    duration = job.get_total_time()
+
+    logger.info(
+        "ETL '%s' completed in %ss (comm=%s, fqn=%s)",
+        etl_name,
+        duration,
+        comm_type,
+        use_fqn,
+    )
+
+    # 3) Verify counts and content
+    objs = list(test_bck.list_all_objects())
+    orig_objs = list(stress_audio_bucket.list_all_objects())
+    assert len(objs) == len(orig_objs), (
+        f"ETL {etl_name} did not transform all objects: "
+        f"{len(objs)} v.s. {len(orig_objs)}"
+    )
+    # 4) Sample and verify payload
+    samples = random.sample(objs, 20)
+    for entry in samples:
+        if not entry.name.endswith(".wav"):
+            logger.debug("Skipping transformed file %s (not a WAV file)", entry.name)
+            continue
+        transformed_data = test_bck.object(entry.name).get_reader().read_all()
+        orig_data = (
+            stress_audio_bucket.object(entry.name.replace("wav", "flac"))
+            .get_reader()
+            .read_all()
+        )
+        _assert_transformed_file(transformed_data, orig_data, entry.name, etl_name)
+
+    # 4) Record metric
     stress_metrics.append((label, duration))

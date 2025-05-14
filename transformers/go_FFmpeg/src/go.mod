@@ -1,4 +1,4 @@
-module github.com/NVIDIA/ais-etl/transformers/go_echo/src
+module github.com/NVIDIA/ais-etl/transformers/go_ffmpeg/src
 
 go 1.24
 

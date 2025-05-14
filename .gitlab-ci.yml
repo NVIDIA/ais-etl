@@ -216,11 +216,13 @@ build:audio_split_consolidate:
 build:ffmpeg:
     extends: .build_template
     script:
-        - cd transformers/FFmpeg
-        - make all
+        - cd transformers
+        - make -C FFmpeg all
+        - make -C go_FFmpeg all
     rules:
       - changes:
           - transformers/FFmpeg/**/*
+          - transformers/go_FFmpeg/**/*
           - transformers/tests/test_ffmpeg.py
         when: always
       - when: manual 
@@ -403,8 +405,9 @@ publish:ffmpeg:
     extends: .publish_template
     needs: ["test:ffmpeg"]
     script:
-        - cd transformers/FFmpeg
-        - make all
+        - cd transformers
+        - make -C FFmpeg all
+        - make -C go-FFmpeg all
 
 publish:batch_rename:
     extends: .publish_template

@@ -23,8 +23,7 @@ from tests.const import (
     ECHO_TEMPLATE,
     ECHO_GO_TEMPLATE,
     LABEL_FMT,
-    ETL_COMM_HPULL,
-    ETL_COMM_HPUSH,
+    GO_PARAM_COMBINATIONS,
 )
 
 logger = logging.getLogger(__name__)
@@ -136,10 +135,7 @@ def test_echo_stress(
 
 # pylint: disable=too-many-arguments, too-many-locals
 @pytest.mark.stress
-@pytest.mark.parametrize(
-    "comm_type, use_fqn, direct_put",
-    product([ETL_COMM_HPUSH, ETL_COMM_HPULL], [True, False], ["true", "false"]),
-)
+@pytest.mark.parametrize("comm_type, use_fqn, direct_put", GO_PARAM_COMBINATIONS)
 def test_go_echo_stress(
     stress_client,
     stress_bucket: Bucket,

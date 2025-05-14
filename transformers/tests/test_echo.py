@@ -21,13 +21,13 @@ from typing import Dict
 import pytest
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 
 from tests.const import (
     ECHO_TEMPLATE,
     ECHO_GO_TEMPLATE,
     INLINE_PARAM_COMBINATIONS,
     FQN_OPTIONS,
+    COMM_TYPES,
 )
 
 # Configure module-level logger
@@ -106,9 +106,7 @@ def test_echo_transformer(
     )
 
 
-@pytest.mark.parametrize(
-    "comm_type, use_fqn", product([ETL_COMM_HPUSH, ETL_COMM_HPULL], FQN_OPTIONS)
-)
+@pytest.mark.parametrize("comm_type, use_fqn", product(COMM_TYPES, FQN_OPTIONS))
 def test_go_echo_transformer(
     test_bck: Bucket,
     local_files: Dict[str, Path],
@@ -129,6 +127,7 @@ def test_go_echo_transformer(
         template=ECHO_GO_TEMPLATE,
         communication_type=comm_type,
         use_fqn=use_fqn,
+        direct_put="true", # doesn't matter for inline transform tests, but required to enable ws
     )
 
     # Execute transform and assert on each file

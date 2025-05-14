@@ -9,13 +9,16 @@ COPY src/go.mod src/go.sum ./
 RUN go mod download
 
 COPY src/ ./
-RUN go build -o echo
+RUN go build -o go_ffmpeg
 
 # Stage 2: Minimal runtime image
 FROM alpine:3.19
 
+# Install ffmpeg
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
-COPY --from=builder /app/echo .
+COPY --from=builder /app/go_ffmpeg .
 
 EXPOSE 8000
-CMD ["./echo"]
+CMD ["./go_ffmpeg"]

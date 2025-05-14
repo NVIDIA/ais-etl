@@ -184,8 +184,8 @@ spec:
       imagePullPolicy: Always
       ports:
         - name: default
-          containerPort: 80
-      command: ['./echo', '-l', '0.0.0.0', '-p', '80']
+          containerPort: 8000
+      command: ['./echo', '-l', '0.0.0.0', '-p', '8000']
       readinessProbe:
         httpGet:
           path: /health
@@ -261,6 +261,36 @@ spec:
         - name: default
           containerPort: 8000
       command: {{command}}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: AR
+          value: "16000"
+        - name: AC
+          value: "1"
+{VOLUME_MOUNTS}
+"""
+
+FFMPEG_GO_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-nemo-ffmpeg-go
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_ffmpeg_go:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: ['./go_ffmpeg', '-l', '0.0.0.0', '-p', '8000']
       readinessProbe:
         httpGet:
           path: /health
@@ -481,6 +511,15 @@ PARAM_COMBINATIONS = [
         (comm == "ws" and (srv in ["http", "flask"]))
         or (comm == "ws" and direct_put == "false")
     )
+]
+
+GO_PARAM_COMBINATIONS = [
+    (comm, fqn, direct_put)
+    for comm, fqn, direct_put in product(
+        COMM_TYPES, FQN_OPTIONS, DIRECT_PUT_OPTIONS
+    )
+    # Cannot run ws communication without direct put
+    if not (comm == "ws" and direct_put == "false")
 ]
 
 INLINE_PARAM_COMBINATIONS = [
