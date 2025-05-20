@@ -4,11 +4,11 @@ set -e
 
 # Defines mapping: "runtime name" -> "python version".
 declare -A python_versions=(
-  [3.9v2]="3.9"
-  [3.10v2]="3.10"
-  [3.11v2]="3.11"
-  [3.12v2]="3.12"
-  [3.13v2]="3.13"
+  [3.9]="3.9"
+  [3.10]="3.10"
+  [3.11]="3.11"
+  [3.12]="3.12"
+  [3.13]="3.13"
 )
 
 for runtime_name in "${!python_versions[@]}"; do
