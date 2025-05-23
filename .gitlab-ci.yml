@@ -239,6 +239,20 @@ build:batch_rename:
         when: always
       - when: manual 
 
+build:runtime-python:
+    extends: .build_template
+    script:
+        - cd runtime/python
+        - make all
+    rules:
+      - changes:
+          - runtime/python/**/*
+        when: always
+      - when: manual 
+    variables:
+        RUNTIME_IMAGE: 'aistorage/runtime_python'
+        REGISTRY_URL: 'docker.io/aistorage'
+
 test:echo:
     extends: .test_template
     needs: ["build:echo"]
