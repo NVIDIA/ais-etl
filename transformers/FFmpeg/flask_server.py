@@ -11,7 +11,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 import os
 import subprocess
 
-from aistore.sdk.etl.webserver import FlaskServer
+from aistore.sdk.etl.webserver.flask_server import FlaskServer
 
 
 class FFmpegServer(FlaskServer):

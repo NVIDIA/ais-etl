@@ -9,7 +9,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
 import hashlib
-from aistore.sdk.etl.webserver import FastAPIServer
+from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
 
 
 class Md5Server(FastAPIServer):

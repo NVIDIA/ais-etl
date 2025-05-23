@@ -9,7 +9,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
 import hashlib
-from aistore.sdk.etl.webserver import FlaskServer
+from aistore.sdk.etl.webserver.flask_server import FlaskServer
 
 
 class Md5Server(FlaskServer):

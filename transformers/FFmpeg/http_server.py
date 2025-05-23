@@ -11,7 +11,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 import os
 import subprocess
 
-from aistore.sdk.etl.webserver import HTTPMultiThreadedServer
+from aistore.sdk.etl.webserver.http_multi_threaded_server import HTTPMultiThreadedServer
 
 
 class FFmpegServer(HTTPMultiThreadedServer):
