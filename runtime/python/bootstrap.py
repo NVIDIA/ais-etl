@@ -82,12 +82,12 @@ def main():
         sys.exit(1)
 
     # 5) Start server
-    if server.isinstance(server, HTTPMultiThreadedServer):
+    if isinstance(server, HTTPMultiThreadedServer):
         log.info("Starting HTTP server in-process")
         server.start()
         return
 
-    if server.isinstance(server, FastAPIServer):
+    if isinstance(server, FastAPIServer):
         cmd = [
             "uvicorn",
             "server:server.app",
@@ -107,7 +107,7 @@ def main():
             "86400",
             "--no-access-log",
         ]
-    elif server.isinstance(server, FlaskServer):
+    elif isinstance(server, FlaskServer):
         cmd = [
             "gunicorn",
             "server:server.app",
