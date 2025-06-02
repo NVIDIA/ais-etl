@@ -20,16 +20,11 @@ class Md5Server(HTTPMultiThreadedServer):
     requests. Each request body is hashed independently.
     """
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 8000):
-        super().__init__(host=host, port=port)
-        self.md5_hash = hashlib.md5()
-
     def transform(self, data: bytes, *_args) -> bytes:
         """
         Compute the MD5 digest of the request payload.
         """
-        digest = hashlib.md5(data).hexdigest()
-        return digest.encode()
+        return hashlib.md5(data).hexdigest().encode()
 
 
 if __name__ == "__main__":

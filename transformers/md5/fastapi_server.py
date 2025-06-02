@@ -19,10 +19,6 @@ class Md5Server(FastAPIServer):
     Inherits from FastAPIServer to handle concurrent transform requests.
     """
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 8000):
-        super().__init__(host=host, port=port)
-        self.md5_hash = hashlib.md5()
-
     def transform(self, data: bytes, *_args) -> bytes:
         """
         Compute the MD5 digest of the request payload.
