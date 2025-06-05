@@ -23,23 +23,8 @@ To transform your audio files using this ETL, follow these steps:
    Run the following command to create the ETL in the AIStore cluster:
 
    ```bash
-   ais etl init spec --from-file pod.yaml --comm-type <communication-type> --name <etl-name>
+   ais etl init spec --from-file etl_spec.yaml
    ```
-   - `<etl-name>`: Name for your ETL.
-   - `<communication-type>`: Communication type for your ETL. (ref: [Communication Mechanisms](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms)). Example: `hpull`, `hpush`, etc.
-
-### Arg Type: FQN (Fully Qualified Name)
-
-When initializing the ETL, you can specify the argument type as Fully Qualified Name (FQN) by adding `--arg-type fqn` to the command. Using FQN means that the AIStore target will send the file path of the object to the transformation pod, rather than the object data itself. The transformation pod will then be responsible for opening, reading, transforming, and closing the corresponding file—in this case, the audio files.
-
-**Initialization with FQN:**
-
-```bash
-ais etl init spec --from-file pod_with_fqn.yaml --comm-type hpull --arg-type fqn --name <etl-name>
-```
-
-- Replace `<etl-name>` with a name for your ETL.
-- Use `pod_with_fqn.yaml` as your specification file, which includes the necessary disk attachments.
 
 ## Transform Data Using the ETL
 

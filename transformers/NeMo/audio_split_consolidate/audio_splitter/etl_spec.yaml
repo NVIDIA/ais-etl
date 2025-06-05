@@ -1,0 +1,31 @@
+name: audio-splitter-etl
+
+runtime:
+  image: aistorage/transformer_audio_splitter:latest
+
+  # Optional: override the default FastAPI server
+  # Uncomment the relevant line below to use a different web server.
+
+  # FastAPI server (default entrypoint)
+  # command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--no-access-log"]
+
+  # Flask server
+  # command: ["gunicorn", "flask_server:flask_app", "--bind", "0.0.0.0:8000", "--workers", "4", "--log-level", "debug"]
+
+  # Simple HTTP server
+  # command: ["python", "http_server.py"]
+
+# --- Optional Fields Below ---
+
+# Communication method: hpull://, hpush://, or ws:// (default is hpush://)
+communication: hpush://
+
+# Argument mode: "" (default) or "fqn" (mounts host filesystem inside ETL container)
+argument: fqn
+
+# Timeout settings
+init_timeout: 5m    # Max time to initialize the ETL container
+obj_timeout: 45s    # Max time to process a single object
+
+# Enables zero-copy optimization for bucket-to-bucket transformations
+support_direct_put: true

@@ -9,14 +9,8 @@ The following steps demonstrate how to initialize the `transformer-hash-with-arg
 ```!bash
 $ cd transformers/hash_with_args
 
-$ # Mention communication type b/w target and container
-$ export COMMUNICATION_TYPE='hpull://'
-
-# Substitute env variables in spec file
-$ envsubst < pod.yaml > init_spec.yaml
-
 $ # Initialize ETL
-$ ais etl init spec --from-file init_spec.yaml --name <etl-name> --comm-type "hpull://"
+$ ais etl init spec --from-file etl_spec.yaml
 
 $ # Put an object
 $ ais object put <your-file> ais://<bck-name>

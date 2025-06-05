@@ -21,4 +21,5 @@ WORKDIR /app
 COPY --from=builder /app/go_ffmpeg .
 
 EXPOSE 8000
-CMD ["./go_ffmpeg"]
+
+ENTRYPOINT ["./go_ffmpeg", "-l", "0.0.0.0", "-p", "8000"]

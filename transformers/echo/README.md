@@ -4,7 +4,6 @@ A simple echo transformer that takes objects (bytes) and simply echoes or repeat
 
 The transformer supports both `hpull` and `hpush` communication mechanisms for seamless integration.
 
-> **Note:** This transformer is using [`FastAPI`](https://fastapi.tiangolo.com/) as framework and [`Gunicorn`](https://gunicorn.org/) + [Uvicorn](https://www.uvicorn.org/) as webserver, multithreaded HTTP server for the same implmentation under [`http-multithreaded-server`](/http-multithreaded-server/) folder.
 
 > For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
@@ -15,14 +14,8 @@ The following steps demonstrate how to initialize the `hello-world-transformer` 
 ```!bash
 $ cd transformers/hello_world
 
-$ # Mention communication type b/w target and container
-$ export COMMUNICATION_TYPE='hpull://'
-
-# Substitute env variables in spec file
-$ envsubst < pod.yaml > init_spec.yaml
-
 $ # Initialize ETL
-$ ais etl init spec --from-file init_spec.yaml --name <etl-name> --comm-type "hpull://"
+$ ais etl init spec --from-file etl_spec.yaml
 
 $ # Transform and retrieve objects from the bucket using this ETL
 $ # For inline transformation

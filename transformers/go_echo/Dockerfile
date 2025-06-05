@@ -18,4 +18,5 @@ WORKDIR /app
 COPY --from=builder /app/echo .
 
 EXPOSE 8000
-CMD ["./echo"]
+
+ENTRYPOINT ["./echo", "-l", "0.0.0.0", "-p", "8000"]

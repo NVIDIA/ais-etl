@@ -18,4 +18,4 @@ WORKDIR /app
 COPY --from=builder /app/hello_world .
 
 EXPOSE 80
-CMD ["./hello_world"]
+ENTRYPOINT ["./hello_world", "-l", "0.0.0.0", "-p", "8000"]

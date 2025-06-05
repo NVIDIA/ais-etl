@@ -1,0 +1,52 @@
+name: batch-rename-etl
+
+runtime:
+  image: aistorage/transformer_batch_rename:latest
+
+  env:
+    # Required: AIStore endpoint (must be reachable by the ETL container)
+    - name: AIS_ENDPOINT
+      value: "http://<proxy-lb-ip>:51080"
+
+    # Required: Destination bucket for renamed objects
+    - name: DST_BUCKET
+      value: "<dst-bucket-name>"
+
+    # Optional: Provider for destination bucket (default is "ais")
+    - name: DST_BUCKET_PROVIDER
+      value: "ais"
+
+    # Required: Regex pattern to match source files (e.g., all .flac files)
+    - name: FILE_PATTERN
+      value: ".*\\.flac$"
+
+    # Required: Prefix to apply to renamed objects
+    - name: DST_PREFIX
+      value: "renamed/"
+
+  # Optional: override default FastAPI server
+  # Uncomment one of the following to use a different web server
+
+  # FastAPI server (default)
+  # command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "6", "--log-level", "info", "--ws-max-size", "17179869184", "--ws-ping-interval", "0", "--ws-ping-timeout", "86400", "--no-access-log"]
+
+  # Flask server
+  # command: ["gunicorn", "flask_server:flask_app", "--bind", "0.0.0.0:8000", "--workers", "4", "--log-level", "debug"]
+
+  # Simple HTTP server
+  # command: ["python", "http_server.py"]
+
+# --- Optional Fields Below ---
+
+# Communication method: hpull://, hpush://, or ws:// (default is hpush://)
+communication: hpush://
+
+# Argument mode: "" (default) or "fqn" (mounts host filesystem inside ETL container)
+argument: fqn
+
+# Timeout settings
+init_timeout: 5m    # Max time to initialize the ETL container
+obj_timeout: 45s    # Max time to process a single object
+
+# Enables zero-copy optimization for bucket-to-bucket transformations
+support_direct_put: true

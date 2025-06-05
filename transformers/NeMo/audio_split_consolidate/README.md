@@ -54,7 +54,7 @@ Create a JSON Lines (`.jsonl`) file where each line contains:
 Review and edit the configuration ([`audio_splitter/pod.yaml`](audio_splitter/pod.yaml)) as needed.
 
 ```bash
-ais etl init spec --from-file audio_splitter/pod.yaml --comm-type hpush --name audio-splitter
+ais etl init spec --from-file audio_splitter/etl_spec.yaml
 ```
 
 ### Audio Manager ETL
@@ -62,7 +62,7 @@ ais etl init spec --from-file audio_splitter/pod.yaml --comm-type hpush --name a
 Review and edit the configuration ([`audio_manager/pod.yaml`](audio_manager/pod.yaml)), ensuring settings match your environment.
 
 ```bash
-ais etl init spec --from-file audio_manager/pod.yaml --comm-type hpush --name audio-manager
+ais etl init spec --from-file audio_splitter/etl_spec.yaml
 ```
 
 Ensure the manifest file is accessible by the Audio Manager.

@@ -35,7 +35,7 @@ $ cd transformers/batch_rename
 $ export COMMUNICATION_TYPE='hpull://'
 
 # Initialize the ETL with a chosen name
-$ ais etl init spec --from-file init_spec.yaml --name <etl-name> --comm-type "$COMMUNICATION_TYPE"
+$ ais etl init spec --from-file etl_spec.yaml
 
 # Inline transformation (single object)
 # If the object matches the pattern, it will be renamed and saved to the destination bucket.

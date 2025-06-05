@@ -13,14 +13,8 @@ The following steps demonstrate how to initialize the `hello-world-transformer` 
 ```!bash
 $ cd transformers/hello_world
 
-$ # Mention communication type b/w target and container
-$ export COMMUNICATION_TYPE = 'hpull://'
-
-# Substitute env variables in spec file
-$ envsubst < pod.yaml > init_spec.yaml
-
 $ # Initialize ETL
-$ ais etl init spec --from-file init_spec.yaml --name <etl-name>
+$ ais etl init spec --from-file etl_spec.yaml
 
 $ # Transform and retrieve objects from the bucket using this ETL
 $ # For inline transformation

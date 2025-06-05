@@ -1,0 +1,19 @@
+name: go-echo-transformer-etl
+
+runtime:
+  image: aistorage/transformer_echo_go:latest
+
+# --- Optional Fields Below ---
+
+# Communication method: hpull://, hpush://, or ws:// (default is hpush://)
+communication: hpush://
+
+# Argument mode: "" (default) or "fqn" (mounts host filesystem inside ETL container)
+argument: fqn
+
+# Timeout settings
+init_timeout: 5m    # Max time to initialize the ETL container
+obj_timeout: 45s    # Max time to process a single object
+
+# Enables zero-copy optimization for bucket-to-bucket transformations
+support_direct_put: true
