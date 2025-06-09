@@ -10,7 +10,7 @@ metadata:
 spec:
   containers:
     - name: server
-      image: aistorage/transformer_nemo_ffmpeg:latest
+      image: aistorage/transformer_ffmpeg:latest
       imagePullPolicy: Always
       ports:
         - name: default

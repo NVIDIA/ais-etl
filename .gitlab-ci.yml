@@ -421,7 +421,7 @@ publish:ffmpeg:
     script:
         - cd transformers
         - make -C FFmpeg all
-        - make -C go-FFmpeg all
+        - make -C go_FFmpeg all
 
 publish:batch_rename:
     extends: .publish_template
