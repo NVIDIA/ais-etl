@@ -57,7 +57,7 @@ $ export COMMUNICATION_TYPE=hpull://
 $ envsubst < pod.yaml > init_spec.yaml
 
 $ # Initialize ETL
-$ ais etl init spec --from-file etl_spec.yaml
+$ ais etl init spec --from-file init_spec.yaml --name hello-world-etl
 
 $ # Transform and retrieve objects from the bucket using this ETL
 $ # For inline transformation
