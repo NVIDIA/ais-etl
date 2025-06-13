@@ -14,25 +14,18 @@ There are **two** ways to start this transformer:
 
 #### 1. Runtime-spec (recommended)
 
-Create a YAML file (e.g. `etl_spec.yaml`):
-
-```yaml
-# etl_spec.yaml
-name: hello-world-etl
-runtime:
-  image: aistorage/transformer_hello_world:latest
-# Other optional values
-```
-> For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
-
 #### Initialize the ETL
 
 ```bash
-# create the ETL
-ais etl init spec --from-file etl_spec.yaml --name hello-world-etl
+# Navigate to the hello_world directory
+cd transformers/hello_world
+
+# Create the ETL
+ais etl init -f etl_spec.yaml
 ```
 
 This initializes the ETL with default settings. To customize, see the sample [etl_spec.yaml](./etl_spec.yaml) for all available fields.
+> For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
 #### Transform objects (inline or bucket-to-bucket)
 
