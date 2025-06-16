@@ -1,99 +1,171 @@
-#
-# Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
-#
+"""
+Pytest suite for the TorchVision ETL transformer.
+
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+"""
 
 import io
+import logging
+from pathlib import Path
+from typing import Dict
+import pytest
 from PIL import Image
-from torchvision import transforms
-
-from tests.base import TestBase
-from tests.utils import (
-    format_image_tag_for_git_test_mode,
-    cases,
-    generate_random_string,
-)
-from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import TORCHVISION_TRANSFORMER
 from aistore.sdk.etl import ETLConfig
+from aistore.sdk import Bucket
+from tests.const import (
+    TORCHVISION_TRANSFORMER,
+    SERVER_COMMANDS,
+    FASTAPI_PARAM_COMBINATIONS,
+)
+
+# Configure module-level logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 
 
-class TestTorchVisionTransformer(TestBase):
-    """Unit tests for TorchVision-based image transformations using AIStore ETL."""
+def _upload_test_image(test_bck: Bucket, image_path: Path) -> None:
+    """
+    Upload test image to the specified bucket.
+    """
+    filename = "test-image.jpg"
+    logger.debug("Uploading %s to bucket %s", filename, test_bck.name)
+    test_bck.object(filename).get_writer().put_file(str(image_path))
+    return filename
 
-    def setUp(self):
-        """Set up test environment by uploading a test image to the bucket."""
-        super().setUp()
-        self.test_image_filename = "test-image.jpg"
-        self.test_image_source = "./resources/test-image.jpg"
 
-        self.test_bck.object(self.test_image_filename).get_writer().put_file(
-            self.test_image_source
-        )
+def _get_transformed_image_local(image_path: Path) -> bytes:
+    """
+    Apply the same transformations locally using PIL.
+    This is used to verify the ETL transformer's output.
+    """
+    # Load image
+    image = Image.open(image_path)
 
-    def run_torchvision_test(self, communication_type):
-        """
-        Compares AIStore ETL-transformed images with locally transformed images.
+    # Resize using PIL directly
+    image = image.resize((100, 100), Image.Resampling.BILINEAR)
 
-        Args:
-            communication_type (str): The ETL communication type (HPULL, HPUSH).
-        """
-        etl_name = f"torchvision-transformer-{generate_random_string(5)}"
-        self.etls.append(etl_name)
+    # Convert to grayscale
+    image = image.convert("L")
 
-        # Define AIStore ETL transformation template
-        template = TORCHVISION_TRANSFORMER.format(
-            communication_type=communication_type,
-            transform='{"Resize": {"size": [100, 100]}, "Grayscale": {"num_output_channels": 1}}',
-            format="JPEG",
-        )
+    # Save to bytes
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format="JPEG")
+    return img_byte_arr.getvalue()
 
-        # Modify template for Git test mode
-        if self.git_test_mode:
-            template = format_image_tag_for_git_test_mode(template, "torchvision")
 
-        # Initialize ETL and apply transformation via AIStore
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=communication_type, timeout="10m"
-        )
-
-        etl_transformed_image_bytes = (
-            self.test_bck.object(self.test_image_filename)
-            .get_reader(etl=ETLConfig(etl_name))
-            .read_all()
-        )
-
-        # Perform the same transformation locally using TorchVision
-        transformed_image_bytes = self.get_transformed_image_local()
-
-        # Assert that AIStore ETL and local transformations produce identical outputs
-        self.assertEqual(transformed_image_bytes, etl_transformed_image_bytes)
-
-    def get_transformed_image_local(self) -> bytes:
-        """
-        Applies the same transformation locally using TorchVision to compare against AIStore ETL output.
-
-        Returns:
-            bytes: The locally transformed image in JPEG format.
-        """
-        transform = transforms.Compose(
-            [
-                transforms.Resize((100, 100)),  # Resize to 100x100 pixels
-                transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
-            ]
-        )
-        image = Image.open(self.test_image_source)
-        transformed_tensor = transform(transforms.ToTensor()(image))
-        transformed_image = transforms.ToPILImage()(transformed_tensor)
-
-        # Convert transformed image to bytes
-        byte_arr = io.BytesIO()
-        transformed_image.save(byte_arr, format="JPEG")
-        return byte_arr.getvalue()
-
-    @cases(
-        ETL_COMM_HPULL,
-        ETL_COMM_HPUSH,
+def _verify_transformed_image(
+    test_bck: Bucket,
+    image_filename: str,
+    etl_name: str,
+    local_transformed: bytes,
+) -> None:
+    """
+    Verify that the ETL-transformed image matches the locally transformed image.
+    """
+    etl_transformed = (
+        test_bck.object(image_filename).get_reader(etl=ETLConfig(etl_name)).read_all()
     )
-    def test_torchvision_transform(self, communication_type):
-        """Runs the TorchVision ETL transformation for different communication types."""
-        self.run_torchvision_test(communication_type)
+    assert etl_transformed == local_transformed, "ETL and local transformations differ"
+
+
+def test_torchvision_transformer_local(
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+) -> None:
+    """
+    Test the image transformations locally without Docker.
+    """
+    # Get test image path
+    image_path = next(path for path in local_files.values() if path.suffix == ".jpg")
+
+    # Upload test image
+    _upload_test_image(test_bck, image_path)
+
+    # Get locally transformed image for comparison
+    local_transformed = _get_transformed_image_local(image_path)
+
+    # Load and transform image using PIL directly
+    image = Image.open(image_path)
+
+    # Resize
+    image = image.resize((100, 100), Image.Resampling.BILINEAR)
+
+    # Convert to grayscale
+    image = image.convert("L")
+
+    # Save transformed image
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format="JPEG")
+    transformed_bytes = img_byte_arr.getvalue()
+
+    # Compare with local transformation
+    assert transformed_bytes == local_transformed, "Transformations differ"
+
+
+@pytest.mark.parametrize("server_type, comm_type, use_fqn", FASTAPI_PARAM_COMBINATIONS)
+def test_torchvision_transformer(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    test_bck: Bucket,
+    local_files: Dict[str, Path],
+    etl_factory,
+    server_type: str,
+    comm_type: str,
+    use_fqn: bool,
+) -> None:
+    """
+    Validate the Python-based TorchVision ETL transformer.
+    Upload test image, initialize the ETL, then compare transformations.
+    """
+    # Get test image path
+    image_path = next(path for path in local_files.values() if path.suffix == ".jpg")
+
+    # Upload test image
+    image_filename = _upload_test_image(test_bck, image_path)
+
+    # Get locally transformed image for comparison
+    local_transformed = _get_transformed_image_local(image_path)
+
+    # Build and initialize ETL
+    transform_config = {
+        "Resize": {"size": [100, 100]},
+        "Grayscale": {"num_output_channels": 1},
+    }
+
+    # Convert transform config to a string with single quotes
+    transform_str = str(transform_config).replace("'", '"')
+    # Escape curly braces to avoid format() conflicts
+    transform_str_escaped = transform_str.replace("{", "{{").replace("}", "}}")
+
+    # Format the template with actual values
+    template = TORCHVISION_TRANSFORMER.format(
+        communication_type=comm_type,
+        command=SERVER_COMMANDS[server_type],
+        direct_put="true",
+        format="JPEG",
+        transform=transform_str_escaped,
+    )
+
+    etl_name = etl_factory(
+        tag="torchvision",
+        server_type=server_type,
+        template=template,
+        communication_type=comm_type,
+        use_fqn=use_fqn,
+        direct_put="true",
+    )
+    logger.info(
+        "Initialized TorchVision ETL '%s' (server=%s, comm=%s, fqn=%s)",
+        etl_name,
+        server_type,
+        comm_type,
+        use_fqn,
+    )
+
+    # Verify transformations match
+    _verify_transformed_image(
+        test_bck,
+        image_filename,
+        etl_name,
+        local_transformed,
+    )

@@ -1,0 +1,25 @@
+name: torchvision-preprocess-etl
+
+runtime:
+  image: aistorage/transformer_torchvision:latest
+  env:
+    # FORMAT specifies the output image format (JPEG, PNG, etc.)
+    - name: FORMAT
+      value: "JPEG"
+    
+    # TRANSFORM specifies the image transformations to apply
+    - name: TRANSFORM
+      value: '{"Resize": {"size": [224, 224]}}'
+
+# Communication method: hpull://, hpush://, or ws://
+communication: hpull://
+
+# Argument mode: "" (default) or "fqn" (mounts host filesystem inside ETL container)
+argument: ""
+
+# Timeout settings
+init_timeout: 5m
+obj_timeout: 45s
+
+# Enables zero-copy optimization for bucket-to-bucket transformations
+support_direct_put: true 

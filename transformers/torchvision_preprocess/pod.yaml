@@ -3,27 +3,32 @@ kind: Pod
 metadata:
   name: transformer-torchvision
   annotations:
-    # Values it can take ["hpull://","hpush://"]
+    # Values `communication_type` can take are ["hpull://", "hpush://"].
+    # Visit https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms 
     communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
     wait_timeout: 5m
 spec:
   containers:
     - name: server
       image: aistorage/transformer_torchvision:latest
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       ports:
         - name: default
           containerPort: 8000
-      command:  ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      # For more information on additional arguments, please refer to
+      # https://github.com/NVIDIA/ais-etl/blob/main/transformers/torchvision_preprocess/README.md
+      command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--no-access-log"]
       env:
+        # FORMAT specifies the output image format (JPEG, PNG, etc.)
         - name: FORMAT
-        # Expected Values - PNG, JPEG, etc.
-          value: ${FORMAT}
+          value: ${FORMAT:-"JPEG"}
+        # TRANSFORM is a JSON string of torchvision transformation parameters.
+        # For more information, refer to https://pytorch.org/vision/stable/transforms.html
         - name: TRANSFORM
-        # MANDATORY: Expected JSON string parameter-value pairs. 
-        # https://pytorch.org/vision/0.9/transforms.html
-        # e.g. '{"ColorJitter": {"brightness": 0.8, "contrast": 0.4}, "RandomRotation": {"degrees": 30}}'
-          value:  ${TRANSFORM}
+          value: ${TRANSFORM:-"{}"}
+        # AIS_TARGET_URL is required for hpull communication mechanism
+        - name: AIS_TARGET_URL
+          value: ${AIS_TARGET_URL:-"http://aistore-proxy:8080"}
       # This is a health check endpoint which one should specify
       # for aistore to determine the health of the ETL container.
       readinessProbe:

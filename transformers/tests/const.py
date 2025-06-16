@@ -517,6 +517,36 @@ spec:
 {VOLUME_MOUNTS}
 """
 
+TORCHVISION_TRANSFORMER = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-torchvision
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 10m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_torchvision:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {{command}}
+      env:
+        - name: FORMAT
+          value: "{{format}}"
+        - name: TRANSFORM
+          value: '{{transform}}'
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+{VOLUME_MOUNTS}
+"""
+
 # -----------------------------------------------------------------------------
 # Parameter grids
 # -----------------------------------------------------------------------------
@@ -539,9 +569,7 @@ PARAM_COMBINATIONS = [
 
 GO_PARAM_COMBINATIONS = [
     (comm, fqn, direct_put)
-    for comm, fqn, direct_put in product(
-        COMM_TYPES, FQN_OPTIONS, DIRECT_PUT_OPTIONS
-    )
+    for comm, fqn, direct_put in product(COMM_TYPES, FQN_OPTIONS, DIRECT_PUT_OPTIONS)
     # Cannot run ws communication without direct put
     if not (comm == "ws" and direct_put == "false")
 ]
@@ -557,11 +585,13 @@ INLINE_PARAM_COMBINATIONS = [
 # -----------------------------------------------------------------------------
 # Test parameter combinations
 # -----------------------------------------------------------------------------
-FASTAPI_PARAM_COMBINATIONS = list(product(
-    ["fastapi"],  # server_type
-    [ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_WS],  # comm_type
-    [True, False],  # use_fqn
-))
+FASTAPI_PARAM_COMBINATIONS = list(
+    product(
+        ["fastapi"],  # server_type
+        [ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_WS],  # comm_type
+        [True, False],  # use_fqn
+    )
+)
 
 # -----------------------------------------------------------------------------
 # Label Format
