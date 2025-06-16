@@ -26,9 +26,10 @@ from aistore.sdk.etl.webserver.utils import deserialize_class
 # ------------------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------------------
-NUM_WORKERS: int = int(os.getenv("NUM_WORKERS", "4"))
+NUM_WORKERS: int = int(os.getenv("NUM_WORKERS", "6"))
 ETL_CLASS_PAYLOAD: str = os.getenv("ETL_CLASS_PAYLOAD", "")
 PACKAGES: str = os.getenv("PACKAGES", "")
+OS_PACKAGES: str = os.getenv("OS_PACKAGES", "")
 
 if not ETL_CLASS_PAYLOAD:
     print("ERROR: ETL_CLASS_PAYLOAD is not set", file=sys.stderr)
@@ -54,6 +55,24 @@ def install(package: str) -> None:
         log.error("Failed to install package '%s': %s", package, e)
         sys.exit(1)
 
+def install_system(pkgs: str) -> None:
+    """
+    Install system packages via apk (Alpine).
+
+    Some python packages require system dependencies that must be installed
+    via the system package manager (apk for Alpine Linux).
+    This function installs the specified packages using `apk add --no-cache`.
+    """
+    pkg_list = [p.strip() for p in pkgs.split(",") if p.strip()]
+    if not pkg_list:
+        return
+    cmd = ["apk", "add", "--no-cache"] + pkg_list
+    try:
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError as e:
+        log.error("Failed to install system packages '%s': %s", pkg_list, e)
+        sys.exit(1)
+
 
 # ------------------------------------------------------------------------------
 # Main
@@ -65,6 +84,10 @@ def main():
         log.info("Installing required packages: %s", PACKAGES)
         for package in PACKAGES.split(","):
             install(package.strip())
+    
+    if OS_PACKAGES:
+        log.info("Installing system packages: %s", OS_PACKAGES)
+        install_system(OS_PACKAGES)
 
     # 2) Deserialize ETL class
     try:
