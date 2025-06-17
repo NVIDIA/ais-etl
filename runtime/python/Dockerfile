@@ -16,3 +16,6 @@ ENV PYTHONUNBUFFERED=1
 
 # Expose the default port
 EXPOSE 8000
+
+# Set default entrypoint
+ENTRYPOINT ["python", "bootstrap.py"]
