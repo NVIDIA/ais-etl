@@ -1,0 +1,23 @@
+name: face-detection-transformer-etl
+
+runtime:
+  image: aistorage/transformer_face_detection:latest
+  env:
+    - name: FORMAT
+      value: "jpg"
+    - name: FILE_FORMAT
+      value: "image"
+
+# Communication protocol: hpull://, hpush://, or ws://
+# See https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms
+communication: hpull://
+
+# Argument mode: "" (default) or "fqn" (mounts host filesystem inside ETL container)
+argument: fqn
+
+# Timeout settings
+init_timeout: 5m    # Max time to initialize the ETL container
+obj_timeout: 45s    # Max time to process a single object
+
+# Enables zero-copy optimization for bucket-to-bucket transformations
+support_direct_put: true 

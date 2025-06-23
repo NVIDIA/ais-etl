@@ -394,8 +394,7 @@ spec:
 {VOLUME_MOUNTS}
 """
 
-# TODO: Fix template
-FACE_DETECTION_TRANSFORMER = """
+FACE_DETECTION_TEMPLATE = f"""
 apiVersion: v1
 kind: Pod
 metadata:
@@ -412,16 +411,16 @@ spec:
       ports:
         - name: default
           containerPort: 8000
-      command:  ["gunicorn", "main:app", "--workers", "5", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+      command: {{command}}
+      env:
+        - name: FORMAT
+          value: "{{format}}"
+        - name: ARG_TYPE
+          value: "{{arg_type}}"
       readinessProbe:
         httpGet:
           path: /health
           port: default
-      env:
-        - name: FORMAT
-          value: "{format}"
-        - name: ARG_TYPE
-          value: "{arg_type}"
 {VOLUME_MOUNTS}
 """
 
@@ -554,6 +553,15 @@ INLINE_PARAM_COMBINATIONS = [
     # Direct put only works on offline tranformations
     if not (comm == "ws")
 ]
+
+# -----------------------------------------------------------------------------
+# Test parameter combinations
+# -----------------------------------------------------------------------------
+FASTAPI_PARAM_COMBINATIONS = list(product(
+    ["fastapi"],  # server_type
+    [ETL_COMM_HPULL, ETL_COMM_HPUSH, ETL_COMM_WS],  # comm_type
+    [True, False],  # use_fqn
+))
 
 # -----------------------------------------------------------------------------
 # Label Format

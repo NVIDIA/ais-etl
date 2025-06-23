@@ -5,7 +5,6 @@ ifeq ($(GIT_TEST), true)
 endif
 
 REGISTRY_URL ?= docker.io/aistorage
-
 all: build push
 
 build:

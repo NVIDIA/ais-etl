@@ -1,6 +1,6 @@
 # Prior to building this image make you own kaggle_creds.json file
 # containing kaggle keys to download dataset
-FROM docker.io/library/python:3.8-slim
+FROM docker.io/library/python:3.11-slim
 
 WORKDIR /
 
@@ -27,10 +27,12 @@ RUN kaggle datasets download -d sambitmukherjee/caffe-face-detector-opencv-pretr
     rm caffe-face-detector-opencv-pretrained-model.zip && \
     rm /root/.kaggle/kaggle.json
 
-COPY main.py main.py
+COPY fastapi_server.py ./
 
-ENV PYTHONUNBUFFERED 1
 
-ENV LOG_LEVEL DEBUG
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
+
+# Set default entrypoint to run the FastAPI server
+ENTRYPOINT ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--log-level", "info", "--ws-max-size", "17179869184", "--ws-ping-interval", "0", "--ws-ping-timeout", "86400", "--no-access-log"]
