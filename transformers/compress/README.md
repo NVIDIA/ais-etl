@@ -2,7 +2,7 @@
 
 The `Compress` transformer employs compression algorithms such as `gzip` and `bz2` to compress or decompress data. 
 
-The transformer supports both `hpull` and `hpush` communication mechanisms.
+The transformer is implemented as a FastAPI server and supports both `hpull` and `hpush` communication mechanisms.
 
 > For more information on communication mechanisms, refer [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
@@ -76,8 +76,8 @@ compress_options = json.dumps('{}')
 # Format Template w/ Communication Mechanism & Default Server Arguments
 compress_template = COMPRESS.format(
     communication_mechanism=ETL_COMM_PULL,
-    compress_options=compress_options
-    
+    compress_options=compress_options,
+    command=["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--workers", "6", "--no-access-log"]
 )
 
 # Initialize Default Compress ETL
@@ -101,12 +101,29 @@ compress_options = json.dumps({"mode": "decompress", "compression": "bz2"})
 # Format Template w/ Communication Mechanism & Additional Server Arguments
 decompress_template = COMPRESS.format(
     communication_mechanism=ETL_COMM_HPULL,
-    compress_options = compress_options
+    compress_options=compress_options,
+    command=["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--workers", "6", "--no-access-log"]
 )
 
 # Initialize ETLs
 decompress_template = client.etl("bz2-decompression-etl").init_spec(template=decompress_template, communication_type=ETL_COMM_HPULL)
 ```
+
+## Server Configuration
+
+The transformer runs as a FastAPI server with the following default configuration:
+
+- Server: uvicorn with FastAPI
+- Workers: 6 (configurable)
+- Host: 0.0.0.0
+- Port: 8000
+- Access Log: Disabled
+- WebSocket Settings:
+  - Max Size: 17GB
+  - Ping Interval: 0
+  - Ping Timeout: 86400s
+
+These settings can be overridden in the pod.yaml or etl_spec.yaml configuration.
 
 ## References
 

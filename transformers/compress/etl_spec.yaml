@@ -1,0 +1,24 @@
+name: compress-transformer-etl
+runtime:
+  image: aistorage/transformer_compress:latest
+  # FastAPI server configuration
+  command: ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--workers", "4", "--no-access-log"]
+  # Compression options
+  # COMPRESS_OPTIONS is a dictionary that can include:
+  # - mode: compression mode (e.g., "gzip", "zstd", "lz4")
+  # - compression: compression level (e.g., 1-9 for gzip)
+  # For more details, see: https://github.com/NVIDIA/ais-etl/blob/main/transformers/compress/README.md
+  env:
+    - name: COMPRESS_OPTIONS
+      value: ${COMPRESS_OPTIONS:-"{}"}
+
+# Communication protocol: hpull://, hpush://, or ws://
+# See https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms
+communication: hpull://
+
+# --- Optional Fields Below ---
+
+init_timeout: 5m   
+obj_timeout: 45s  
+
+support_direct_put: true 
