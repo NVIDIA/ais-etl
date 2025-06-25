@@ -4,7 +4,7 @@ metadata:
   name: transformer-hello-world
   annotations:
     # Values it can take ["hpull://", "hpush://"]
-    communication_type: ${COMMUNICATION_TYPE:-"\"hpush://\""}
+    communication_type: hpull://
     wait_timeout: 5m
     support_direct_put: "true"
 spec:
@@ -28,11 +28,11 @@ spec:
       # If using `arg_type=fqn`, ensure the `mountPath` matches the file system path 
       # where the objects are stored on AIStore targets. This allows the ETL container 
       # to access the files directly by absolute path.
-      volumeMounts:
-        - name: ais
-          mountPath: /mnt/data/ais
-  volumes:
-    - name: ais
-      hostPath:
-        path: /mnt/data/ais
-        type: Directory
+  #     volumeMounts:
+  #       - name: ais
+  #         mountPath: /mnt/data/ais
+  # volumes:
+  #   - name: ais
+  #     hostPath:
+  #       path: /mnt/data/ais
+  #       type: Directory

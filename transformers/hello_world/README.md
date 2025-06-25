@@ -43,12 +43,6 @@ ais etl bucket hello-world-etl ais://<src-bck> ais://<dst-bck>
 ```!bash
 $ cd transformers/hello_world
 
-$ # Mention communication type between target and container
-$ export COMMUNICATION_TYPE=hpull://
-
-# Substitute env variables in spec file
-$ envsubst < pod.yaml > init_spec.yaml
-
 $ # Initialize ETL
 $ ais etl init spec --from-file init_spec.yaml --name hello-world-etl
 
