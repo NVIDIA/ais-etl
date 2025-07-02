@@ -491,7 +491,6 @@ spec:
           value: "{{dst_prefix}}"
 {VOLUME_MOUNTS}
 """
-
 COMPRESS_TEMPLATE = f"""
 apiVersion: v1
 kind: Pod
@@ -514,6 +513,36 @@ spec:
         httpGet:
           path: /health
           port: default
+{VOLUME_MOUNTS}
+"""
+
+KERAS_FASTAPI_TEMPLATE = f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: transformer-keras-preprocess
+  annotations:
+    communication_type: "{{communication_type}}://"
+    wait_timeout: 5m
+    support_direct_put: "{{direct_put}}"
+spec:
+  containers:
+    - name: server
+      image: aistorage/transformer_keras_preprocess:latest
+      imagePullPolicy: Always
+      ports:
+        - name: default
+          containerPort: 8000
+      command: {{command}}
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: default
+      env:
+        - name: TRANSFORM
+          value: '{{{{\"rotation_range\": 20, \"width_shift_range\": 0.2, \"height_shift_range\": 0.2, \"horizontal_flip\": true}}}}'
+        - name: FORMAT
+          value: "JPEG"
 {VOLUME_MOUNTS}
 """
 

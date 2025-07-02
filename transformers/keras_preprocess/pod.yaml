@@ -1,43 +1,28 @@
-# https://github.com/NVIDIA/ais-etl/blob/main/transformers/keras_transformer/README.md
 apiVersion: v1
 kind: Pod
 metadata:
-  name: transformer-keras
+  name: transformer-keras-preprocess
   annotations:
-    # Values `communication_type` can take are ["hpull://", "hpush://"].
-    # Visit https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms 
-    communication_type: ${COMMUNICATION_TYPE:-"\"hpull://\""}
-    wait_timeout: 10m
+    # Communication type: push, pull, hpush, hpull
+    communication_type: "hpull"
+    wait_timeout: "1m"
 spec:
   containers:
     - name: server
-      image: aistorage/transformer_keras:latest
+      image: aistorage/transformer_keras_preprocess:latest
       imagePullPolicy: Always
       ports:
-        - name: default
-          containerPort: 8000
-      # change worker nodes to x2 of number of cores (cpu) available
-      command:  ["gunicorn", "main:app", "--workers", "12", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+        - containerPort: 8000
       env:
-        - name: FORMAT
-        # expected values - PNG, JPEG, etc
-          value: ${FORMAT:-"JPEG"}
         - name: TRANSFORM
-        # MANDATORY: expected json string parameter-value pairs. 
-        # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator#apply_transform
-        # e.g. '{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}'
-          value:  ${TRANSFORM}
-        - name: ARG_TYPE
-          value: ${ARG_TYPE:-""}
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: default
-      volumeMounts:
-        - name: ais
-          mountPath: /tmp/
-  volumes:
-    - name: ais
-      hostPath:
-        path: /tmp/
-        type: Directory
+          value: '{"rotation_range": 40, "width_shift_range": 0.2, "height_shift_range": 0.2, "shear_range": 0.2, "zoom_range": 0.2, "horizontal_flip": true, "fill_mode": "nearest"}'
+        - name: FORMAT
+          value: "JPEG"
+      resources:
+        requests:
+          cpu: "1"
+          memory: "1Gi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+  restartPolicy: Never 

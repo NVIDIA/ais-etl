@@ -1,14 +1,13 @@
-FROM docker.io/library/python:3.9-slim
+FROM docker.io/library/python:3.11-slim
 
-WORKDIR /
+WORKDIR /code
 
-COPY ./requirements.txt requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
-
-COPY main.py main.py
-
-ENV PYTHONUNBUFFERED 1
-ENV TF_ENABLE_ONEDNN_OPTS 0
+COPY fastapi_server.py ./
 
 EXPOSE 8000
+
+# Run FastAPI app with uvicorn
+ENTRYPOINT ["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--workers", "6", "--log-level", "info", "--ws-max-size", "17179869184", "--ws-ping-interval", "0", "--ws-ping-timeout", "86400", "--no-access-log"]

@@ -1,6 +1,6 @@
 # Keras Transformer - Image Data Augmentation and Preprocessing
 
-The Keras Transformer is a powerful tool designed for image data preprocessing and data augmentation. Leveraging the `apply_transform` function from Keras (TensorFlow), this transformer allows users to define transformations by providing a JSON string with parameter-value pairs. Currently, the following parameters are supported:
+The Keras Transformer is a powerful tool designed for image data preprocessing and data augmentation. Leveraging the Keras `ImageDataGenerator` class, this transformer allows users to define transformations by providing a JSON string with parameter-value pairs. The following parameters are supported and tested:
 
 | Parameter                | Description                                             |
 |-------------------------|---------------------------------------------------------|
@@ -32,6 +32,31 @@ Only two parameters need to be updated in the `pod.yaml` file.
 | `FORMAT`| To process/store images in which image format (PNG, JPEG,etc)           | `JPEG`          |
 
 Please ensure to adjust these parameters according to your specific requirements.
+
+## ETL Args - Runtime Transform Parameters
+
+In addition to the default `TRANSFORM` environment variable, users can override transformation parameters at runtime by passing **ETL args** when calling the transformation. This allows for dynamic, per-request customization of image transformations without requiring ETL reinitialization.
+
+### How ETL Args Work
+
+- **Format**: JSON string containing transformation parameters
+- **Encoding**: ETL args are automatically URL-decoded by the server
+- **Precedence**: ETL args override the default `TRANSFORM` environment variable for that specific request
+- **Fallback**: If ETL args are invalid or missing, the transformation falls back to the default `TRANSFORM` parameters
+
+### Supported ETL Args Parameters
+
+ETL args support the same parameters as the `TRANSFORM` environment variable (Keras ImageDataGenerator parameters):
+
+| Parameter                | Type    | Description                                             | Example Values        |
+|-------------------------|---------|---------------------------------------------------------|-----------------------|
+| `rotation_range`        | Float   | Range for random rotations (in degrees)                | `40`, `90`, `180`     |
+| `width_shift_range`     | Float   | Range for random horizontal shifts                      | `0.2`, `0.3`          |
+| `height_shift_range`    | Float   | Range for random vertical shifts                        | `0.2`, `0.3`          |
+| `shear_range`           | Float   | Range for random shear transformations                  | `0.2`, `0.5`          |
+| `zoom_range`            | Float   | Range for random zoom                                   | `0.2`, `0.5`          |
+| `horizontal_flip`       | Boolean | Enable random horizontal flips                          | `true`, `false`       |
+| `fill_mode`             | String  | Fill mode ("nearest", "constant", "reflect", "wrap")    | `"nearest"`, `"constant"` |
 
 ### Initializing ETL with AIStore CLI
 

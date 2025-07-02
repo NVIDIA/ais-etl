@@ -5,11 +5,14 @@ ifeq ($(GIT_TEST), true)
 endif
 
 REGISTRY_URL ?= docker.io/aistorage
+IMAGE_NAME ?= transformer_keras_preprocess
 
-all: build push
+.PHONY: build push all
 
 build:
-	docker build -t $(REGISTRY_URL)/transformer_keras:$(TAG) .
+	docker build -t $(REGISTRY_URL)/$(IMAGE_NAME):$(TAG) .
 
-push:
-	docker push $(REGISTRY_URL)/transformer_keras:$(TAG)
+push: build
+	docker push $(REGISTRY_URL)/$(IMAGE_NAME):$(TAG)
+
+all: build push
