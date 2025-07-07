@@ -9,10 +9,9 @@ import logging
 import time
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Generator
+from typing import Generator, Dict, Any, Optional
 from io import BytesIO
 import tarfile
-from typing import Dict, Any, Optional
 
 
 from aistore import Client
@@ -27,15 +26,13 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class BenchmarkConfig:
+class BenchmarkConfig:  # pylint: disable=missing-class-docstring,too-many-instance-attributes
     # Data generation parameters
     total_manifests: int = 1000
     total_audio_files: int = 100
     entries_per_manifest: int = 100
     parts_per_audio: int = 3
-    audio_file_path: str = (
-        "/home/abhgaikwad/go/src/github.com/NVIDIA/ais-etl/transformers/tests/resources/test-audio-wav.wav"
-    )
+    audio_file_path: str = "<path-to-audio-file>/test-audio-wav.wav"
 
     # AIS configuration
     endpoint: str = "http://10.52.160.18:51080"
@@ -103,7 +100,7 @@ def initialize_bucket(client: Client, bucket_name: str) -> None:
     logger.info("Initialized bucket %s", bucket_name)
 
 
-def upload_files(
+def upload_files(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     client: Client,
     bucket_name: str,
     file_count: int,
@@ -246,7 +243,7 @@ def manage_etl(
                 client.etl(etl_name).stop()
                 client.etl(etl_name).delete()
                 logger.info("Cleaned up ETL: %s", etl_name)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Error processing ETL %s: %s", etl_name, str(e))
 
 
@@ -269,7 +266,9 @@ def execute_transformation(client: Client, cfg: BenchmarkConfig) -> None:
     logger.info("Transformation completed in %d:%05.2f", int(mins), secs)
 
 
-def trim_audio(cfg: BenchmarkConfig, data: dict, client: Client) -> Optional[bytes]:
+def trim_audio(  # pylint: disable=too-many-locals
+    cfg: BenchmarkConfig, data: dict, client: Client
+) -> Optional[bytes]:
     """Trim audio bytes from start_time to end_time."""
     # Get audio file from AIStore
     audio_bytes = (
@@ -305,7 +304,7 @@ def trim_audio(cfg: BenchmarkConfig, data: dict, client: Client) -> Optional[byt
             trimmed_file.write(trimmed_data)
         trimmed_bytes = trimmed_audio_buffer.getvalue()
         return trimmed_bytes
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logger.error("Failed to trim audio: %s", e)
         return None
 
@@ -344,7 +343,7 @@ def create_tar_archive(
                     tar_info = tarfile.TarInfo(name=f"{data['id']}_{data['part']}.wav")
                     tar_info.size = len(audio_content)
                     tar.addfile(tar_info, BytesIO(audio_content))
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logging.error("Failed to process line %d: %s", line_number, e)
         return output_tar.getvalue()
     except Exception as e:
@@ -373,7 +372,9 @@ def run_local_transformation(cfg: BenchmarkConfig, client: Client) -> None:
     logger.info("Local transformation completed in %d:%05.2f", int(mins), secs)
 
 
-def benchmark(client: Client, cfg: BenchmarkConfig, comm_type: str):
+def benchmark(
+    client: Client, cfg: BenchmarkConfig, comm_type: str
+):  # pylint: disable=missing-function-docstring
     # Initialize ETLs
     manage_etl(client, cfg, "init", comm_type)
 

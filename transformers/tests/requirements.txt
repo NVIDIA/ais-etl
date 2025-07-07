@@ -1,4 +1,4 @@
-aistore>=1.13.5
+aistore[etl]>=1.13.5
 filetype
 keras
 numpy
@@ -7,9 +7,9 @@ pyyaml
 requests
 scikit-image
 scipy
-keras
 pytest
 tensorflow
+soundfile
 opencv-python
 aiofiles
 kaggle

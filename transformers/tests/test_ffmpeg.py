@@ -149,6 +149,7 @@ def test_ffmpeg_transformer(
         etl_name,
     )
 
+
 # pylint: disable=too-many-arguments
 @pytest.mark.parametrize("comm_type, use_fqn", product(COMM_TYPES, FQN_OPTIONS))
 def test_ffmpeg_go_transformer(
@@ -172,7 +173,7 @@ def test_ffmpeg_go_transformer(
         template=FFMPEG_GO_TEMPLATE,
         communication_type=comm_type,
         use_fqn=use_fqn,
-        direct_put="true", # doesn't matter for inline transform tests, but required to enable ws
+        direct_put="true",  # doesn't matter for inline transform tests, but required to enable ws
     )
     logger.info(
         "Initialized Go FFmpeg ETL '%s' (comm=%s, fqn=%s)",
@@ -271,6 +272,7 @@ def test_ffmpeg_stress(
 
     # Record metric
     stress_metrics.append((label, duration))
+
 
 # pylint: disable=too-many-arguments, too-many-locals
 @pytest.mark.stress

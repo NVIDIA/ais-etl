@@ -1,7 +1,7 @@
 """
 Face Detection ETL transformer (FastAPI)
 
-FastAPI-based ETL server that detects faces in images using SSD (Single Shot MultiBox Detector) model.
+FastAPI-based ETL server detects faces in images using SSD (Single Shot MultiBox Detector) model.
 Supports both individual images and tar/webdataset archives.
 
 Environment:
@@ -54,7 +54,9 @@ class FaceDetection(FastAPIServer):
             "./model/architecture.txt", "./model/weights.caffemodel"
         )
 
-    def _transform_image(self, image_bytes: bytes) -> bytes:
+    def _transform_image(  # pylint: disable=too-many-locals
+        self, image_bytes: bytes
+    ) -> bytes:
         """
         Detect faces in a single image.
 
@@ -64,7 +66,9 @@ class FaceDetection(FastAPIServer):
         Returns:
             Processed image with detected faces marked.
         """
-        image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
+        image = cv2.imdecode(  # pylint: disable=no-member
+            np.frombuffer(image_bytes, np.uint8), -1
+        )
         image_height, image_width, _ = image.shape
         output_image = image.copy()
 
@@ -91,7 +95,7 @@ class FaceDetection(FastAPIServer):
                 y_1 = int(bbox[1] * image_height)
                 x_2 = int(bbox[2] * image_width)
                 y_2 = int(bbox[3] * image_height)
-                cv2.rectangle(
+                cv2.rectangle(  # pylint: disable=no-member
                     output_image,
                     pt1=(x_1, y_1),
                     pt2=(x_2, y_2),
@@ -100,7 +104,9 @@ class FaceDetection(FastAPIServer):
                 )
 
         # Encode and return the processed image
-        _, encoded_image = cv2.imencode(f".{self.format}", output_image)
+        _, encoded_image = cv2.imencode(  # pylint: disable=no-member
+            f".{self.format}", output_image
+        )
         return encoded_image.tobytes()
 
     def _transform_tar(self, data: bytes) -> bytes:

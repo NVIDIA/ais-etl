@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+HTTP server for torchvision preprocessing transformations.
+"""
+# pylint: disable=missing-class-docstring,missing-function-docstring,invalid-name,broad-exception-caught,missing-timeout,import-error
+
 #
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 #
@@ -89,7 +94,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(b"Running")
                 return
 
-            response = requests.get(host_target + self.path)
+            response = requests.get(host_target + self.path, timeout=10)
             self._set_headers()
             self.wfile.write(self.transform_image(response.content))
         except Exception as e:

@@ -12,6 +12,7 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "web"'
 
 stages:
+    - lint
     - build
     - test
     - publish
@@ -85,6 +86,24 @@ stages:
         - transformers/tests/metrics.txt
         - transformers/tests/logs/
         expire_in: 1 month
+
+lint:
+    stage: lint
+    tags:
+        - $RUNNER_TAG
+    timeout: 10m
+    rules:
+        - changes: &transformers_changes
+            - transformers/**/*
+          if: '$CI_COMMIT_BRANCH == "main"'
+          when: manual
+          allow_failure: true
+        - changes: *transformers_changes
+          if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"'
+          when: on_success
+        - when: never
+    script:
+        - make fmt-check
 
 build:echo:
     extends: .build_template

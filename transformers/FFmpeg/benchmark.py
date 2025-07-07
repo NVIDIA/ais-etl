@@ -1,5 +1,6 @@
 """
-Benchmark script for transforming audio files using FFmpeg based on [NeMo's Speech Data Processor](https://github.com/NVIDIA/NeMo-speech-data-processor).
+Benchmark script for transforming audio files using FFmpeg
+based on [NeMo's Speech Data Processor](https://github.com/NVIDIA/NeMo-speech-data-processor).
 
 This script:
 - Reads an audio file.
@@ -66,23 +67,23 @@ def transform(input_bytes: bytes, ac: int = AC, ar: int = AR) -> bytes:
     ]
 
     try:
-        process = subprocess.Popen(
+        with subprocess.Popen(
             process_args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-        )
+        ) as process:
+            raw_audio_data, stderr = process.communicate(input=input_bytes)
 
-        raw_audio_data, stderr = process.communicate(input=input_bytes)
+            if process.returncode != 0:
+                raise RuntimeError(f"FFmpeg process failed: {stderr.decode()}")
 
-        if process.returncode != 0:
-            raise RuntimeError(f"FFmpeg process failed: {stderr.decode()}")
-
-    except FileNotFoundError:
-        raise RuntimeError("FFmpeg is not installed or not found in PATH.")
+    except FileNotFoundError as exc:
+        raise RuntimeError("FFmpeg is not installed or not found in PATH.") from exc
 
     # Create a WAV file in memory
     with io.BytesIO() as wav_io:
+        # pylint: disable=no-member
         with wave.open(wav_io, "wb") as wav_file:
             wav_file.setnchannels(ac)
             wav_file.setsampwidth(2)  # 16-bit audio

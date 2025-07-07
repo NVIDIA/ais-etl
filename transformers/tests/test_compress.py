@@ -29,6 +29,7 @@ FASTAPI_PARAM_COMBINATIONS = [
     ("fastapi", "hpush", False),
 ]
 
+
 def _upload_test_files(test_bck: Bucket, local_files: Dict[str, Path]) -> None:
     """Upload files to the specified bucket."""
     for filename, path in local_files.items():
@@ -48,44 +49,46 @@ def _verify_compression(
     for filename, path in local_files.items():
         # Read original file
         original_data = Path(path).read_bytes()
-        
+
         if mode == "decompress":
             # First compress the file using the specified compression type
             if compression_type == "gzip":
                 compressed_data = gzip.compress(original_data)
             else:  # bz2
                 compressed_data = bz2.compress(original_data)
-            
+
             # Upload the compressed version
             writer = test_bck.object(filename).get_writer()
             writer.put_content(compressed_data)
-        
+
         # Get transformed data
         etl_config = ETLConfig(
-            etl_name,
-            args={"mode": mode, "compression": compression_type}
+            etl_name, args={"mode": mode, "compression": compression_type}
         )
-        
+
         reader = test_bck.object(filename).get_reader(etl=etl_config)
         transformed = reader.read_all()
-        
+
         if mode == "compress":
             # Verify compression worked
-            assert len(transformed) < len(original_data), \
-                f"Compression did not reduce size for {filename}"
-            
+            assert len(transformed) < len(
+                original_data
+            ), f"Compression did not reduce size for {filename}"
+
             # Verify we can decompress it
             if compression_type == "gzip":
                 decompressed = gzip.decompress(transformed)
             else:  # bz2
                 decompressed = bz2.decompress(transformed)
-            
-            assert decompressed == original_data, \
-                f"Decompressed data doesn't match original for {filename}"
+
+            assert (
+                decompressed == original_data
+            ), f"Decompressed data doesn't match original for {filename}"
         else:  # decompress
             # Verify decompression worked
-            assert transformed == original_data, \
-                f"Decompressed data doesn't match original for {filename}"
+            assert (
+                transformed == original_data
+            ), f"Decompressed data doesn't match original for {filename}"
 
 
 @pytest.mark.parametrize("server_type, comm_type, use_fqn", FASTAPI_PARAM_COMBINATIONS)

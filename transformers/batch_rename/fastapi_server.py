@@ -54,7 +54,7 @@ class BatchRenameServer(FastAPIServer):
         """
         if re.search(self.pattern, path):
             new_path = f"{self.prefix}{os.path.basename(path)}"
-            # TODO: Add directly to target option
+            # Write the renamed object to the destination bucket
             self.ais_client.bucket(self.dst_bucket, provider=self.dst_provider).object(
                 new_path
             ).get_writer().put_content(data)

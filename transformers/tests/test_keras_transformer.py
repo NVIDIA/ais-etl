@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-from tensorflow.keras.preprocessing.image import (
+from tensorflow.keras.preprocessing.image import (  # pylint: disable=import-error,no-name-in-module
     ImageDataGenerator,
     load_img,
     array_to_img,

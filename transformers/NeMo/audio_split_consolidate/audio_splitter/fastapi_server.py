@@ -64,11 +64,7 @@ class AudioSplitterServer(FastAPIServer):
         return args
 
     def _trim_audio(
-        self, 
-        audio_bytes: bytes, 
-        start_time: float, 
-        end_time: float, 
-        fmt: str
+        self, audio_bytes: bytes, start_time: float, end_time: float, fmt: str
     ) -> bytes:
         """
         Trim the given audio bytes between start_time and end_time.

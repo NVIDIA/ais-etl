@@ -55,6 +55,7 @@ def install(package: str) -> None:
         log.error("Failed to install package '%s': %s", package, e)
         sys.exit(1)
 
+
 def install_system(pkgs: str) -> None:
     """
     Install system packages via apk (Alpine).
@@ -84,7 +85,7 @@ def main():
         log.info("Installing required packages: %s", PACKAGES)
         for package in PACKAGES.split(","):
             install(package.strip())
-    
+
     if OS_PACKAGES:
         log.info("Installing system packages: %s", OS_PACKAGES)
         install_system(OS_PACKAGES)

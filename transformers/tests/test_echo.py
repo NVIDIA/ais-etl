@@ -127,7 +127,7 @@ def test_go_echo_transformer(
         template=ECHO_GO_TEMPLATE,
         communication_type=comm_type,
         use_fqn=use_fqn,
-        direct_put="true", # doesn't matter for inline transform tests, but required to enable ws
+        direct_put="true",  # doesn't matter for inline transform tests, but required to enable ws
     )
 
     # Execute transform and assert on each file

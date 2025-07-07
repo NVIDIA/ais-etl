@@ -46,7 +46,7 @@ def _verify_face_detection(
 ) -> None:
     """
     Verify that faces are correctly detected in the images.
-    
+
     Args:
         test_bck: Test bucket containing input images
         local_files: Dictionary mapping filenames to local paths
@@ -55,23 +55,26 @@ def _verify_face_detection(
     """
     for filename, path in local_files.items():
         # Skip non-image files
-        if not filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+        if not filename.lower().endswith((".jpg", ".jpeg", ".png")):
             continue
-            
+
         # Get transformed image
-        reader = test_bck.object(filename).get_reader(
-            etl=ETLConfig(etl_name)
-        )
+        reader = test_bck.object(filename).get_reader(etl=ETLConfig(etl_name))
         transformed = reader.read_all()
-        
+
         # Decode the transformed image
         image = cv2.imdecode(np.frombuffer(transformed, np.uint8), -1)
-        
+
         # Basic verification checks
         assert image is not None, f"Failed to decode transformed image for {filename}"
-        assert len(image.shape) == 3, f"Expected color image, got shape {image.shape} for {filename}"
-        assert image.shape[2] in [3, 4], f"Expected 3 (RGB) or 4 (RGBA) color channels, got {image.shape[2]} for {filename}"
-        
+        assert (
+            len(image.shape) == 3
+        ), f"Expected color image, got shape {image.shape} for {filename}"
+        assert image.shape[2] in [
+            3,
+            4,
+        ], f"Expected 3 (RGB) or 4 (RGBA) color channels, got {image.shape[2]} for {filename}"
+
         # Check for green rectangles (face detection markers)
         # Ensure image is 8-bit for HSV conversion (workaround for Docker image issue)
         if image.dtype != np.uint8:
@@ -79,13 +82,15 @@ def _verify_face_detection(
                 image = (image / 256).astype(np.uint8)
             else:
                 image = cv2.convertScaleAbs(image)
-        
+
         # Convert to HSV for easier color detection
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         green_mask = cv2.inRange(hsv, (35, 50, 50), (85, 255, 255))
         has_green = np.any(green_mask)
-        
-        assert has_green, f"No face detection markers (green rectangles) found in {filename}"
+
+        assert (
+            has_green
+        ), f"No face detection markers (green rectangles) found in {filename}"
 
 
 def _verify_tar_face_detection(
@@ -96,7 +101,7 @@ def _verify_tar_face_detection(
 ) -> None:
     """
     Verify face detection in a tar/webdataset archive.
-    
+
     Args:
         test_bck: Test bucket containing the tar file
         tar_filename: Name of the tar file in the bucket
@@ -104,31 +109,34 @@ def _verify_tar_face_detection(
         output_format: Expected output image format
     """
     # Get transformed tar
-    reader = test_bck.object(tar_filename).get_reader(
-        etl=ETLConfig(etl_name)
-    )
+    reader = test_bck.object(tar_filename).get_reader(etl=ETLConfig(etl_name))
     transformed_tar = reader.read_all()
-    
+
     # Read tar contents
     tar_buffer = io.BytesIO(transformed_tar)
-    with tarfile.open(fileobj=tar_buffer, mode='r:*') as tar:
+    with tarfile.open(fileobj=tar_buffer, mode="r:*") as tar:
         for member in tar.getmembers():
-            if not member.name.lower().endswith(f'.{output_format}'):
+            if not member.name.lower().endswith(f".{output_format}"):
                 continue
-                
+
             # Extract and verify each image
             f = tar.extractfile(member)
             if f is None:
                 continue
-                
+
             image_data = f.read()
             image = cv2.imdecode(np.frombuffer(image_data, np.uint8), -1)
-            
+
             # Basic verification checks
             assert image is not None, f"Failed to decode image {member.name} from tar"
-            assert len(image.shape) == 3, f"Expected color image, got shape {image.shape} for {member.name}"
-            assert image.shape[2] in [3, 4], f"Expected 3 (RGB) or 4 (RGBA) color channels, got {image.shape[2]} for {member.name}"
-            
+            assert (
+                len(image.shape) == 3
+            ), f"Expected color image, got shape {image.shape} for {member.name}"
+            assert image.shape[2] in [
+                3,
+                4,
+            ], f"Expected 3 (RGB) or 4 (RGBA) color channels, got {image.shape[2]} for {member.name}"
+
             # Check for green rectangles (face detection markers)
             # Ensure image is 8-bit for HSV conversion (workaround for Docker image issue)
             if image.dtype != np.uint8:
@@ -136,11 +144,11 @@ def _verify_tar_face_detection(
                     image = (image / 256).astype(np.uint8)
                 else:
                     image = cv2.convertScaleAbs(image)
-            
+
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             green_mask = cv2.inRange(hsv, (35, 50, 50), (85, 255, 255))
             has_green = np.any(green_mask)
-            
+
             assert has_green, f"No face detection markers found in {member.name}"
 
 
@@ -168,7 +176,7 @@ def test_face_detection(
         command=SERVER_COMMANDS[server_type],
         format=output_format,
         arg_type="fqn" if use_fqn else "",
-        direct_put="true"
+        direct_put="true",
     )
 
     etl_name = etl_factory(
@@ -177,7 +185,7 @@ def test_face_detection(
         template=template,
         communication_type=comm_type,
         use_fqn=use_fqn,
-        direct_put="true"
+        direct_put="true",
     )
 
     _verify_face_detection(
@@ -186,6 +194,7 @@ def test_face_detection(
         etl_name,
         output_format,
     )
+
 
 @pytest.mark.parametrize("server_type, comm_type, use_fqn", FASTAPI_PARAM_COMBINATIONS)
 @pytest.mark.parametrize("output_format", ["jpg", "png"])
@@ -221,7 +230,7 @@ def test_face_detection_tar_runtime(
         command=SERVER_COMMANDS[server_type],
         format=output_format,
         arg_type="fqn" if use_fqn else "",
-        direct_put="true"
+        direct_put="true",
     )
 
     etl_name = etl_factory(
@@ -230,7 +239,7 @@ def test_face_detection_tar_runtime(
         template=template,
         communication_type=comm_type,
         use_fqn=use_fqn,
-        direct_put="true"
+        direct_put="true",
     )
 
     _verify_tar_face_detection(

@@ -30,7 +30,7 @@ from aistore.sdk.etl import ETLConfig
 from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
 
 
-class AudioManagerServer(FastAPIServer):
+class AudioManagerServer(FastAPIServer):  # pylint: disable=too-many-instance-attributes
     """
     Audio Manager Server for batch-splitting audio via ETL.
 
@@ -59,7 +59,9 @@ class AudioManagerServer(FastAPIServer):
         self.max_pool_size = int(os.getenv("MAX_POOL_SIZE", "50"))
 
         # Initialize AIS SDK client and source bucket
-        self.ais_client = Client(self.ais_endpoint, max_pool_size=self.max_pool_size, timeout=None)
+        self.ais_client = Client(
+            self.ais_endpoint, max_pool_size=self.max_pool_size, timeout=None
+        )
         self.src_bucket = self.ais_client.bucket(
             bck_name=self.bucket_name, provider=self.provider
         )
@@ -146,7 +148,7 @@ class AudioManagerServer(FastAPIServer):
                     tar.addfile(tarinfo=info, fileobj=BytesIO(audio))
                     processed += 1
 
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     self.logger.error("Line %d failed: %s", idx, e)
 
         self.logger.info("Created TAR with %d audio files", processed)

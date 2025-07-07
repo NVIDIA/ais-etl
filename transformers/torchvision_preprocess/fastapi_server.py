@@ -12,7 +12,7 @@ Supports configurable image transformations and compression.
 
 Environment Variables:
     TRANSFORM          - JSON string with torchvision transformations (required)
-                        Ex: {"Resize": {"size": [224, 224]}, "Grayscale": {"num_output_channels": 1}}
+                        Ex: {"Resize": {"size": [224, 224]}, "Grayscale": {"num_output_channels": 1}}  # pylint: disable=line-too-long
     FORMAT             - Output image format (JPEG, PNG, etc.)
                         Default: "JPEG"
 
@@ -26,8 +26,8 @@ import sys
 from collections.abc import Iterable
 from typing import Optional
 
-from PIL import Image
-from torchvision import transforms
+from PIL import Image  # pylint: disable=import-error
+from torchvision import transforms  # pylint: disable=import-error
 from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
 
 # Patch collections.Iterable for Python 3.13 compatibility
@@ -47,19 +47,15 @@ class TorchvisionServer(FastAPIServer):
         transform_config = os.environ.get("TRANSFORM")
         if not transform_config:
             raise ValueError("TRANSFORM environment variable is required")
-        self.transform_pipeline = self._create_transform_pipeline(
-            transform_config
-        )
+        self.transform_pipeline = self._create_transform_pipeline(transform_config)
 
     def _create_transform_pipeline(self, transform_config: str) -> transforms.Compose:
         """Create a torchvision transform pipeline from configuration."""
         try:
             config_dict = json.loads(transform_config)
         except json.JSONDecodeError as e:
-            raise ValueError(
-                f"Invalid JSON in transform configuration: {e}"
-            ) from e
-            
+            raise ValueError(f"Invalid JSON in transform configuration: {e}") from e
+
         transform_list = []
         for transform_name, params in config_dict.items():
             try:
