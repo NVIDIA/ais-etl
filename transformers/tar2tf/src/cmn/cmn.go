@@ -7,10 +7,10 @@ package cmn
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -75,8 +75,7 @@ func ErrFileNotExists(err error) bool {
 	if err == nil {
 		return false
 	}
-	// TODO: fixme?
-	return os.IsNotExist(err) || strings.Contains(err.Error(), "no such file or directory")
+	return errors.Is(err, fs.ErrNotExist)
 }
 
 // HTTP RANGE HEADER
