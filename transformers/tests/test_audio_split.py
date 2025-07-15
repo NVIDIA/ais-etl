@@ -19,7 +19,7 @@ import soundfile as sf
 from aistore.sdk import Bucket
 from aistore.sdk.etl import ETLConfig
 
-from tests.const import AUDIO_SPLITTER_TEMPLATE, COMM_TYPES, FQN_OPTIONS
+from tests.const import COMM_TYPES, FQN_OPTIONS
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
@@ -74,9 +74,8 @@ def test_audio_splitter_transform(
     etl_name = etl_factory(
         tag="audio-splitter",
         server_type="fastapi",
-        template=AUDIO_SPLITTER_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=True,
     )
     logger.info("Initialized ETL %s (comm=%s, fqn=%s)", etl_name, comm_type, use_fqn)

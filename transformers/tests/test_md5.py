@@ -19,7 +19,7 @@ import pytest
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
-from tests.const import MD5_TEMPLATE, INLINE_PARAM_COMBINATIONS
+from tests.const import INLINE_PARAM_COMBINATIONS
 
 # Configure module‐level logging
 logging.basicConfig(
@@ -57,9 +57,8 @@ def test_md5_transformer(
     etl_name = etl_factory(
         tag="md5",
         server_type=server_type,
-        template=MD5_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
     )
     logging.info(
         "Initialized MD5 ETL '%s' (server=%s, comm=%s, fqn=%s)",

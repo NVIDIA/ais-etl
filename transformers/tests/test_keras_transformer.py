@@ -23,7 +23,6 @@ from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
 from tests.const import (
-    KERAS_FASTAPI_TEMPLATE,
     FASTAPI_PARAM_COMBINATIONS,
 )
 
@@ -152,10 +151,10 @@ def test_keras_fastapi_transformer(
     etl_name = etl_factory(
         tag="keras-preprocess",
         server_type=server_type,
-        template=KERAS_FASTAPI_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
+        TRANSFORM=json.dumps(DEFAULT_TRANSFORM),
     )
     logger.info(
         "Initialized Keras ETL '%s' (server=%s, comm=%s, fqn=%s)",

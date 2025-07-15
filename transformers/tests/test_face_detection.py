@@ -19,11 +19,7 @@ import webdataset as wds
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
-from tests.const import (
-    FASTAPI_PARAM_COMBINATIONS,
-    FACE_DETECTION_TEMPLATE,
-    SERVER_COMMANDS,
-)
+from tests.const import FASTAPI_PARAM_COMBINATIONS
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -171,21 +167,13 @@ def test_face_detection(
     _upload_test_files(test_bck, local_files)
 
     # Build and initialize ETL
-    template = FACE_DETECTION_TEMPLATE.format(
-        communication_type=comm_type,
-        command=SERVER_COMMANDS[server_type],
-        format=output_format,
-        arg_type="fqn" if use_fqn else "",
-        direct_put="true",
-    )
-
     etl_name = etl_factory(
         tag="face-detection",
         server_type=server_type,
-        template=template,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
+        format=output_format,
     )
 
     _verify_face_detection(
@@ -225,21 +213,13 @@ def test_face_detection_tar_runtime(
 
     test_bck.object(tar_object_name).get_writer().put_content(tar_stream.getvalue())
 
-    template = FACE_DETECTION_TEMPLATE.format(
-        communication_type=comm_type,
-        command=SERVER_COMMANDS[server_type],
-        format=output_format,
-        arg_type="fqn" if use_fqn else "",
-        direct_put="true",
-    )
-
     etl_name = etl_factory(
         tag="face-detection",
         server_type=server_type,
-        template=template,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
+        format=output_format,
     )
 
     _verify_tar_face_detection(

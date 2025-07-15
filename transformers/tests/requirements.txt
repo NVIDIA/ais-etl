@@ -1,4 +1,4 @@
-aistore[etl]>=1.13.5
+aistore[etl]>=1.15.0
 filetype
 keras
 numpy

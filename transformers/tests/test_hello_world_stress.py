@@ -17,7 +17,7 @@ import logging
 import pytest
 from aistore.sdk import Bucket
 
-from tests.const import PARAM_COMBINATIONS, HELLO_WORLD_TEMPLATE, LABEL_FMT
+from tests.const import PARAM_COMBINATIONS, LABEL_FMT
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -50,15 +50,14 @@ def test_hello_world_stress(
         name="HELLO WORLD",
         server=server_type,
         comm=comm_type,
-        arg="fqn" if use_fqn else "",
+        arg=use_fqn,
         direct=direct_put,
     )
     etl_name = etl_factory(
         tag="hello-world",
         server_type=server_type,
-        template=HELLO_WORLD_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=direct_put,
     )
 

@@ -23,8 +23,6 @@ from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
 from tests.const import (
-    ECHO_TEMPLATE,
-    ECHO_GO_TEMPLATE,
     INLINE_PARAM_COMBINATIONS,
     FQN_OPTIONS,
     COMM_TYPES,
@@ -87,9 +85,8 @@ def test_echo_transformer(
     etl_name = etl_factory(
         tag="echo",
         server_type=server_type,
-        template=ECHO_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
     )
     logger.info(
         "Initialized Echo ETL '%s' (server=%s, comm=%s, fqn=%s)",
@@ -124,10 +121,9 @@ def test_go_echo_transformer(
     etl_name = etl_factory(
         tag="echo-go",
         server_type="go-http",
-        template=ECHO_GO_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",  # doesn't matter for inline transform tests, but required to enable ws
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,  # doesn't matter for inline transform tests, but required to enable ws
     )
 
     # Execute transform and assert on each file

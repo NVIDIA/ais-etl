@@ -14,10 +14,7 @@ import xxhash
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 
-from tests.const import (
-    INLINE_PARAM_COMBINATIONS,
-    HASH_WITH_ARGS_TEMPLATE,
-)
+from tests.const import INLINE_PARAM_COMBINATIONS
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -84,9 +81,9 @@ def test_echo_transformer(
     etl_name = etl_factory(
         tag="hash-with-args",
         server_type=server_type,
-        template=HASH_WITH_ARGS_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
     )
     logger.info(
         "Initialized HashWithArgs ETL '%s' (server=%s, comm=%s, fqn=%s)",

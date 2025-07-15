@@ -19,8 +19,6 @@ from aistore.sdk import Bucket, Client
 from aistore.sdk.errors import ErrBckNotFound
 
 from tests.const import (
-    FFMPEG_TEMPLATE,
-    FFMPEG_GO_TEMPLATE,
     INLINE_PARAM_COMBINATIONS,
     PARAM_COMBINATIONS,
     LABEL_FMT,
@@ -131,9 +129,10 @@ def test_ffmpeg_transformer(
     etl_name = etl_factory(
         tag="ffmpeg",
         server_type=server_type,
-        template=FFMPEG_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        AR="16000",
+        AC="1",
     )
     logger.info(
         "Initialized Echo ETL '%s' (server=%s, comm=%s, fqn=%s)",
@@ -170,10 +169,11 @@ def test_ffmpeg_go_transformer(
     etl_name = etl_factory(
         tag="ffmpeg-go",
         server_type="go-http",
-        template=FFMPEG_GO_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",  # doesn't matter for inline transform tests, but required to enable ws
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,  # doesn't matter for inline transform tests, but required to enable ws
+        AR="16000",
+        AC="1",
     )
     logger.info(
         "Initialized Go FFmpeg ETL '%s' (comm=%s, fqn=%s)",
@@ -218,16 +218,17 @@ def test_ffmpeg_stress(
         name="FFMPEG",
         server=server_type,
         comm=comm_type,
-        arg="fqn" if use_fqn else "",
+        arg=use_fqn,
         direct=direct_put,
     )
     etl_name = etl_factory(
         tag="ffmpeg",
         server_type=server_type,
-        template=FFMPEG_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=direct_put,
+        AR="16000",
+        AC="1",
     )
 
     # 2) Run transform job
@@ -292,17 +293,18 @@ def test_go_ffmpeg_stress(
         name="FFMPEG-GO",
         server="go-http",
         comm=comm_type,
-        arg="fqn" if use_fqn else "",
+        arg=use_fqn,
         direct=direct_put,
     )
 
     etl_name = etl_factory(
         tag="ffmpeg-go",
         server_type="go-http",
-        template=FFMPEG_GO_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=direct_put,
+        AR="16000",
+        AC="1",
     )
 
     # 2) Run transform job

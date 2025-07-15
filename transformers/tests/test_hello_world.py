@@ -15,9 +15,9 @@ from pathlib import Path
 
 import pytest
 from aistore.sdk.etl import ETLConfig
-from aistore.sdk import Bucket
+from aistore.sdk import Bucket, Client
 
-from tests.const import HELLO_WORLD_TEMPLATE, INLINE_PARAM_COMBINATIONS
+from tests.const import INLINE_PARAM_COMBINATIONS
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ logging.basicConfig(
 # pylint: disable=too-many-arguments
 @pytest.mark.parametrize("server_type, comm_type, use_fqn", INLINE_PARAM_COMBINATIONS)
 def test_hello_world_transformer(
+    client: Client,
     test_bck: Bucket,
     local_files: dict[str, Path],
     etl_factory: callable,
@@ -57,9 +58,8 @@ def test_hello_world_transformer(
     etl_name = etl_factory(
         tag="hello-world",
         server_type=server_type,
-        template=HELLO_WORLD_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
     )
     logger.info(
         "Initialized Hello-World ETL '%s' (server=%s, comm=%s, fqn=%s)",
@@ -67,6 +67,20 @@ def test_hello_world_transformer(
         server_type,
         comm_type,
         use_fqn,
+    )
+
+    # Verify ETL configuration matches what we requested
+    etl_details = client.etl(etl_name).view()
+    expected_arg_type = "fqn" if use_fqn else ""
+    expected_communication = f"{comm_type}://"
+
+    assert etl_details.init_msg.communication == expected_communication, (
+        f"ETL {etl_name} has communication='{etl_details.init_msg.communication}', "
+        f"expected '{expected_communication}'"
+    )
+    assert etl_details.init_msg.argument == expected_arg_type, (
+        f"ETL {etl_name} has argument='{etl_details.init_msg.argument}', "
+        f"expected '{expected_arg_type}'"
     )
 
     # Execute transform and assert on each file

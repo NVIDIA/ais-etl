@@ -13,7 +13,6 @@ from aistore.sdk import Bucket
 from aistore.sdk.etl import ETLConfig
 
 from tests.const import (
-    BATCH_RENAME_TEMPLATE,
     COMM_TYPES,
     FQN_OPTIONS,
 )
@@ -75,25 +74,18 @@ def test_batch_rename_transformer(
     for fname, fpath in local_audio_files.items():
         test_bck.object(fname).get_writer().put_file(str(fpath))
 
-    # Build transformer spec
-    transformer_spec = BATCH_RENAME_TEMPLATE.format(
-        communication_type="{communication_type}",
-        direct_put="{direct_put}",
-        command="{command}",
-        ais_endpoint=endpoint,
-        bck_name=test_bck.name,
-        regex_pattern=pattern,
-        dst_prefix=prefix,
-    )
-
     # Initialize transformer
     etl_name = etl_factory(
         tag="batch-rename",
         server_type="fastapi",
-        template=transformer_spec,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
+        AIS_ENDPOINT=endpoint,
+        DST_BUCKET=test_bck.name,
+        DST_BUCKET_PROVIDER="ais",
+        FILE_PATTERN=pattern,
+        DST_PREFIX=prefix,
     )
     logger.info(
         "Initialized ETL '%s' (server=fastapi, comm=%s, fqn=%s)",

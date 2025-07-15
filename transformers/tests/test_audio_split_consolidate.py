@@ -21,8 +21,6 @@ from aistore.sdk import Bucket
 from aistore.sdk.etl import ETLConfig
 
 from tests.const import (
-    AUDIO_SPLITTER_TEMPLATE,
-    AUDIO_MANAGER_TEMPLATE,
     COMM_TYPES,
     FQN_OPTIONS,
 )
@@ -140,29 +138,23 @@ def test_audio_split_consolidate_transform(
     splitter_etl = etl_factory(
         tag="audio-splitter",
         server_type="fastapi",
-        template=AUDIO_SPLITTER_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=True,
     )
-
-    manager_tmpl = AUDIO_MANAGER_TEMPLATE.format(
-        communication_type="{communication_type}",
-        direct_put="{direct_put}",
-        command="{command}",
-        ais_endpoint=endpoint,
-        bck_name=test_bck.name,
-        etl_name=splitter_etl,
-    )
-    logger.info("template: %s", manager_tmpl)
 
     manager_etl = etl_factory(
         tag="audio-manager",
         server_type="fastapi",
-        template=manager_tmpl,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=True,
+        AIS_ENDPOINT=endpoint,
+        SRC_BUCKET=test_bck.name,
+        SRC_PROVIDER="ais",
+        OBJ_PREFIX="",
+        OBJ_EXTENSION="wav",
+        ETL_NAME=splitter_etl,
     )
 
     # Fetch actual tar from manager ETL

@@ -20,8 +20,6 @@ from itertools import product
 
 from tests.const import (
     PARAM_COMBINATIONS,
-    ECHO_TEMPLATE,
-    ECHO_GO_TEMPLATE,
     LABEL_FMT,
     GO_PARAM_COMBINATIONS,
 )
@@ -93,16 +91,15 @@ def test_echo_stress(
         name="ECHO",
         server=server_type,
         comm=comm_type,
-        arg="fqn" if use_fqn else "",
+        arg=use_fqn,
         direct=direct_put,
     )
 
     etl_name = etl_factory(
         tag="echo",
         server_type=server_type,
-        template=ECHO_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=direct_put,
     )
 
@@ -155,16 +152,15 @@ def test_go_echo_stress(
         name="ECHO-GO",
         server="go-http",
         comm=comm_type,
-        arg="fqn" if use_fqn else "",
+        arg=use_fqn,
         direct=direct_put,
     )
 
     etl_name = etl_factory(
         tag="echo-go",
         server_type="go-http",
-        template=ECHO_GO_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
         direct_put=direct_put,
     )
 

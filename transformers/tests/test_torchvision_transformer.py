@@ -5,6 +5,7 @@ Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
 """
 
 import io
+import json
 import logging
 from pathlib import Path
 from typing import Dict
@@ -13,7 +14,6 @@ from PIL import Image
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
 from tests.const import (
-    TORCHVISION_TRANSFORMER,
     SERVER_COMMANDS,
     FASTAPI_PARAM_COMBINATIONS,
 )
@@ -132,27 +132,17 @@ def test_torchvision_transformer(  # pylint: disable=too-many-arguments,too-many
         "Grayscale": {"num_output_channels": 1},
     }
 
-    # Convert transform config to a string with single quotes
-    transform_str = str(transform_config).replace("'", '"')
-    # Escape curly braces to avoid format() conflicts
-    transform_str_escaped = transform_str.replace("{", "{{").replace("}", "}}")
-
-    # Format the template with actual values
-    template = TORCHVISION_TRANSFORMER.format(
-        communication_type=comm_type,
-        command=SERVER_COMMANDS[server_type],
-        direct_put="true",
-        format="JPEG",
-        transform=transform_str_escaped,
-    )
+    # Convert transform config to proper JSON string
+    transform_json = json.dumps(transform_config)
 
     etl_name = etl_factory(
         tag="torchvision",
         server_type=server_type,
-        template=template,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
-        direct_put="true",
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
+        FORMAT="JPEG",
+        TRANSFORM=transform_json,
     )
     logger.info(
         "Initialized TorchVision ETL '%s' (server=%s, comm=%s, fqn=%s)",

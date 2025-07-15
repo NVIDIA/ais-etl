@@ -15,7 +15,6 @@ import os
 import logging
 from pathlib import Path
 from typing import Dict, List, Tuple
-import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pytest
@@ -25,7 +24,6 @@ from aistore.sdk.errors import ErrETLNotFound
 from tests.utils import (
     generate_random_string,
     log_etl,
-    format_image_tag_for_git_test_mode,
 )
 from tests.const import SERVER_COMMANDS
 
@@ -103,12 +101,16 @@ def etl_factory(client: Client):
     automatically stops & deletes it at test teardown.
 
     Usage:
+        etl_name = etl_factory(tag="hello-world")
+
+    With optional parameters:
         etl_name = etl_factory(
             tag="hello-world",
-            server_type="flask",
-            template=HELLO_WORLD_TEMPLATE,
-            communication_type="hpull",
-            use_fqn=True,
+            server_type="fastapi",
+            comm_type="hpull",
+            arg_type="fqn",
+            direct_put=True,
+            ENV_VAR_NAME="value",
         )
 
     After the test completes, every ETL created via this factory will
@@ -116,14 +118,10 @@ def etl_factory(client: Client):
     """
     created: list[str] = []
 
-    # pylint: disable=too-many-arguments
     def _create(
         tag: str,
-        server_type: str,
-        template: str,
-        communication_type: str,
-        use_fqn: bool,
-        direct_put: str = "false",
+        server_type: str = "fastapi",
+        **kwargs,
     ) -> str:
         """
         Initialize one ETL spec.
@@ -131,43 +129,32 @@ def etl_factory(client: Client):
         Args:
             tag: short identifier (e.g. "echo" or "hello-world")
             server_type: key in SERVER_COMMANDS ("flask"/"fastapi"/"http")
-            template: Pod-spec YAML template string
-            communication_type: ETL_COMM_HPULL or ETL_COMM_HPUSH
-            use_fqn: if True, sets arg_type="fqn", else ""
-            direct_put: if "true", sets direct_put=true in the template
+            **kwargs: any additional parameters for init() method (optional)
         Returns:
             The unique ETL name created.
         """
+        comm_type = kwargs.get("comm_type", "hpull")
         suffix = generate_random_string(6)
-        name = f"{tag[:10]}-{server_type}-{communication_type}-{suffix}"
+        name = f"{tag[:10]}-{server_type}-{comm_type}-{suffix}"
         created.append(name)
 
-        try:
-            cmd = json.dumps(SERVER_COMMANDS[server_type])
+        # Get the image name, handling GIT_TEST logic
+        image_tag = tag.replace("-", "_")
+        use_test_tag = os.getenv("GIT_TEST", "false").lower() == "true"
+        tag_suffix = "test" if use_test_tag else "latest"
+        image = f"aistorage/transformer_{image_tag}:{tag_suffix}"
 
-            tmpl = template.format(
-                communication_type=communication_type,
-                command=cmd,
-                direct_put=direct_put,
-            )
-        except KeyError:
-            # Other types of servers, like "go", let the template handle it
-            tmpl = template.format(
-                communication_type=communication_type,
-                direct_put=direct_put,
-            )
+        # Get the command for the server type
+        command = None
+        if server_type in SERVER_COMMANDS:
+            command = SERVER_COMMANDS[server_type]
 
-        if os.getenv("GIT_TEST", "false").lower() == "true":
-            tmpl = format_image_tag_for_git_test_mode(tmpl, tag.replace("-", "_"))
-
-        logger.debug("Template for ETL %s:\n%s", name, tmpl)
+        logger.debug(
+            "Initializing ETL %s with image %s and command %s", name, image, command
+        )
 
         # Init the ETL on the cluster
-        client.etl(name).init_spec(
-            template=tmpl,
-            communication_type=communication_type,
-            arg_type="fqn" if use_fqn else "",
-        )
+        client.etl(name).init(image=image, command=command, **kwargs)
         logger.debug("Initialized ETL %s", name)
         return name
 

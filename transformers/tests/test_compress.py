@@ -9,17 +9,12 @@ Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 
 import gzip
 import bz2
-import logging
 from pathlib import Path
 from typing import Dict
 
 import pytest
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk import Bucket
-
-from tests.const import (
-    COMPRESS_TEMPLATE,
-)
 
 # FastAPI-only test parameters
 FASTAPI_PARAM_COMBINATIONS = [
@@ -115,9 +110,9 @@ def test_compress_transformer(
     etl_name = etl_factory(
         tag="compress",
         server_type=server_type,
-        template=COMPRESS_TEMPLATE,
-        communication_type=comm_type,
-        use_fqn=use_fqn,
+        comm_type=comm_type,
+        arg_type="fqn" if use_fqn else "",
+        direct_put=True,
     )
 
     _verify_compression(
