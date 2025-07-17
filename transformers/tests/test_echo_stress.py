@@ -91,7 +91,7 @@ def test_echo_stress(
         name="ECHO",
         server=server_type,
         comm=comm_type,
-        arg=use_fqn,
+        arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
 
@@ -152,7 +152,7 @@ def test_go_echo_stress(
         name="ECHO-GO",
         server="go-http",
         comm=comm_type,
-        arg=use_fqn,
+        arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
 

@@ -50,7 +50,7 @@ def test_hello_world_stress(
         name="HELLO WORLD",
         server=server_type,
         comm=comm_type,
-        arg=use_fqn,
+        arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
     etl_name = etl_factory(

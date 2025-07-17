@@ -218,7 +218,7 @@ def test_ffmpeg_stress(
         name="FFMPEG",
         server=server_type,
         comm=comm_type,
-        arg=use_fqn,
+        arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
     etl_name = etl_factory(
@@ -293,7 +293,7 @@ def test_go_ffmpeg_stress(
         name="FFMPEG-GO",
         server="go-http",
         comm=comm_type,
-        arg=use_fqn,
+        arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
 

@@ -51,7 +51,7 @@ def test_md5_stress(
         name="MD5",
         server=server_type,
         comm=comm_type,
-        arg=use_fqn,
+        arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
     etl_name = etl_factory(
