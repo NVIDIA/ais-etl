@@ -2,4 +2,4 @@ aistore[etl]>=1.14.0
 numpy
 opencv-python
 kaggle==1.5.16
-Pillow>=10.0.1
+Pillow>=10.3.0

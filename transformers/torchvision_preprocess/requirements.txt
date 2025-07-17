@@ -1,4 +1,4 @@
 aistore[etl]>=1.14.0
-pillow>=10.0.0,<10.1.0
+Pillow>=10.3.0
 torch>=2.0.0
 torchvision>=0.15.0
