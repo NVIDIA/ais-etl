@@ -20,8 +20,9 @@ stages:
 
 # Common setup for all build stages
 .build_template:
-    when: manual
+    when: on_success
     stage: build
+    needs: ["lint"]
     tags: 
         - $RUNNER_TAG
     variables:
@@ -93,15 +94,12 @@ lint:
         - $RUNNER_TAG
     timeout: 10m
     rules:
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
         - changes: &transformers_changes
             - transformers/**/*
-          if: '$CI_COMMIT_BRANCH == "main"'
-          when: manual
+          if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+        - when: manual
           allow_failure: true
-        - changes: *transformers_changes
-          if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"'
-          when: on_success
-        - when: never
     script:
         - make fmt-check
 
@@ -116,8 +114,8 @@ build:echo:
           - transformers/echo/**/*
           - transformers/go_echo/**/*
           - transformers/tests/test_echo.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:hello_world:
     extends: .build_template
@@ -130,8 +128,8 @@ build:hello_world:
           - transformers/hello_world/**/*
           - transformers/go_hello_world/**/*
           - transformers/tests/test_hello_world.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:md5:
     extends: .build_template
@@ -142,8 +140,8 @@ build:md5:
       - changes:
           - transformers/md5/**/*
           - transformers/tests/test_md5.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:hash_with_args:
     extends: .build_template
@@ -154,8 +152,8 @@ build:hash_with_args:
       - changes:
           - transformers/hash_with_args/**/*
           - transformers/tests/test_hash_with_args.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:tar2tf:
     extends: .build_template
@@ -166,8 +164,8 @@ build:tar2tf:
       - changes:
           - transformers/tar2tf/**/*
           - transformers/tests/test_tar2tf.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:compress:
     extends: .build_template
@@ -178,8 +176,8 @@ build:compress:
       - changes:
           - transformers/compress/**/*
           - transformers/tests/test_compress.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:torchvision:
     extends: .build_template
@@ -190,8 +188,8 @@ build:torchvision:
       - changes:
           - transformers/torchvision_preprocess/**/*
           - transformers/tests/test_torchvision_transformer.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:keras:
     extends: .build_template
@@ -202,8 +200,8 @@ build:keras:
       - changes:
           - transformers/keras_preprocess/**/*
           - transformers/tests/test_keras_transformer.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:face_detection:
     extends: .build_template
@@ -215,8 +213,8 @@ build:face_detection:
       - changes:
           - transformers/face_detection/**/*
           - transformers/tests/test_face_detection.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:audio_split_consolidate:
     extends: .build_template
@@ -229,8 +227,8 @@ build:audio_split_consolidate:
           - transformers/NeMo/audio_split_consolidate/**/*
           - transformers/tests/test_audio_split_consolidate.py
           - transformers/tests/test_audio_split.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:ffmpeg:
     extends: .build_template
@@ -243,8 +241,8 @@ build:ffmpeg:
           - transformers/FFmpeg/**/*
           - transformers/go_FFmpeg/**/*
           - transformers/tests/test_ffmpeg.py
-        when: always
-      - when: manual 
+      - when: manual
+        allow_failure: true 
 
 build:batch_rename:
     extends: .build_template
@@ -255,8 +253,8 @@ build:batch_rename:
       - changes:
           - transformers/batch_rename/**/*
           - transformers/tests/test_batch_rename.py
-        when: always
-      - when: manual 
+      - when: manual
+        allow_failure: true 
 
 build:runtime-python:
     extends: .build_template
@@ -266,8 +264,8 @@ build:runtime-python:
     rules:
       - changes:
           - runtime/python/**/*
-        when: always
-      - when: manual 
+      - when: manual
+        allow_failure: true 
     variables:
         RUNTIME_IMAGE: 'aistorage/runtime_python'
         REGISTRY_URL: 'docker.io/aistorage'
