@@ -26,10 +26,10 @@ stages:
     tags: 
         - $RUNNER_TAG
     variables:
-        GIT_TEST: "true"
-        DOCKER_TLS_CERTDIR: ""
+        REGISTRY_URL: $CI_REGISTRY_IMAGE
+        TAG: $CI_COMMIT_SHORT_SHA
     before_script:
-        - echo "$DOCKERHUB_TOKEN" | podman login docker.io --username "$DOCKERHUB_USERNAME" --password-stdin
+        - echo "$CI_REGISTRY_PASSWORD" | podman login $CI_REGISTRY --username "$CI_REGISTRY_USER" --password-stdin
 
 # Common setup for all publish stages
 .publish_template:
@@ -38,7 +38,6 @@ stages:
     tags: 
         - $RUNNER_TAG
     variables:
-        GIT_TEST: "false"
         DOCKER_TLS_CERTDIR: ""
     before_script:
         - echo "$DOCKERHUB_TOKEN" | podman login docker.io --username "$DOCKERHUB_USERNAME" --password-stdin
@@ -57,7 +56,6 @@ stages:
         - $RUNNER_TAG_K8S
     variables:
         AIS_ENDPOINT: "http://192.168.49.2:8080"
-        GIT_TEST: "true"
     before_script:
         - cd transformers && make common_deps && cd ..
     artifacts:
@@ -74,7 +72,6 @@ stages:
     timeout: 1h
     variables:
         AIS_ENDPOINT: $SJC4_DEV_CLUSTER
-        GIT_TEST: "true"
         DEPLOY_ENV: "prod"
     before_script:
         - cd transformers && make common_deps && cd ..
@@ -258,6 +255,8 @@ build:batch_rename:
 
 build:runtime-python:
     extends: .build_template
+    variables:
+        RUNTIME_TAG_MODIFIER: "-${CI_COMMIT_SHORT_SHA}"
     script:
         - cd runtime/python
         - make all
@@ -266,9 +265,6 @@ build:runtime-python:
           - runtime/python/**/*
       - when: manual
         allow_failure: true 
-    variables:
-        RUNTIME_IMAGE: 'aistorage/runtime_python'
-        REGISTRY_URL: 'docker.io/aistorage'
 
 test:echo:
     extends: .test_template

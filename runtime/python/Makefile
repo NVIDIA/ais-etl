@@ -1,3 +1,6 @@
+REGISTRY_URL ?= docker.io/aistorage
+RUNTIME_TAG_MODIFIER ?=
+
 .PHONY: all
 all:
 	@REGISTRY_URL=$(REGISTRY_URL) RUNTIME_TAG_MODIFIER=$(RUNTIME_TAG_MODIFIER) bash builder.sh

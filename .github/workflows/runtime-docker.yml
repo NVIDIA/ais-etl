@@ -6,10 +6,6 @@ on:
     paths:
       - 'runtime/python/**'
 
-env:
-  RUNTIME_IMAGE: 'aistorage/runtime_python'
-  REGISTRY_URL: 'docker.io/aistorage'
-
 jobs:
   docker:
     runs-on: ubuntu-latest

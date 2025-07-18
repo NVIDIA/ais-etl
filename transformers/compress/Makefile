@@ -1,11 +1,5 @@
-# Default image tag is 'latest'
-TAG := latest
-ifeq ($(GIT_TEST), true)
-	TAG := test
-endif
-
+TAG ?= latest
 REGISTRY_URL ?= docker.io/aistorage
-
 IMAGE_NAME := transformer_compress
 
 .PHONY: all build push clean test

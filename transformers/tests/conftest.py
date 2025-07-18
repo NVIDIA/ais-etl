@@ -138,11 +138,14 @@ def etl_factory(client: Client):
         name = f"{tag[:10]}-{server_type}-{comm_type}-{suffix}"
         created.append(name)
 
-        # Get the image name, handling GIT_TEST logic
+        # Get the image name, handling CI vs local logic
         image_tag = tag.replace("-", "_")
-        use_test_tag = os.getenv("GIT_TEST", "false").lower() == "true"
-        tag_suffix = "test" if use_test_tag else "latest"
-        image = f"aistorage/transformer_{image_tag}:{tag_suffix}"
+        if os.getenv("GITLAB_CI"):
+            registry_image = os.getenv("CI_REGISTRY_IMAGE")
+            tag_suffix = os.getenv("CI_COMMIT_SHORT_SHA")
+            image = f"{registry_image}/transformer_{image_tag}:{tag_suffix}"
+        else:
+            image = f"aistorage/transformer_{image_tag}:latest"
 
         # Get the command for the server type
         command = None
