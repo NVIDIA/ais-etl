@@ -33,7 +33,7 @@ runtime:
 ais etl init spec --from-file etl_spec.yaml md5-etl
 ```
 
-This initializes the ETL with default settings. To customize, see the sample [etl_spec.yaml](transformers/md5/Dockerfile) for all available fields.
+This initializes the ETL with default settings. To customize, see the sample [etl_spec.yaml](Dockerfile) for all available fields.
 
 #### Transform objects (inline or bucket-to-bucket)
 

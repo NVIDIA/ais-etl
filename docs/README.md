@@ -69,9 +69,6 @@ For each extension `e`, dict with have an entry `e` with value the same as conte
 If default `record_to_example` was used, `default_record_parser` function should be used to
 parse `TFRecord` to `tf.Dataset` interface.
 
-
-![POC TAR2TF](images/poctar2tf.png)
-
 ### tar2tf.ops
 
 `ops` module is used to describe tar-record to datapoint transformation.

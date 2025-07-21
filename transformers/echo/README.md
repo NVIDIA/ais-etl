@@ -34,7 +34,7 @@ runtime:
 ais etl init spec --from-file etl_spec.yaml --name echo-etl
 ```
 
-This initializes the ETL with default settings. To customize, see the sample [etl_spec.yaml](transformers/echo/etl_spec.yaml) for all available fields.
+This initializes the ETL with default settings. To customize, see the sample [etl_spec.yaml](etl_spec.yaml) for all available fields.
 
 #### Transform objects (inline or bucket-to-bucket)
 
