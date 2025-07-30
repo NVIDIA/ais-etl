@@ -27,5 +27,4 @@ class Md5Server(FlaskServer):
 
 
 flask_server = Md5Server(port=8000)
-flask_server.logger.setLevel("DEBUG")
 flask_app = flask_server.app

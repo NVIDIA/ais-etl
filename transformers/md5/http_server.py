@@ -29,5 +29,4 @@ class Md5Server(HTTPMultiThreadedServer):
 
 if __name__ == "__main__":
     server = Md5Server()
-    server.logger.setLevel("DEBUG")
     server.start()

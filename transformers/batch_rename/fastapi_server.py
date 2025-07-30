@@ -63,5 +63,4 @@ class BatchRenameServer(FastAPIServer):
 
 # Initialize the ETL server and expose the FastAPI application
 fastapi_server = BatchRenameServer()
-fastapi_server.logger.setLevel("DEBUG")
 fastapi_app = fastapi_server.app

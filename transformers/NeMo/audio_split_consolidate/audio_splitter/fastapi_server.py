@@ -37,7 +37,6 @@ class AudioSplitterServer(FastAPIServer):
 
     def __init__(self, port: int = 8000) -> None:
         super().__init__(port=port)
-        self.logger.setLevel("DEBUG")
         self.logger.info("AudioSplitterServer initialized on port %d", port)
 
     def _parse_etl_args(self, raw: str) -> Dict[str, Any]:

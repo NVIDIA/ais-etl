@@ -21,5 +21,4 @@ class HelloWorldServerFastAPI(FastAPIServer):
 
 # Instantiate the server and expose its FastAPI app
 fastapi_server = HelloWorldServerFastAPI(port=8000)
-fastapi_server.logger.setLevel("DEBUG")
 fastapi_app = fastapi_server.app  # This is what uvicorn will run

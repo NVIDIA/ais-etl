@@ -21,5 +21,4 @@ class HelloWorldServerFlask(FlaskServer):
 
 
 flask_server = HelloWorldServerFlask(port=8000)
-flask_server.logger.setLevel("DEBUG")
 flask_app = flask_server.app

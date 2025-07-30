@@ -17,5 +17,4 @@ class EchoServerFlask(FlaskServer):
 
 
 flask_server = EchoServerFlask(port=8000)
-flask_server.logger.setLevel("DEBUG")
 flask_app = flask_server.app

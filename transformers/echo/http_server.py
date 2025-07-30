@@ -18,5 +18,4 @@ class EchoServer(HTTPMultiThreadedServer):
 
 if __name__ == "__main__":
     echo_server = EchoServer(port=8000)
-    echo_server.logger.setLevel("DEBUG")
     echo_server.start()

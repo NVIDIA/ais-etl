@@ -22,5 +22,4 @@ class HelloWorldHTTPServer(HTTPMultiThreadedServer):
 
 if __name__ == "__main__":
     http_server = HelloWorldHTTPServer(port=8000)
-    http_server.logger.setLevel("DEBUG")
     http_server.start()

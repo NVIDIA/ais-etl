@@ -76,5 +76,4 @@ class FFmpegServer(HTTPMultiThreadedServer):
 
 if __name__ == "__main__":
     server = FFmpegServer()
-    server.logger.setLevel("DEBUG")
     server.start()

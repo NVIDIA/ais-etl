@@ -18,5 +18,4 @@ class EchoServerFastAPI(FastAPIServer):
 
 # Create the server instance and expose the FastAPI app
 fastapi_server = EchoServerFastAPI(port=8000)
-fastapi_server.logger.setLevel("DEBUG")
 fastapi_app = fastapi_server.app  # Expose the FastAPI app

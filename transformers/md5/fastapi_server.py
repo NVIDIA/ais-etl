@@ -28,5 +28,4 @@ class Md5Server(FastAPIServer):
 
 # Create the server instance and expose the FastAPI app
 fastapi_server = Md5Server(port=8000)
-fastapi_server.logger.setLevel("DEBUG")
 fastapi_app = fastapi_server.app  # Expose the FastAPI app
