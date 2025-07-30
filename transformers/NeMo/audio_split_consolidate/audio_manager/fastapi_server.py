@@ -151,7 +151,7 @@ class AudioManagerServer(FastAPIServer):  # pylint: disable=too-many-instance-at
                 except Exception as e:  # pylint: disable=broad-exception-caught
                     self.logger.error("Line %d failed: %s", idx, e)
 
-        self.logger.info("Created TAR with %d audio files", processed)
+        self.logger.debug("Created TAR with %d audio files", processed)
         return buffer.getvalue()
 
 
