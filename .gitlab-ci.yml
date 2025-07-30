@@ -262,8 +262,8 @@ build:parquet-parser:
       - changes:
           - transformers/parquet-parser/**/*
           - transformers/tests/test_parquet_parser.py
-        when: always
       - when: manual
+        allow_failure: true
 
 build:runtime-python:
     extends: .build_template
