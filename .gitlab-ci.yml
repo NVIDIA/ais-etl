@@ -370,7 +370,8 @@ test:parquet-parser:
     extends: .test_template
     needs: ["build:parquet-parser"]
     script:
-        - cd transformers/parquet-parser/src && go test -v
+        - cd transformers/tests && pytest -v --log-cli-level=INFO test_parquet_parser.py
+        - cd ../parquet-parser/src && go test -v
 
 publish:echo:
     extends: .publish_template

@@ -1,7 +1,7 @@
 name: parquet-parser-etl
 
 runtime:
-  image: aistorage/transformer_parquet-parser:latest
+  image: aistorage/transformer_parquet_parser:latest
   env:
   - name: OUTPUT_FORMAT
     value: "json"  # Default format: json, csv, txt, text
@@ -10,6 +10,6 @@ runtime:
 communication: hpush://
 
 init_timeout: 5m
-obj_timeout: 45s
+obj_timeout: 1m
 
 support_direct_put: true 

@@ -37,7 +37,7 @@ Set the `OUTPUT_FORMAT` environment variable in your ETL spec:
 # etl_spec.yaml
 name: parquet-parser-etl
 runtime:
-  image: aistorage/transformer_parquet-parser:latest
+  image: aistorage/transformer_parquet_parser:latest
   env:
   - name: OUTPUT_FORMAT
     value: "csv"  # Options: json, csv, txt, text
@@ -59,7 +59,7 @@ ais etl object parquet-parser-etl ais://data/file.parquet output.csv --etl-args 
 cd ais-etl/transformers/parquet-parser/
 
 # Deploy the ETL to your AIStore cluster
-ais etl init spec --from-file etl_spec.yaml parquet-parser
+ais etl init spec --f etl_spec.yaml parquet-parser
 ```
 
 ### Transform Data
@@ -171,15 +171,4 @@ make push
 
 # Custom registry
 REGISTRY_URL=your-registry.com make build
-```
-
-## Integration with Download Pipeline
-
-This transformer is designed to work with the upcoming AIStore download-ETL pipeline:
-
-```bash
-# Future: Single command download + transform
-ais download --hf-dataset squad ais://training-data/ \
-  --etl-transform parquet-parser \
-  --etl-format json
 ```
