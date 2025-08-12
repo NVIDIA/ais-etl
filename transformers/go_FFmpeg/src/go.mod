@@ -2,7 +2,7 @@ module github.com/NVIDIA/ais-etl/transformers/go_ffmpeg/src
 
 go 1.24
 
-require github.com/NVIDIA/aistore v1.3.32-0.20250808144913-0a1a72c932e1
+require github.com/NVIDIA/aistore v1.3.32-0.20250812001501-6e988847edfe
 
 require (
 	github.com/OneOfOne/xxhash v1.2.8 // indirect

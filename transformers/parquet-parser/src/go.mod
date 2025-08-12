@@ -3,7 +3,7 @@ module github.com/NVIDIA/ais-etl/transformers/parquet-parser/src
 go 1.24
 
 require (
-	github.com/NVIDIA/aistore v1.3.32-0.20250808144913-0a1a72c932e1
+	github.com/NVIDIA/aistore v1.3.32-0.20250812001501-6e988847edfe
 	github.com/apache/arrow-go/v18 v18.1.0
 	golang.org/x/sync v0.16.0
 )
