@@ -1,10 +1,10 @@
-FROM python:3.13-alpine
+FROM docker.io/library/python:3.13-alpine
+
+RUN pip3 install --upgrade aistore[etl]>=1.15.1
 
 # Set working directory
+RUN mkdir /code
 WORKDIR /code
-
-# Install Python dependencies
-RUN pip3 install --upgrade aistore[etl]>=1.13.6
 
 # Copy application code
 COPY flask_server.py fastapi_server.py http_server.py ./
