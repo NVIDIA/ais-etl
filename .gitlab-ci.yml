@@ -469,6 +469,14 @@ publish:parquet-parser:
         - cd transformers
         - make -C parquet-parser all
 
+publish:runtime-python:
+    extends: .publish_template
+    # TODO: Add test stage for runtime-python
+    needs: ["build:runtime-python"]
+    script:
+        - cd runtime/python
+        - make all
+
 stress:echo:
     extends: .stress_template
     script:
