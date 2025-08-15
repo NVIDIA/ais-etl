@@ -15,13 +15,16 @@ import os
 import sys
 import logging
 import subprocess
+import pickle
+import importlib
+import base64
+import io
 from typing import Type
 
 from aistore.sdk.etl.webserver.base_etl_server import ETLServer
 from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
 from aistore.sdk.etl.webserver.flask_server import FlaskServer
 from aistore.sdk.etl.webserver.http_multi_threaded_server import HTTPMultiThreadedServer
-from aistore.sdk.etl.webserver.utils import deserialize_class
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -75,6 +78,25 @@ def install_system(pkgs: str) -> None:
         sys.exit(1)
 
 
+class RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that only allows ETLServer subclasses."""
+
+    def find_class(self, module: str, name: str):
+        # Import the class
+        try:
+            mod = importlib.import_module(module)
+            obj = getattr(mod, name)
+        except (ImportError, AttributeError) as exc:
+            raise pickle.UnpicklingError(f"Cannot import: {module}.{name}") from exc
+
+        # Check if it's a class and subclass of ETLServer
+        if not isinstance(obj, type) or not issubclass(obj, ETLServer):
+            raise pickle.UnpicklingError(
+                f"{module}.{name} is not a subclass of ETLServer"
+            )
+        return obj
+
+
 # ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
@@ -92,15 +114,16 @@ def main():
 
     # 2) Deserialize ETL class
     try:
-        # pylint: disable=invalid-name
-        ETLClass: Type[ETLServer] = deserialize_class(ETL_CLASS_PAYLOAD)
-    except Exception as e:
+        raw = base64.b64decode(ETL_CLASS_PAYLOAD.encode())
+        etl_class: Type[ETLServer] = RestrictedUnpickler(io.BytesIO(raw)).load()
+    except Exception as e:  # pylint: disable=broad-exception-caught
         log.error("Failed to decode ETL class payload: %s", e)
         sys.exit(1)
 
     # 3) Instantiate ETL server
     try:
-        server = ETLClass()
+        server = etl_class()
+    # pylint: disable=broad-exception-caught
     except Exception as e:
         log.error("Failed to instantiate ETLServer: %s", e)
         sys.exit(1)

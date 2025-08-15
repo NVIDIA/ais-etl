@@ -9,7 +9,7 @@ RUN mkdir /code
 WORKDIR /code
 
 # Copy app code
-COPY bootstrap.py server.py ./
+COPY bootstrap.py ./
 
 # Environment setup
 ENV PYTHONUNBUFFERED=1
