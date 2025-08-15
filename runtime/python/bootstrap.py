@@ -15,11 +15,9 @@ import os
 import sys
 import logging
 import subprocess
-import pickle
-import importlib
 import base64
-import io
 from typing import Type
+import cloudpickle
 
 from aistore.sdk.etl.webserver.base_etl_server import ETLServer
 from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
@@ -78,23 +76,17 @@ def install_system(pkgs: str) -> None:
         sys.exit(1)
 
 
-class RestrictedUnpickler(pickle.Unpickler):
-    """Unpickler that only allows ETLServer subclasses."""
-
-    def find_class(self, module: str, name: str):
-        # Import the class
-        try:
-            mod = importlib.import_module(module)
-            obj = getattr(mod, name)
-        except (ImportError, AttributeError) as exc:
-            raise pickle.UnpicklingError(f"Cannot import: {module}.{name}") from exc
-
-        # Check if it's a class and subclass of ETLServer
-        if not isinstance(obj, type) or not issubclass(obj, ETLServer):
-            raise pickle.UnpicklingError(
-                f"{module}.{name} is not a subclass of ETLServer"
-            )
-        return obj
+def deserialize_class(payload: str) -> Type[ETLServer]:
+    """Deserialize the ETL class from the payload."""
+    try:
+        raw = base64.b64decode(payload.encode())
+        etl_class = cloudpickle.loads(raw)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        log.error("Failed to deserialize ETL class: %s", e)
+        sys.exit(1)
+    if not isinstance(etl_class, type) or not issubclass(etl_class, ETLServer):
+        raise TypeError(f"{etl_class!r} is not a subclass of ETLServer")
+    return etl_class
 
 
 # ------------------------------------------------------------------------------
@@ -113,12 +105,7 @@ def main():
         install_system(OS_PACKAGES)
 
     # 2) Deserialize ETL class
-    try:
-        raw = base64.b64decode(ETL_CLASS_PAYLOAD.encode())
-        etl_class: Type[ETLServer] = RestrictedUnpickler(io.BytesIO(raw)).load()
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        log.error("Failed to decode ETL class payload: %s", e)
-        sys.exit(1)
+    etl_class = deserialize_class(ETL_CLASS_PAYLOAD)
 
     # 3) Instantiate ETL server
     try:
