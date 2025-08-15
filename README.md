@@ -46,3 +46,9 @@ A blank list (`[]`) and the absence of error messages indicate that the cluster 
 
 > **Note**
 > For the ETL functionality you must first initialize the transformation logic so that the cluster can execute it. The following folders and examples in this repository demonstrate how to build and register your own transformers.
+
+> **⚠️ BETA NOTICE**  
+> This software is currently in beta phase. Please be aware that:
+> - Changes may not be backward compatible
+> - AIS-ETL runs user code in containers within the AIStore environment, which may pose security risks if not properly controlled. Use with caution in production environments.
+> - Not yet audited by NVIDIA’s security team
