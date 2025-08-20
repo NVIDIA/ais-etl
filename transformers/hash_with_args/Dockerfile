@@ -1,6 +1,6 @@
 FROM docker.io/library/python:3.13-alpine
 
-RUN pip3 install --upgrade aistore[etl]>=1.15.1
+RUN pip3 install --upgrade aistore[etl]>=1.15.2
 
 # Set working directory
 RUN mkdir /code

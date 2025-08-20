@@ -4,7 +4,7 @@ FROM docker.io/library/python:3.13-alpine
 WORKDIR /code
 
 # Install Python dependencies
-RUN pip3 install --upgrade aistore[etl]>=1.15.1
+RUN pip3 install --upgrade aistore[etl]>=1.15.2
 
 # Copy application code
 COPY fastapi_server.py ./
