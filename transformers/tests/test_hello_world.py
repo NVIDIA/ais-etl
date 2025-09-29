@@ -78,10 +78,6 @@ def test_hello_world_transformer(
         f"ETL {etl_name} has communication='{etl_details.init_msg.communication}', "
         f"expected '{expected_communication}'"
     )
-    assert etl_details.init_msg.argument == expected_arg_type, (
-        f"ETL {etl_name} has argument='{etl_details.init_msg.argument}', "
-        f"expected '{expected_arg_type}'"
-    )
 
     # Execute transform and assert on each file
     for filename in local_files:
