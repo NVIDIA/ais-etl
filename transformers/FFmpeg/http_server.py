@@ -1,11 +1,20 @@
 """
-FFmpeg ETL Transformer (HTTP-based Server)
+FFmpeg ETL Transformer (HTTPMultiThreadedServer)
 
-This module implements an ETL transformer as a FastAPI-based server
-that transform audio files into WAV format with control over
-Audio Channels (`AC`) and Audio Rate (`AR`) with help of FFmpeg utility.
+HTTPMultiThreadedServer-based ETL that normalizes/encodes audio via FFmpeg.
+- Reads audio bytes from stdin (pipe:0)
+- Applies optional channel/sample-rate/codec/bitrate/format settings
+- Writes the transformed audio to stdout (pipe:1)
 
-Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+Env vars (all optional):
+  AC      -> channels (e.g., "1", "2")
+  AR      -> sample rate (e.g., "16000", "44100")
+  BR      -> bitrate (e.g., "128k", "64k")   # lossy codecs only
+  CODEC   -> audio codec (e.g., "pcm_s16le", "flac", "libmp3lame", "aac")
+  FORMAT  -> container/format (e.g., "wav", "flac", "mp3", "m4a", "opus", "ogg")
+
+Default codec: pcm_s16le
+Default format: wav
 """
 
 import os
@@ -14,17 +23,39 @@ import subprocess
 from aistore.sdk.etl.webserver.http_multi_threaded_server import HTTPMultiThreadedServer
 
 
+_MIME_BY_FORMAT = {
+    "wav": "audio/wav",
+    "flac": "audio/flac",
+    "mp3": "audio/mpeg",
+    "m4a": "audio/mp4",
+    "aac": "audio/aac",
+    "opus": "audio/opus",
+    "ogg": "audio/ogg",
+}
+
+_AUDIO_EXTS = {".wav", ".flac", ".mp3", ".m4a", ".aac", ".opus", ".ogg"}
+
+
 class FFmpegServer(HTTPMultiThreadedServer):
-    """
-    Multi-threaded HTTP server for FFmpeg-based ETL transformation.
-    """
+    """FastAPI-based server for FFmpeg audio transformation."""
 
     def __init__(self, host: str = "0.0.0.0", port: int = 8000):
         super().__init__(host=host, port=port)
-        # configure from environment or defaults
-        self.channels = os.getenv("AC", "2")
-        self.samplerate = os.getenv("AR", "44100")
-        # base ffmpeg command, reading from stdin, writing WAV to stdout
+        # Read env (do not coerce unless present)
+        self.channels = os.getenv("AC")  # "1", "2", ...
+        self.samplerate = os.getenv("AR")  # "16000", "44100", ...
+        self.bitrate = os.getenv("BR")  # "128k", "64k", ...
+        self.codec = os.getenv(
+            "CODEC", "pcm_s16le"
+        )  # "pcm_s16le", "flac", "libmp3lame", "aac", ...
+        self.audio_filters = os.getenv(
+            "AUDIO_FILTERS"
+        )  # "loudnorm", "silenceremove", "atempo", "volume", ...
+        self.format = os.getenv(
+            "FORMAT", "wav"
+        )  # "wav", "flac", "mp3", "m4a", "opus", "ogg", ...
+
+        # Build ffmpeg command lazily (only include flags that have values)
         self.ffmpeg_cmd = [
             "ffmpeg",
             "-nostdin",
@@ -32,28 +63,33 @@ class FFmpegServer(HTTPMultiThreadedServer):
             "error",
             "-i",
             "pipe:0",
-            "-ac",
-            str(self.channels),
-            "-ar",
-            str(self.samplerate),
-            "-c:a",
-            "pcm_s16le",
-            "-f",
-            "wav",
-            "pipe:1",
         ]
-        self.audio_exts = {".wav", ".flac", ".mp3", ".m4a", ".opus", ".ogg"}
+        if self.channels:
+            self.ffmpeg_cmd += ["-ac", str(self.channels)]
+        if self.samplerate:
+            self.ffmpeg_cmd += ["-ar", str(self.samplerate)]
+
+        # Codec default (always include)
+        self.ffmpeg_cmd += ["-c:a", self.codec]
+
+        if self.audio_filters:
+            self.ffmpeg_cmd += ["-af", self.audio_filters]
+
+        # Bitrate only for lossy codecs (safe to include conditionally)
+        if self.bitrate:
+            self.ffmpeg_cmd += ["-b:a", self.bitrate]
+
+        # Output format (default wav)
+        self.ffmpeg_cmd += ["-f", self.format, "pipe:1"]
 
     def transform(self, data: bytes, path: str, _etl_args: str) -> bytes:
         """
-        Run FFmpeg to convert raw audio into WAV format.
-        Raises an error on FFmpeg failure.
+        Transform input audio using FFmpeg. If the path extension doesn't look
+        like audio, pass the bytes through unchanged.
         """
-        ext = os.path.splitext(path)[1].lower()
-        # If it doesn’t look like audio, just pass it back without processing it
-        if ext not in self.audio_exts:
+        ext = os.path.splitext(path or "")[1].lower()
+        if ext and ext not in _AUDIO_EXTS:
             return data
-
         with subprocess.Popen(
             self.ffmpeg_cmd,
             stdin=subprocess.PIPE,
@@ -68,10 +104,8 @@ class FFmpegServer(HTTPMultiThreadedServer):
             return out
 
     def get_mime_type(self) -> str:
-        """
-        Return the MIME type for the transformed data.
-        """
-        return "audio/wav"
+        """Return MIME type based on configured output format."""
+        return _MIME_BY_FORMAT.get(self.format.lower(), "application/octet-stream")
 
 
 if __name__ == "__main__":

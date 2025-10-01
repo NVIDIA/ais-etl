@@ -5,10 +5,23 @@ runtime:
   env:
     # Audio Rate
     - name: AR
-      value: "16000"
+      value: "44100"
     # Audio Channels  
     - name: AC
-      value: "1"
+      value: "2"
+    # Optional Audio Options
+    # # Audio Bitrate
+    # - name: BR
+    #   value: "192k"
+    # # Audio Codec
+    # - name: CODEC
+    #   value: "libmp3lame"
+    # # Audio Format
+    # - name: FORMAT
+    #   value: "mp3"
+    # # Audio Filters
+    # - name: AUDIO_FILTERS
+    #   value: "loudnorm"
 
   # Optional: override the default FastAPI server
   # Uncomment the relevant line below to use a different web server.
