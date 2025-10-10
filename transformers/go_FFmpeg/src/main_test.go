@@ -26,12 +26,13 @@ func TestFFmpegTransform(t *testing.T) {
 		samplerate: "44100",
 	}
 
-	transformed, err := svr.Transform(input, filename, "")
+	transformed, size, err := svr.Transform(input, filename, "")
 	tassert.CheckError(t, err)
 
 	output, err := io.ReadAll(transformed)
 	tlog.Logf("Transformed output size: %d\n", len(output))
 	tassert.CheckError(t, err)
+	tassert.Fatalf(t, size == int64(len(output)), "Size mismatch: Transform reported %d bytes, but actual output is %d bytes", size, len(output))
 	tassert.Fatalf(t, bytes.HasPrefix(output, []byte("RIFF")), "Output is not a valid WAV file")
 }
 
@@ -47,7 +48,7 @@ func TestFFmpegTransformMP3(t *testing.T) {
 	}
 
 	// Run the transform
-	transformed, err := svr.Transform(input, filename, "")
+	transformed, size, err := svr.Transform(input, filename, "")
 	tassert.CheckError(t, err)
 
 	// Read result
@@ -56,6 +57,9 @@ func TestFFmpegTransformMP3(t *testing.T) {
 
 	tlog.Logf("Transformed output size: %d bytes\n", len(output))
 	tlog.Logln(string(output[:10]))
+
+	// Validate that reported size matches actual output
+	tassert.Fatalf(t, size == int64(len(output)), "Size mismatch: Transform reported %d bytes, but actual output is %d bytes", size, len(output))
 
 	// Assert basic WAV structure
 	tassert.Fatalf(t, bytes.HasPrefix(output, []byte("RIFF")), "Missing RIFF header")

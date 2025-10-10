@@ -1,6 +1,6 @@
 // Package main is implementation of a simple hello world transformation in golang.
 /*
- * Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
  */
 package main
 
@@ -18,9 +18,9 @@ type HelloWorldServer struct {
 	webserver.ETLServer
 }
 
-func (es *HelloWorldServer) Transform(input io.ReadCloser, path, args string) (io.ReadCloser, error) {
+func (es *HelloWorldServer) Transform(input io.ReadCloser, path, args string) (io.ReadCloser, int64, error) {
 	input.Close()
-	return io.NopCloser(bytes.NewReader([]byte(es.response))), nil
+	return io.NopCloser(bytes.NewReader([]byte(es.response))), int64(len(es.response)), nil
 }
 
 var _ webserver.ETLServer = (*HelloWorldServer)(nil)

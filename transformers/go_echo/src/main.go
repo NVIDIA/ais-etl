@@ -17,13 +17,13 @@ type EchoServer struct {
 	webserver.ETLServer
 }
 
-func (es *EchoServer) Transform(input io.ReadCloser, path, args string) (io.ReadCloser, error) {
+func (es *EchoServer) Transform(input io.ReadCloser, path, args string) (io.ReadCloser, int64, error) {
 	data, err := io.ReadAll(input)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	input.Close()
-	return io.NopCloser(bytes.NewReader(data)), nil
+	return io.NopCloser(bytes.NewReader(data)), int64(len(data)), nil
 }
 
 var _ webserver.ETLServer = (*EchoServer)(nil)

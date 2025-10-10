@@ -59,7 +59,6 @@ def test_hello_world_transformer(
         tag="hello-world",
         server_type=server_type,
         comm_type=comm_type,
-        arg_type="fqn" if use_fqn else "",
     )
     logger.info(
         "Initialized Hello-World ETL '%s' (server=%s, comm=%s, fqn=%s)",
