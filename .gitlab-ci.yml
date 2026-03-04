@@ -267,6 +267,7 @@ build:parquet-parser:
 
 build:runtime-python:
     extends: .build_template
+    needs: []
     variables:
         RUNTIME_TAG_MODIFIER: "-${CI_COMMIT_SHORT_SHA}"
     script:
