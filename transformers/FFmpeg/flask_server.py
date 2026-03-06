@@ -22,7 +22,6 @@ import subprocess
 
 from aistore.sdk.etl.webserver.flask_server import FlaskServer
 
-
 _MIME_BY_FORMAT = {
     "wav": "audio/wav",
     "flac": "audio/flac",

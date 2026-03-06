@@ -1,4 +1,4 @@
-aistore[etl]>=1.15.0
+aistore[etl]>=1.21.1
 filetype
 keras
 numpy
@@ -10,7 +10,7 @@ requests
 scikit-image
 scipy
 pytest
-tensorflow
+tensorflow; python_version < "3.14"
 soundfile
 opencv-python
 aiofiles

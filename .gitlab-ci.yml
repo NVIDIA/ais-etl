@@ -319,6 +319,10 @@ test:compress:
 test:torchvision:
     extends: .test_template
     needs: ["build:torchvision"]
+    before_script:
+        - uv venv --python 3.13 --seed .venv
+        - source .venv/bin/activate
+        - cd transformers && make common_deps && cd ..
     script:
         - pip install torchvision==0.21.0
         - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_torchvision_transformer.py
@@ -326,6 +330,10 @@ test:torchvision:
 test:keras:
     extends: .test_template
     needs: ["build:keras"]
+    before_script:
+        - uv venv --python 3.13 --seed .venv
+        - source .venv/bin/activate
+        - cd transformers && make common_deps && cd ..
     script:
         - cd transformers/tests && pytest -o log_cli=true --log-cli-level=INFO -v test_keras_transformer.py
 

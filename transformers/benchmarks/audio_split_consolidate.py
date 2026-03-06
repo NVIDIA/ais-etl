@@ -17,7 +17,6 @@ import tarfile
 from aistore import Client
 import soundfile as sf
 
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -157,8 +156,7 @@ def setup_benchmark_data(client: Client, cfg: BenchmarkConfig) -> None:
 def get_etl_template(template_type: str, cfg: BenchmarkConfig) -> str:
     """Return ETL template based on type."""
     templates = {
-        "split": dedent(
-            f"""
+        "split": dedent(f"""
             apiVersion: v1
             kind: Pod
             metadata:
@@ -179,10 +177,8 @@ def get_etl_template(template_type: str, cfg: BenchmarkConfig) -> str:
                     httpGet:
                       path: /health
                       port: default
-            """
-        ),
-        "manager": dedent(
-            f"""
+            """),
+        "manager": dedent(f"""
             apiVersion: v1
             kind: Pod
             metadata:
@@ -218,8 +214,7 @@ def get_etl_template(template_type: str, cfg: BenchmarkConfig) -> str:
                       value: "{cfg.audio_split_etl}"
                     - name: DIRECT_FROM_TARGET
                       value: "true"
-            """
-        ),
+            """),
     }
     return templates[template_type].strip()
 

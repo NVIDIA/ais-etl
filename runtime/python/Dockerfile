@@ -2,7 +2,7 @@ ARG PYTHON_VERSION
 
 FROM docker.io/library/python:${PYTHON_VERSION}-alpine
 
-RUN pip3 install --upgrade aistore[etl]>=1.21.0
+RUN pip3 install --upgrade aistore[etl]>=1.21.1
 
 # Set working directory
 RUN mkdir /code

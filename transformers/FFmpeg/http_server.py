@@ -22,7 +22,6 @@ import subprocess
 
 from aistore.sdk.etl.webserver.http_multi_threaded_server import HTTPMultiThreadedServer
 
-
 _MIME_BY_FORMAT = {
     "wav": "audio/wav",
     "flac": "audio/flac",

@@ -3,7 +3,7 @@ FROM docker.io/library/python:3.13-alpine
 # Install ffmpeg
 RUN apk add --no-cache ffmpeg
 
-RUN pip3 install --upgrade aistore[etl]>=1.15.2
+RUN pip3 install --upgrade aistore[etl]>=1.21.1
 
 # Set working directory
 RUN mkdir /code

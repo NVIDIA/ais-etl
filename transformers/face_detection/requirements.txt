@@ -1,4 +1,4 @@
-aistore[etl]>=1.14.0
+aistore[etl]>=1.21.1
 numpy
 opencv-python
 kaggle==1.5.16

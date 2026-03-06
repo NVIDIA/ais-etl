@@ -22,7 +22,6 @@ import subprocess
 
 from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
 
-
 _MIME_BY_FORMAT = {
     "wav": "audio/wav",
     "flac": "audio/flac",
