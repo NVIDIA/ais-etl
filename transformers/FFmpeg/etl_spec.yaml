@@ -1,8 +1,11 @@
-name: ffmpeg-etl
+name: ffmpeg-etl-new
 
 runtime:
   image: aistorage/transformer_ffmpeg:latest
   env:
+    # Direct file access: ffmpeg reads from disk instead of receiving bytes
+    - name: ETL_DIRECT_FQN
+      value: "true"
     # Audio Rate
     - name: AR
       value: "44100"

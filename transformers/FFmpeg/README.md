@@ -79,6 +79,17 @@ ais etl bucket <etl-name> <source-bucket> <destination-bucket> \
 
 This command transforms all data in the `<source-bucket>` (optionally within the specified virtual sub-directory) and saves it to the `<destination-bucket>`, optionally under the `transformed/` sub-directory.
 
+## Direct File Access (FQN Mode)
+
+For best performance with large audio files, enable **direct file access** so that FFmpeg reads directly from the target’s mountpath instead of receiving bytes over the network:
+
+Set `ETL_DIRECT_FQN=true` in the `etl_spec.yaml` environment variables (already enabled by default in the provided spec). This requires `argument: fqn` to be set as well.
+
+With direct file access:
+- The target passes the local file path to the ETL pod
+- FFmpeg reads the file directly from disk via `-i /path/to/file`
+- No data is loaded into Python’s memory — zero-copy input
+
 ## **Performance**
 
 This transformer achieves significantly better performance than traditional FFmpeg methods by leveraging **AIStore’s parallelization** across multiple nodes and ETL communication mechanisms.

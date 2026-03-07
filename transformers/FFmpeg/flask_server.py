@@ -36,75 +36,69 @@ _AUDIO_EXTS = {".wav", ".flac", ".mp3", ".m4a", ".aac", ".opus", ".ogg"}
 
 
 class FFmpegServer(FlaskServer):
-    """FastAPI-based server for FFmpeg audio transformation."""
+    """Flask-based server for FFmpeg audio transformation."""
 
     def __init__(self, host: str = "0.0.0.0", port: int = 8000):
         super().__init__(host=host, port=port)
-        # Read env (do not coerce unless present)
-        self.channels = os.getenv("AC")  # "1", "2", ...
-        self.samplerate = os.getenv("AR")  # "16000", "44100", ...
-        self.bitrate = os.getenv("BR")  # "128k", "64k", ...
-        self.codec = os.getenv(
-            "CODEC", "pcm_s16le"
-        )  # "pcm_s16le", "flac", "libmp3lame", "aac", ...
-        self.audio_filters = os.getenv(
-            "AUDIO_FILTERS"
-        )  # "loudnorm", "silenceremove", "atempo", "volume", ...
-        self.format = os.getenv(
-            "FORMAT", "wav"
-        )  # "wav", "flac", "mp3", "m4a", "opus", "ogg", ...
+        # Read env and build ffmpeg command parts (prefix + suffix).
+        # At transform time, the input source is slotted between them.
+        channels = os.getenv("AC")
+        samplerate = os.getenv("AR")
+        bitrate = os.getenv("BR")
+        codec = os.getenv("CODEC", "pcm_s16le")
+        audio_filters = os.getenv("AUDIO_FILTERS")
+        self.out_format = os.getenv("FORMAT", "wav")
 
-        # Build ffmpeg command lazily (only include flags that have values)
-        self.ffmpeg_cmd = [
-            "ffmpeg",
-            "-nostdin",
-            "-loglevel",
-            "error",
-            "-i",
-            "pipe:0",
-        ]
-        if self.channels:
-            self.ffmpeg_cmd += ["-ac", str(self.channels)]
-        if self.samplerate:
-            self.ffmpeg_cmd += ["-ar", str(self.samplerate)]
+        self._cmd_prefix = ["ffmpeg", "-nostdin", "-loglevel", "error", "-i"]
+        self._cmd_suffix = []
+        if channels:
+            self._cmd_suffix += ["-ac", channels]
+        if samplerate:
+            self._cmd_suffix += ["-ar", samplerate]
+        self._cmd_suffix += ["-c:a", codec]
+        if audio_filters:
+            self._cmd_suffix += ["-af", audio_filters]
+        if bitrate:
+            self._cmd_suffix += ["-b:a", bitrate]
+        self._cmd_suffix += ["-f", self.out_format, "pipe:1"]
 
-        # Codec default (always include)
-        self.ffmpeg_cmd += ["-c:a", self.codec]
-
-        if self.audio_filters:
-            self.ffmpeg_cmd += ["-af", self.audio_filters]
-
-        # Bitrate only for lossy codecs (safe to include conditionally)
-        if self.bitrate:
-            self.ffmpeg_cmd += ["-b:a", self.bitrate]
-
-        # Output format (default wav)
-        self.ffmpeg_cmd += ["-f", self.format, "pipe:1"]
-
-    def transform(self, data: bytes, path: str, _etl_args: str) -> bytes:
+    def transform(self, data, path: str, _etl_args: str) -> bytes:
         """
         Transform input audio using FFmpeg. If the path extension doesn't look
-        like audio, pass the bytes through unchanged.
+        like audio, pass the data through unchanged.
+
+        When ETL_DIRECT_FQN=true, `data` is a str (file path) and ffmpeg reads
+        the file directly — avoiding loading the entire file into memory.
+        Otherwise `data` is bytes piped through stdin.
         """
         ext = os.path.splitext(path or "")[1].lower()
         if ext and ext not in _AUDIO_EXTS:
+            if isinstance(data, str):
+                with open(data, "rb") as f:
+                    return f.read()
             return data
+
+        # Build command: file path (FQN) or pipe:0 (bytes)
+        if isinstance(data, str):
+            cmd = self._cmd_prefix + [data] + self._cmd_suffix
+            stdin, input_data = subprocess.DEVNULL, None
+        else:
+            cmd = self._cmd_prefix + ["pipe:0"] + self._cmd_suffix
+            stdin, input_data = subprocess.PIPE, data
+
         with subprocess.Popen(
-            self.ffmpeg_cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            cmd, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ) as proc:
-            out, err = proc.communicate(input=data)
-            if proc.returncode != 0:
-                msg = err.decode("utf-8", errors="ignore").strip()
-                self.logger.error("FFmpeg error: %s", msg)
-                raise RuntimeError(f"FFmpeg process failed: {msg}")
-            return out
+            out, err = proc.communicate(input=input_data)
+        if proc.returncode != 0:
+            msg = err.decode("utf-8", errors="ignore").strip()
+            self.logger.error("FFmpeg error: %s", msg)
+            raise RuntimeError(f"FFmpeg process failed: {msg}")
+        return out
 
     def get_mime_type(self) -> str:
         """Return MIME type based on configured output format."""
-        return _MIME_BY_FORMAT.get(self.format.lower(), "application/octet-stream")
+        return _MIME_BY_FORMAT.get(self.out_format.lower(), "application/octet-stream")
 
 
 flask_server = FFmpegServer(port=8000)
