@@ -2,8 +2,8 @@
 Audio Manager ETL Server
 
 This FastAPI server reads a newline-delimited JSON manifest from AIS, invokes an ETL
-transformer for each record to slice audio files, and returns a TAR archive of the
-resulting WAV segments.
+transformer for each record to slice audio files, and streams a TAR archive of the
+resulting WAV segments — without buffering the entire archive in memory.
 
 Environment variables:
 - AIS_TARGET_URL (required): Base URL for AIS target, used for FQN or network fetch.
@@ -16,18 +16,40 @@ Environment variables:
 - DIRECT_FROM_TARGET: Whether to use direct_put (default: "true").
 - MAX_POOL_SIZE: HTTP connection pool size for AIS SDK client (default: "50").
 
-Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+Copyright (c) 2025-2026, NVIDIA CORPORATION. All rights reserved.
 """
 
+import io
 import json
 import os
 import tarfile
-from io import BytesIO
-from typing import Any, Dict, Optional
+from typing import Any, BinaryIO, Dict, Iterator, Optional
 
 from aistore import Client
 from aistore.sdk.etl import ETLConfig
 from aistore.sdk.etl.webserver.fastapi_server import FastAPIServer
+
+
+class _StreamingTarBuffer:
+    """Write-only buffer that lets you drain chunks as tarfile writes them."""
+
+    def __init__(self) -> None:
+        self._buf: io.BytesIO = io.BytesIO()
+
+    def write(self, data: bytes) -> int:
+        """Write data to the internal buffer."""
+        self._buf.write(data)
+        return len(data)
+
+    def tell(self) -> int:
+        """Return the current buffer position."""
+        return self._buf.tell()
+
+    def drain(self) -> bytes:
+        """Return buffered data and reset."""
+        val = self._buf.getvalue()
+        self._buf = io.BytesIO()
+        return val
 
 
 class AudioManagerServer(FastAPIServer):  # pylint: disable=too-many-instance-attributes
@@ -38,7 +60,8 @@ class AudioManagerServer(FastAPIServer):  # pylint: disable=too-many-instance-at
         {"id": "<object_id>", "part": <int>, "from_time": <float>, "to_time": <float>, ...}
 
     Returns:
-        A TAR archive (bytes) of `<id>_<part>.wav` files produced by the ETL.
+        A streamed TAR archive of `<id>_<part>.wav` files produced by the ETL.
+        Only one WAV file is held in memory at a time.
     """
 
     def __init__(self, port: int = 8000) -> None:
@@ -108,51 +131,83 @@ class AudioManagerServer(FastAPIServer):  # pylint: disable=too-many-instance-at
         obj_key = f"{self.prefix}{record['id']}.{self.extension}"
         self.logger.debug("Request ETL '%s' for %s", self.etl_name, obj_key)
 
-        # ETLConfig takes optional `args` for metadata-based slicing
         cfg = ETLConfig(name=self.etl_name, args=record)
         reader = self.src_bucket.object(obj_key).get_reader(
             etl=cfg, direct=self.direct_from_target
         )
         return reader.read_all()
 
-    def transform(self, data: bytes, *_args: Any) -> bytes:
+    def transform_stream(
+        self, reader: BinaryIO, _path: str, _etl_args: str
+    ) -> Iterator[bytes]:
         """
-        Build a TAR archive of audio segments given a JSONL manifest.
+        Stream a TAR archive of audio segments given a JSONL manifest.
+
+        Uses tarfile streaming mode ('w|') and a drainable buffer so that
+        only one WAV file is held in memory at a time. Each chunk is yielded
+        as soon as tarfile writes it.
 
         Args:
-            data: JSONL content bytes.
-            *_args: Ignored (placeholder for ETL signature compatibility).
+            reader: File-like object containing JSONL manifest data.
+            _path: Object path (unused).
+            _etl_args: ETL arguments (unused).
 
-        Returns:
-            Bytes of a TAR file containing `<id>_<part>.wav` entries.
+        Yields:
+            bytes: Chunks of the TAR archive.
         """
-        buffer = BytesIO()
-        processed = 0
+        data = reader.read()
+        if isinstance(data, (bytes, bytearray)):
+            data = data.decode()
+        self.logger.info("transform_stream: received %d bytes", len(data))
 
-        with tarfile.open(fileobj=buffer, mode="w") as tar:
-            for idx, raw in enumerate(data.decode().splitlines(), start=1):
-                line = raw.strip()
-                if not line:
-                    continue
+        buf = _StreamingTarBuffer()
+        processed, errors = 0, 0
 
+        with tarfile.open(fileobj=buf, mode="w|", format=tarfile.GNU_FORMAT) as tar:
+            for idx, line in enumerate(
+                (l.strip() for l in data.splitlines() if l.strip()), start=1
+            ):
                 record = self._process_json_line(line)
                 if record is None:
-                    self.logger.debug("Skipping invalid manifest line %d", idx)
+                    self.logger.warning("Skipping invalid manifest line %d", idx)
                     continue
 
                 try:
+                    self.logger.debug(
+                        "Line %d: fetching audio for %s", idx, record["id"]
+                    )
                     audio = self._fetch_transformed_audio(record)
-                    name = f"{record['id']}_{record['part']}.wav"
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(audio)
-                    tar.addfile(tarinfo=info, fileobj=BytesIO(audio))
+                    tar_info = tarfile.TarInfo(
+                        name=f"{record['id']}_{record['part']}.wav"
+                    )
+                    tar_info.size = len(audio)
+                    tar.addfile(tarinfo=tar_info, fileobj=io.BytesIO(audio))
                     processed += 1
 
+                    chunk = buf.drain()
+                    if chunk:
+                        self.logger.debug(
+                            "Line %d: yielding %d bytes (total processed: %d)",
+                            idx,
+                            len(chunk),
+                            processed,
+                        )
+                        yield chunk
+
                 except Exception as e:  # pylint: disable=broad-exception-caught
+                    errors += 1
                     self.logger.error("Line %d failed: %s", idx, e)
 
-        self.logger.debug("Created TAR with %d audio files", processed)
-        return buffer.getvalue()
+        # Yield final TAR end-of-archive markers written by tar.close() (via with)
+        chunk = buf.drain()
+        if chunk:
+            yield chunk
+
+        self.logger.info(
+            "transform_stream: done — processed=%d, errors=%d",
+            processed,
+            errors,
+        )
 
 
 # Expose FastAPI app

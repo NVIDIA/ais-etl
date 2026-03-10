@@ -20,10 +20,14 @@ import pytest
 from aistore.sdk import Bucket
 from aistore.sdk.etl import ETLConfig
 
+from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
 from tests.const import (
-    COMM_TYPES,
     FQN_OPTIONS,
 )
+
+# Audio Manager uses transform_stream() which is not supported over WebSocket.
+# Only test HTTP communication types.
+AUDIO_MANAGER_COMM_TYPES = [ETL_COMM_HPULL, ETL_COMM_HPUSH]
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
@@ -109,7 +113,9 @@ def compare_tar_contents(actual: bytes, expected: bytes) -> None:
         assert content == exp[name], f"Content mismatch for {name}"
 
 
-@pytest.mark.parametrize("comm_type,use_fqn", product(COMM_TYPES, FQN_OPTIONS))
+@pytest.mark.parametrize(
+    "comm_type,use_fqn", product(AUDIO_MANAGER_COMM_TYPES, FQN_OPTIONS)
+)
 def test_audio_split_consolidate_transform(
     endpoint: str,
     test_bck: Bucket,
