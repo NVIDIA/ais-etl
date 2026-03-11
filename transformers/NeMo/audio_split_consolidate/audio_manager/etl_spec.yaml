@@ -22,6 +22,28 @@ runtime:
     - name: ETL_NAME
       value: "<etl-name>"
 
+    # --- TLS / Auth (uncomment if your AIS cluster uses HTTPS or AuthN) ---
+    # The Audio Manager calls the Audio Splitter ETL via the AIS SDK,
+    # so it needs the same SSL/auth settings as any AIS client.
+    #
+    # Skip SSL certificate verification (set to "true" for self-signed certs)
+    # - name: AIS_SKIP_VERIFY
+    #   value: "true"
+    #
+    # Path to CA certificate bundle (mounted via volume)
+    # - name: AIS_CLIENT_CA
+    #   value: "/certs/ca.crt"
+    #
+    # Client certificate and key for mTLS (mounted via volume)
+    # - name: AIS_CRT
+    #   value: "/certs/client.crt"
+    # - name: AIS_CRT_KEY
+    #   value: "/certs/client.key"
+    #
+    # AuthN bearer token (if AIS cluster has authentication enabled)
+    # - name: AIS_AUTHN_TOKEN
+    #   value: "<your-token>"
+
 
   # Optional: override the default FastAPI server
   # Uncomment the relevant line below to use a different web server.

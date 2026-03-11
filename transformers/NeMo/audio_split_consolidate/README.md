@@ -67,6 +67,20 @@ ais etl init spec --from-file audio_splitter/etl_spec.yaml
 
 Ensure the manifest file is accessible by the Audio Manager.
 
+### TLS / Auth-Enabled Clusters
+
+The Audio Manager makes SDK calls to the AIS cluster to invoke the Audio Splitter ETL. If your cluster uses **HTTPS** or has **AuthN** enabled, you need to pass additional environment variables in the Audio Manager's `etl_spec.yaml`:
+
+| Variable | Description |
+|----------|-------------|
+| `AIS_SKIP_VERIFY` | Set to `"true"` to skip SSL certificate verification (e.g., self-signed certs) |
+| `AIS_CLIENT_CA` | Path to a CA certificate bundle (mount via volume) |
+| `AIS_CRT` | Path to a client certificate PEM file (for mTLS) |
+| `AIS_CRT_KEY` | Path to the client certificate private key (for mTLS) |
+| `AIS_AUTHN_TOKEN` | Bearer token if AIS cluster has authentication enabled |
+
+These are the same environment variables used by the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/README.md#environment-variables). See the commented-out examples in [`audio_manager/etl_spec.yaml`](audio_manager/etl_spec.yaml).
+
 ---
 
 ## Run Transformations
