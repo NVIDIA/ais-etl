@@ -33,7 +33,9 @@ class TestTar2TFTransformer(TestBase):
         super().setUp()
         self.test_tar_filename = "test-tar-single.tar"
         self.test_tar_source = "./resources/test-tar-single.tar"
-        self.test_bck.object(self.test_tar_filename).put_file(self.test_tar_source)
+        self.test_bck.object(self.test_tar_filename).get_writer().put_file(
+            self.test_tar_source
+        )
 
     def tearDown(self):
         """Cleans up generated files and directories after each test."""
