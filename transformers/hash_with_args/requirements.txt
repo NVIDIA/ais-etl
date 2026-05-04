@@ -1,2 +1,2 @@
-requests
-xxhash
+requests>=2.33.1
+xxhash>=3.7.0

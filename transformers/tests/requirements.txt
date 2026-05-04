@@ -1,18 +1,18 @@
 aistore[etl]>=1.22.0
-filetype
-keras
-numpy
-pandas
-pillow
-pyarrow
-pyyaml
-requests
-scikit-image
-scipy
-pytest
-tensorflow; python_version < "3.14"
-soundfile
-opencv-python
-aiofiles
-kaggle
+filetype>=1.2.0
+keras>=3.14.0
+numpy>=2.4.4
+pandas>=3.0.2
+pillow>=12.2.0
+pyarrow>=24.0.0
+pyyaml>=6.0.3
+requests>=2.33.1
+scikit-image>=0.26.0
+scipy>=1.17.1
+pytest>=9.0.3
+tensorflow>=2.21.0; python_version < "3.14"
+soundfile>=0.13.1
+opencv-python>=4.13.0.92
+aiofiles>=25.1.0
+kaggle>=2.1.0
 typing-extensions>=4.3.0
