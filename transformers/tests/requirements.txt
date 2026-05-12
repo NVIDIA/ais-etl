@@ -1,4 +1,4 @@
-aistore[etl]>=1.22.0
+aistore[etl]>=1.24.0
 filetype>=1.2.0
 keras>=3.14.0
 numpy>=2.4.4
