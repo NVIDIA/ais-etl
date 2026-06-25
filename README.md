@@ -11,7 +11,6 @@ For more information on how ETL works in AIStore, refer to the following documen
 
 - [transformers](/transformers/README.md) — ready-to-use ETL transformers that can be deployed on an AIStore cluster
 - [runtime](/runtime/README.md) — ETL runtime definitions for `init_class` function
-- [deploy](/deploy/README.md) — utility tools and deployment configurations
 - [examples](/examples) — example scripts for using and testing ETL features
 - [docs](/docs/README.md) — documentation-related content
 
