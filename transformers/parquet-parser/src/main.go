@@ -21,16 +21,18 @@ type ParquetParserServer struct {
 	webserver.ETLServer
 }
 
-func (ps *ParquetParserServer) Transform(input io.ReadCloser, path, etlArgs string) (io.ReadCloser, error) {
+func (ps *ParquetParserServer) Transform(input io.ReadCloser, path, etlArgs string) (io.ReadCloser, int64, error) {
 
 	ext := strings.ToLower(filepath.Ext(path))
 	if ext != ".parquet" {
+		// TODO: stream/spool the pass-through path instead of io.ReadAll — buffering
+		// the whole object in memory can OOM on large payloads.
 		data, err := io.ReadAll(input)
 		input.Close()
 		if err != nil {
-			return nil, fmt.Errorf("reading pass-through data: %w", err)
+			return nil, 0, fmt.Errorf("reading pass-through data: %w", err)
 		}
-		return io.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewReader(data)), int64(len(data)), nil
 	}
 
 	outputFormat := strings.ToLower(os.Getenv("OUTPUT_FORMAT"))
@@ -49,25 +51,25 @@ func (ps *ParquetParserServer) Transform(input io.ReadCloser, path, etlArgs stri
 
 	// Validate final format choice
 	if !isValidFormat(outputFormat) {
-		return nil, fmt.Errorf("unsupported output format: %s. Supported: %s, %s, %s, %s", outputFormat, FormatJSON, FormatCSV, FormatTXT, FormatText)
+		return nil, 0, fmt.Errorf("unsupported output format: %s. Supported: %s, %s, %s, %s", outputFormat, FormatJSON, FormatCSV, FormatTXT, FormatText)
 	}
 
 	parquetData, err := io.ReadAll(input)
 	input.Close()
 	if err != nil {
-		return nil, fmt.Errorf("reading parquet data: %w", err)
+		return nil, 0, fmt.Errorf("reading parquet data: %w", err)
 	}
 
 	convertedData, err := convertParquet(parquetData, outputFormat)
 	if err != nil {
-		return nil, fmt.Errorf("converting parquet: %w", err)
+		return nil, 0, fmt.Errorf("converting parquet: %w", err)
 	}
 
 	if convertedData == nil {
-		return nil, fmt.Errorf("convertParquet returned nil data")
+		return nil, 0, fmt.Errorf("convertParquet returned nil data")
 	}
 
-	return io.NopCloser(bytes.NewReader(convertedData)), nil
+	return io.NopCloser(bytes.NewReader(convertedData)), int64(len(convertedData)), nil
 }
 
 // isValidFormat checks if the format is supported
