@@ -7,7 +7,6 @@ package transforms
 import (
 	"fmt"
 	"image"
-	"image/color"
 	_ "image/jpeg"
 	_ "image/png"
 	"math/rand"
@@ -16,7 +15,7 @@ import (
 	"github.com/NVIDIA/go-tfdata/tfdata/core"
 	"github.com/NVIDIA/go-tfdata/tfdata/transform"
 	"github.com/NVIDIA/go-tfdata/tfdata/transform/selection"
-	"github.com/disintegration/imaging"
+	bild "github.com/anthonynsimon/bild/transform"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -139,12 +138,12 @@ func (c *RotateConv) TransformSample(sample core.Sample) core.Sample {
 	if angle == 0 {
 		angle = rand.Float64() * 100
 	}
-	sample[c.key] = imaging.Rotate(img, angle, color.Black)
+	sample[c.key] = bild.Rotate(img, angle, &bild.RotationOptions{ResizeBounds: true})
 	return sample
 }
 
 func (c *ResizeConv) TransformSample(sample core.Sample) core.Sample {
-	sample[c.key] = imaging.Resize(sample[c.key].(image.Image), c.dstSize[0], c.dstSize[1], imaging.Linear)
+	sample[c.key] = bild.Resize(sample[c.key].(image.Image), c.dstSize[0], c.dstSize[1], bild.Linear)
 	return sample
 }
 
