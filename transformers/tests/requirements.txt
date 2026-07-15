@@ -1,9 +1,9 @@
 aistore[etl]>=1.24.0
 filetype>=1.2.0
-keras>=3.14.0
+keras>=3.15.0
 numpy>=2.4.4
 pandas>=3.0.2
-pillow>=12.2.0
+pillow>=12.3.0
 pyarrow>=24.0.0
 pyyaml>=6.0.3
 requests>=2.33.1
