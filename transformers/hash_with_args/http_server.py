@@ -41,7 +41,7 @@ class HashWithArgs(HTTPMultiThreadedServer):
         """
         super().__init__(port=port)
         self.logger.setLevel(logging.DEBUG)
-        if default_seed:
+        if default_seed is not None:
             self.default_seed = default_seed
         else:
             try:
