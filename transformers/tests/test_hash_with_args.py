@@ -59,6 +59,17 @@ def _verify_test_files(
             transformed == original_hash
         ), f"Hash mismatch for {filename}: expected {original_hash}, got {transformed}"
 
+        # Seed 0 is a valid seed (falsy edge case): it must be honored
+        # explicitly rather than treated as "not provided".
+        zero_reader = test_bck.object(filename).get_reader(
+            etl=ETLConfig(etl_name, args="0")
+        )
+        zero_transformed = zero_reader.read_all()
+        zero_hash = _calculate_hash(original, 0)
+        assert (
+            zero_transformed == zero_hash
+        ), f"Hash mismatch for {filename} with seed 0: expected {zero_hash}, got {zero_transformed}"
+
 
 # pylint: disable=too-many-arguments
 @pytest.mark.parametrize("server_type, comm_type, use_fqn", INLINE_PARAM_COMBINATIONS)
