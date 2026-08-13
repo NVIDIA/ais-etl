@@ -35,7 +35,6 @@ class HashWithArgs(FlaskServer):
         Initialize the HashWithArgs server.
 
         Args:
-            host: interface to bind on (default "0.0.0.0").
             port: TCP port to listen on (default 8000).
             default_seed: fallback seed if ETL args absent/invalid.
                 If None, reads `SEED_DEFAULT` env var (defaulting to 0).
