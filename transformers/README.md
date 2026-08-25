@@ -1,6 +1,6 @@
 # Sample Transformers
 
-AIStore hosts a variety of sample transformers in the form of Docker images to be used with ETL workflows on AIStore via the [`init spec`](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#init-spec-request) functionality.
+AIStore hosts a variety of sample transformer images for ETL workflows. Each transformer includes an [`etl_spec.yaml`](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#runtime-specification) runtime specification.
 
 | Transformer | Language | Communication Mechanisms | Description |
 | ---------- | -------- | ------------------------ | ----------- |
@@ -35,18 +35,14 @@ The following sections demonstrate initializing ETLs on AIStore using the provid
 
 ### Usage w/ AIStore CLI
 
-There are **two** ways to initialize transformers:
-
-#### 1. Runtime-spec (Recommended)
-
-The modern approach uses a compact `etl_spec.yaml` that lists only the image, command, and optionally communication type, environment variables, timeouts, etc.
+Initialize a transformer from its `etl_spec.yaml`, which defines the image and optional command, communication type, environment variables, and timeouts.
 
 ```bash
 # Change Directory (to Desired Sample Transformer)
 cd ais-etl/transformers/md5
 
 # Initialize ETL directly from runtime spec
-ais etl init spec --from-file etl_spec.yaml md5-etl
+ais etl init -f etl_spec.yaml --name md5-etl
 
 # Transform objects (inline)
 ais etl object md5-etl ais://<src-bck>/<obj> -
@@ -55,35 +51,13 @@ ais etl object md5-etl ais://<src-bck>/<obj> -
 ais etl bucket md5-etl ais://<src-bck> ais://<dst-bck>
 ```
 
-#### 2. Legacy Pod-spec (Still Supported)
-
-The original method using full Kubernetes Pod specification with environment variable substitution:
-
-```bash
-# Change Directory (to Desired Sample Transformer)
-cd ais-etl/transformers/md5
-
-# Export Environment Variables for Communication Mechanism (& Any Additional Arguments)
-export COMMUNICATION_TYPE="hpull://"
-
-# Substitute Environment Variables in YAML Specification
-envsubst < pod.yaml > init_spec.yaml
-
-# Initialize ETL on AIStore via CLI
-ais etl init spec --from-file init_spec.yaml --name md5-etl-legacy
-
-# Transform objects (inline)
-ais etl object md5-etl-legacy ais://<bck-name>/<obj-name>.<ext> -
-
-# Transform bucket-to-bucket
-ais etl bucket md5-etl-legacy ais://src-bck ais://dst-bck
-```
-
-> **Note**: Most transformers now provide both `etl_spec.yaml` (runtime-spec) and `pod.yaml` (legacy pod-spec) files. The runtime-spec approach is recommended for new deployments.
-
 ### Usage w/ AIStore Python SDK
 
-The `YAML` specification files for the sample transformers are provided as [templates](https://github.com/NVIDIA/ais-etl/blob/main/transformers/md5/etl_spec.yaml).
+Initialize the same image directly with the Python SDK:
+
+```python
+client.etl("md5-etl").init(image="aistorage/transformer_md5:latest")
+```
 
 ## Contribution
 

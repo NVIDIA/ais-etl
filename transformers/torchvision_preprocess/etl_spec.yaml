@@ -14,9 +14,6 @@ runtime:
 # Communication method: hpull://, hpush://, or ws://
 communication: hpull://
 
-# Argument mode: "" (default) or "fqn" (mounts host filesystem inside ETL container)
-argument: ""
-
 # Timeout settings
 init_timeout: 5m
 obj_timeout: 45s

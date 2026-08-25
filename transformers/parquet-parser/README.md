@@ -45,11 +45,11 @@ runtime:
 
 #### Method 2: ETL Arguments (Inline Transforms)
 
-Pass the format via `--etl-args` flag:
+Pass the format via `--args` flag:
 
 ```bash
 # Override with ETL args (takes priority)
-ais etl object parquet-parser-etl ais://data/file.parquet output.csv --etl-args csv
+ais etl object parquet-parser-etl ais://data/file.parquet output.csv --args csv
 ```
 
 ### Initialize the ETL
@@ -59,7 +59,7 @@ ais etl object parquet-parser-etl ais://data/file.parquet output.csv --etl-args 
 cd ais-etl/transformers/parquet-parser/
 
 # Deploy the ETL to your AIStore cluster
-ais etl init spec --f etl_spec.yaml parquet-parser
+ais etl init -f etl_spec.yaml --name parquet-parser
 ```
 
 ### Transform Data
@@ -70,10 +70,10 @@ ais etl init spec --f etl_spec.yaml parquet-parser
 ais etl object parquet-parser ais://data/dataset.parquet output.json
 
 # Transform to CSV format (ETL args override env var)
-ais etl object parquet-parser ais://data/dataset.parquet output.csv --etl-args csv
+ais etl object parquet-parser ais://data/dataset.parquet output.csv --args csv
 
 # Transform to text format (ETL args override env var)
-ais etl object parquet-parser ais://data/dataset.parquet output.txt --etl-args text
+ais etl object parquet-parser ais://data/dataset.parquet output.txt --args text
 ```
 
 #### Batch Transformation (Entire Bucket)
@@ -148,7 +148,7 @@ id	title	context	question	answers
 - `DEFAULT_FORMAT`: Default output format (`json`, `csv`, `txt`) - default: `json`
 
 ### ETL Arguments
-Pass output format via `--etl-args`:
+Pass output format via `--args`:
 - `json` - JSON Lines format (default)
 - `csv` - Comma-separated values
 - `txt` or `text` - Tab-separated text

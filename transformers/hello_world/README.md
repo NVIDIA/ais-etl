@@ -5,14 +5,6 @@ A simple hello world transformer that reads objects stored in AIStore and return
 ### Initializing ETL with AIStore CLI
 
 The following steps demonstrate how to initialize the `hello-world-transformer` using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md):
-There are **two** ways to start this transformer:
-
-1. **Runtime-spec (recommended)** – a compact YAML that lists only the image, command, and (optionally) the communication type, argument, timeouts, runtime etc.
-2. **Legacy pod-spec** – the original full Kubernetes Pod specification plus `envsubst`.
-
----
-
-#### 1. Runtime-spec (recommended)
 
 #### Initialize the ETL
 
@@ -35,23 +27,6 @@ ais etl object hello-world-etl ais://<src-bck>/<obj> -
 
 # Bucket-to-bucket transform
 ais etl bucket hello-world-etl ais://<src-bck> ais://<dst-bck>
-```
-
----
-#### 2. Legacy pod-spec (still supported)
-
-```!bash
-$ cd transformers/hello_world
-
-$ # Initialize ETL
-$ ais etl init spec --from-file init_spec.yaml --name hello-world-etl
-
-$ # Transform and retrieve objects from the bucket using this ETL
-$ # For inline transformation
-$ ais etl object <etl-name> ais://<bck-name>/<obj-name>.<ext> -
-
-$ # Or, for offline (bucket-to-bucket) transformation
-$ ais etl bucket <etl-name> ais://src-bck ais://dst-bck 
 ```
 
 ### Quick test from scratch

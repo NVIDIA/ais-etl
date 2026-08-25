@@ -31,11 +31,8 @@ Follow these steps to initialize the batch rename transformer using the [AIStore
 ```bash
 $ cd transformers/batch_rename
 
-# Set communication type: either 'hpull://' or 'hpush://'
-$ export COMMUNICATION_TYPE='hpull://'
-
 # Initialize the ETL with a chosen name
-$ ais etl init spec --from-file etl_spec.yaml
+$ ais etl init -f etl_spec.yaml
 
 # Inline transformation (single object)
 # If the object matches the pattern, it will be renamed and saved to the destination bucket.

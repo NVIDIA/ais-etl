@@ -8,7 +8,6 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from textwrap import dedent
 from typing import Generator, Dict, Any, Optional
 from io import BytesIO
 import tarfile
@@ -153,70 +152,22 @@ def setup_benchmark_data(client: Client, cfg: BenchmarkConfig) -> None:
     logger.info("Benchmark data setup completed in %.2f seconds", timer.elapsed)
 
 
-def get_etl_template(template_type: str, cfg: BenchmarkConfig) -> str:
-    """Return ETL template based on type."""
-    templates = {
-        "split": dedent(f"""
-            apiVersion: v1
-            kind: Pod
-            metadata:
-              name: {cfg.audio_split_etl}
-              annotations:
-                communication_type: "hpull://"
-                wait_timeout: 10m
-            spec:
-              containers:
-                - name: server
-                  image: {cfg.audio_split_image}
-                  imagePullPolicy: Always
-                  ports:
-                    - name: default
-                      containerPort: 80
-                  command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
-                  readinessProbe:
-                    httpGet:
-                      path: /health
-                      port: default
-            """),
-        "manager": dedent(f"""
-            apiVersion: v1
-            kind: Pod
-            metadata:
-              name: {cfg.audio_manager_etl}
-              annotations:
-                communication_type: "hpull://"
-                wait_timeout: 10m
-            spec:
-              containers:
-                - name: server
-                  image: {cfg.audio_manager_image}
-                  imagePullPolicy: Always
-                  ports:
-                    - name: default
-                      containerPort: 80
-                  command: ['/code/server.py', '--listen', '0.0.0.0', '--port', '80']
-                  readinessProbe:
-                    httpGet:
-                      path: /health
-                      port: default
-                  env:
-                    - name: AIS_ENDPOINT
-                      value: "{cfg.endpoint}"
-                    - name: SRC_BUCKET
-                      value: "{cfg.audio_bucket}"
-                    - name: SRC_PROVIDER
-                      value: "ais"  
-                    - name: OBJ_PREFIX
-                      value: ""
-                    - name: OBJ_EXTENSION
-                      value: "wav"
-                    - name: ETL_NAME
-                      value: "{cfg.audio_split_etl}"
-                    - name: DIRECT_FROM_TARGET
-                      value: "true"
-            """),
+def get_etl_config(etl_type: str, cfg: BenchmarkConfig) -> Dict[str, Any]:
+    """Return runtime configuration based on ETL type."""
+    configs = {
+        "split": {"image": cfg.audio_split_image},
+        "manager": {
+            "image": cfg.audio_manager_image,
+            "AIS_ENDPOINT": cfg.endpoint,
+            "SRC_BUCKET": cfg.audio_bucket,
+            "SRC_PROVIDER": "ais",
+            "OBJ_PREFIX": "",
+            "OBJ_EXTENSION": "wav",
+            "ETL_NAME": cfg.audio_split_etl,
+            "DIRECT_FROM_TARGET": "true",
+        },
     }
-    return templates[template_type].strip()
+    return configs[etl_type]
 
 
 def manage_etl(
@@ -229,9 +180,9 @@ def manage_etl(
     ]:
         try:
             if action == "init":
-                template = get_etl_template(etl_type, cfg)
-                client.etl(etl_name).init_spec(
-                    template=template, communication_type=comm_type, timeout="10m"
+                config = get_etl_config(etl_type, cfg)
+                client.etl(etl_name).init(
+                    comm_type=comm_type, init_timeout="10m", **config
                 )
                 logger.info("Initialized ETL: %s", etl_name)
             elif action == "cleanup":

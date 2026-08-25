@@ -1,0 +1,9 @@
+name: tar2tf
+
+runtime:
+  image: aistorage/transformer_tar2tf:latest
+  command: ["./tar2tf", "-l", "0.0.0.0", "-p", "8000"]
+
+communication: hpull://
+init_timeout: 5m
+obj_timeout: 45s

@@ -49,23 +49,10 @@ The following steps demonstrate how to initialize the Torchvision Image Pre-Proc
 ```bash
 cd transformers/torchvision_preprocess
 
-# Set the AIS target URL
-export AIS_TARGET_URL="http://localhost:8080"
-
-# Export Communication Mechanism as Environment Variable
-export COMMUNICATION_TYPE='hpull://'
-
-# Export Transformations as Environment Variable
-export TRANSFORM='{"Resize": {"size": [100, 100]}, "Grayscale": {"num_output_channels": 1}}'
-
-# Export Output Format as Environment Variable
-export FORMAT="JPEG"
-
-# Substitute Environment Variables in Pod Spec
-eval "echo \"$(cat pod.yaml)\"" > torch_preprocess_pod_config.yaml 
+# Edit TRANSFORM and FORMAT in etl_spec.yaml as needed
 
 # Initialize ETL
-ais etl init spec --name torch-preprocess-etl --from-file torch_preprocess_pod_config.yaml
+ais etl init -f etl_spec.yaml --name torch-preprocess-etl
 ```
 
 ### Initializing ETL with AIStore Python SDK
@@ -77,10 +64,6 @@ import json
 import os
 
 from aistore.sdk.client import Client
-# Import TORCHVISION Transformer YAML Specification
-from aistore.sdk.etl_templates import TORCHVISION_TRANSFORMER
-# Import Communication Mechanism
-from aistore.sdk.etl_const import ETL_COMM_HPULL
 
 AIS_ENDPOINT = os.environ.get("AIS_ENDPOINT")
 client = Client(AIS_ENDPOINT)
@@ -88,12 +71,13 @@ client = Client(AIS_ENDPOINT)
 # TORCHVISION Options
 torchvision_options = json.dumps({"Resize": {"size": [100, 100]}, "Grayscale": {"num_output_channels": 1}})
 
-# Format Template w/ Communication Mechanism & Additional Server Arguments
-torchvision_template = TORCHVISION_TRANSFORMER.format(communication_type=ETL_COMM_HPULL, format="JPEG", transform=torchvision_options, direct_put="true"
+# Initialize ETL
+client.etl("torch-preprocess-etl").init(
+    image="aistorage/transformer_torchvision:latest",
+    comm_type="hpull",
+    FORMAT="JPEG",
+    TRANSFORM=torchvision_options,
 )
-
-# Initialize ETL 
-torchvision_etl = client.etl("torchvision-etl").init_spec(template=torchvision_template, communication_type=ETL_COMM_HPULL)
 ```
 
 ## Architecture
@@ -116,5 +100,4 @@ The FastAPI architecture provides:
 - [AIS-ETL](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md)
 - [Torchvision](https://pytorch.org/vision/stable/index.html)
 - [PyTorch](https://pytorch.org/)
-
 

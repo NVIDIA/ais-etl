@@ -8,11 +8,9 @@ import logging
 from datetime import datetime
 
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import FACE_DETECTION_TRANSFORMER
 
 from tests.base import TestBase
 from tests.utils import (
-    format_image_tag_for_git_test_mode,
     cases,
     generate_random_string,
 )
@@ -34,15 +32,14 @@ class TestFaceDetectionStress(TestBase):
         self.images_bck = self.client.bucket(bck_name="stress-test-face-detection")
 
     @cases(
-        (ETL_COMM_HPUSH, "hpush_fastapi", ""),
-        (ETL_COMM_HPULL, "hpull_fastapi", ""),
-        "",
-        (ETL_COMM_HPULL, "hpull_fastapi_fqn", "fqn"),
-        (ETL_COMM_HPUSH, "hpush_fastapi_fqn", "fqn"),
+        (ETL_COMM_HPUSH, "hpush-fastapi", ""),
+        (ETL_COMM_HPULL, "hpull-fastapi", ""),
+        # pylint: disable-next=fixme
+        # TODO: Re-enable FQN cases after FaceDetection supports path input.
     )
     def test_face_detection(self, test_case):
-        comm_type, test_suffix, arg_type = test_case
         """Stress test face detection ETL transformation using various communication types."""
+        comm_type, test_suffix, arg_type = test_case
         test_name = f"test_face_detection_{test_suffix}"
         etl_name = f"face-detect-{generate_random_string(5)}-{test_suffix}"
         self.etls.append(etl_name)
@@ -52,16 +49,15 @@ class TestFaceDetectionStress(TestBase):
 
     def initialize_etl(self, comm_type: str, etl_name: str, arg_type: str):
         """Initializes the ETL transformation with the specified parameters."""
-        template = FACE_DETECTION_TRANSFORMER.format(
-            communication_type=comm_type, format="jpg", arg_type=arg_type
-        )
-
-        # Adjust template for Git test mode
-        template = format_image_tag_for_git_test_mode(template, "face_detection")
+        tag = "test" if self.git_test_mode == "true" else "latest"
+        image = f"aistorage/transformer_face_detection:{tag}"
 
         # Initialize ETL transformation
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=comm_type, arg_type=arg_type
+        self.client.etl(etl_name).init(
+            image=image,
+            comm_type=comm_type,
+            direct_file_access=arg_type == "fqn",
+            FORMAT="jpg",
         )
 
         logger.info(

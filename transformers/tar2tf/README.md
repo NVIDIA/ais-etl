@@ -11,6 +11,12 @@ Additionally, it accepts optional parameters to apply conversions to TAR records
 $ cd src && go build
 ```
 
+### Initialize with AIStore
+
+```console
+$ ais etl init -f etl_spec.yaml
+```
+
 ### Run
 
 #### Run without any conversions and selections, on localhost:80

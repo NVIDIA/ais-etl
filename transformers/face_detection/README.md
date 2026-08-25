@@ -8,15 +8,11 @@ This document outlines the process of utilizing the `Single Shot MultiBox Detect
 
 ## Image Format Specification
 
-The image formats (`jpeg`, `png`, etc.) for processing or storage are defined in the [`pod.yaml`](pod.yaml) file.
+The image formats (`jpeg`, `png`, etc.) for processing or storage are defined by the `FORMAT` environment variable in [`etl_spec.yaml`](etl_spec.yaml).
 
 ## Transformer Communication Mechanisms
 
 The transformer is compatible with `hpull` and `hpush` for seamless integration. Detailed information about these communication mechanisms can be found [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
-
-## Recommended Parameter Setting
-
-For efficient transformation, use `fqn` as `ARG_TYPE` in the [`pod.yaml`](pod.yaml) file. This approach allows for local object reading from the target, reducing the time required for each transformation.
 
 ## Web Server Framework
 
@@ -24,12 +20,11 @@ The transformer employs the [`FastAPI`](https://fastapi.tiangolo.com/) framework
 
 ## Configurable Parameters
 
-Adjust the following parameters in the `pod.yaml` file as per your requirements:
+Adjust the following parameters in `etl_spec.yaml` as needed:
 
 | Argument   | Description                                                         | Default Value |
 |------------|---------------------------------------------------------------------|---------------|
 | `FORMAT`   | Image format for processing/storing (png, jpeg, etc.)                | "jpeg"        |
-| `ARG_TYPE` | Local object reading (`fqn`) vs. HTTP request for object retrieval   | ""            |
 | `FILE_FORMAT` | Configure as "tar" for processing datasets in the webdataset format or for handling batches of images packaged in a tarball   | ""            |
 
 ### Setting Up the Face Detection Transformer with AIStore CLI
@@ -40,19 +35,10 @@ To initialize the `Face Detection Transformer` using the [AIStore CLI](https://g
 # Navigate to the transformer directory
 cd transformers/face_detection
 
-# Set FORMAT and ARG_TYPE environment variables
-export FORMAT="jpeg"
-export ARG_TYPE="" # Or use 'fqn' for local reading
-export FILE_FORMAT="" # or use "tar", if using webdataset format
-
-# Define communication type
-export COMMUNICATION_TYPE="hpush://"
-
-# Generate an initialization specification file
-envsubst < pod.yaml > init_spec.yaml
+# Edit FORMAT and FILE_FORMAT in etl_spec.yaml as needed
 
 # Initialize the ETL process
-ais etl init spec --from-file init_spec.yaml --name <etl-name> --comm-type $COMMUNICATION_TYPE
+ais etl init -f etl_spec.yaml --name <etl-name> --comm-type hpush://
 
 # Use the ETL for transforming and retrieving objects
 # For inline transformation

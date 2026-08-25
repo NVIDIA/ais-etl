@@ -45,7 +45,7 @@ Use it with the Python SDK’s new [`init_class` decorator](https://github.com/N
        comm_type="hpush://",         # or "hpull://"
        init_timeout="3m",
        obj_timeout="30s",
-       arg_type="",                  # "" or "fqn"
+       direct_file_access=False,      # pass bytes to transform()
        direct_put=True,              # enable direct-put optimization
        NUM_WORKERS="8",              # concurrency inside the pod
    )
@@ -109,4 +109,4 @@ Use it with the Python SDK’s new [`init_class` decorator](https://github.com/N
 * **Rapid prototyping**: spin up new ETL logic in minutes without Docker knowledge.
 * **Python-only workloads**: your code depends only on PyPI (or can be packaged via `os_packages`).
 
-If you ever need custom binaries or non-Python runtimes, you can still build your own container via `init_spec` or `init(image=..., command=...)`, but for pure-Python logic `init_class` + this runtime is all you need.
+If you ever need custom binaries or non-Python runtimes, build your own container and use `init(image=..., command=...)`. For pure-Python logic, `init_class` plus this runtime is all you need.

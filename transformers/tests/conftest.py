@@ -108,7 +108,7 @@ def etl_factory(client: Client):
             tag="hello-world",
             server_type="fastapi",
             comm_type="hpull",
-            arg_type="fqn",
+            direct_file_access=True,
             direct_put=True,
             ENV_VAR_NAME="value",
         )

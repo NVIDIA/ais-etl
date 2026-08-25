@@ -15,7 +15,7 @@ The Keras Transformer is a powerful tool designed for image data preprocessing a
 | 'channel_shift_intensity' | Float. Channel shift intensity.                          |
 | 'brightness'            | Float. Brightness shift intensity.                          |
 
-The image format (JPEG, PNG, etc.) of the images to be processed or stored is specified in the `spec.yaml`.
+The image format (JPEG, PNG, etc.) of the images to be processed or stored is specified in `etl_spec.yaml`.
 
 The transformer supports both `hpull` and `hpush` communication mechanisms for seamless integration.
 
@@ -24,7 +24,7 @@ The transformer supports both `hpull` and `hpush` communication mechanisms for s
 > For more information on communication mechanisms, please refer to [this link](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms).
 
 ## Parameters
-Only two parameters need to be updated in the `pod.yaml` file.
+The main runtime parameters are configured in `etl_spec.yaml`.
 
 | Argument    | Description                                                           | Default Value |
 | ----------- | --------------------------------------------------------------------- | ------------- |
@@ -62,25 +62,15 @@ ETL args support the same parameters as the `TRANSFORM` environment variable (Ke
 
 The following steps demonstrate how to initialize the `Keras Transformer` with using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md):
 
-```!bash
-$ cd transformers/keras_transformer
+```bash
+cd transformers/keras_preprocess
 
-$ # Set values for FORMAT and TRANSFORM
-$ export FORMAT="JPEG"
-$ export TRANSFORM='{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}'
+# Edit FORMAT and TRANSFORM in etl_spec.yaml, then initialize the ETL
+ais etl init -f etl_spec.yaml --name <etl-name>
 
-$ # Mention communication type b/w target and container
-$ export COMMUNICATION_TYPE = 'hpull://'
+# Transform and retrieve objects from the bucket using this ETL
+ais etl object <etl-name> ais://src/<image-name>.JPEG dst.JPEG
 
-# Substitute env variables in spec file
-$ envsubst < pod.yaml > init_spec.yaml
-
-$ # Initialize ETL
-$ ais etl init spec --from-file init_spec.yaml --name <etl-name>
-
-$ # Transform and retrieve objects from the bucket using this ETL
-$ # For inline transformation
-$ ais etl object <etl-name> ais://src/<image-name>.JPEG dst.JPEG
-$ # Or, for offline (bucket-to-bucket) transformation
-$ ais etl bucket <etl-name> ais://src-bck ais://dst-bck --ext="{JPEG:JPEG}" 
+# Or, transform a bucket
+ais etl bucket <etl-name> ais://src-bck ais://dst-bck --ext="{JPEG:JPEG}"
 ```

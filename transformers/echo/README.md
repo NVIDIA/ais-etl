@@ -6,15 +6,6 @@ A simple echo transformer that takes objects (bytes) and simply echoes or repeat
 
 The following steps demonstrate how to initialize the **echo transformer** using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md).
 
-There are **two** ways to start this transformer:
-
-1. **Runtime-spec (recommended)** – a compact YAML that lists only the image, command, and (optionally) the communication type, argument, timeouts, runtime etc.
-2. **Legacy pod-spec** – the original full Kubernetes Pod specification plus `envsubst`.
-
----
-
-#### 1. Runtime-spec (recommended)
-
 Create a YAML file (e.g. `etl_spec.yaml`):
 
 ```yaml
@@ -31,7 +22,7 @@ runtime:
 
 ```bash
 # create the ETL
-ais etl init spec --from-file etl_spec.yaml --name echo-etl
+ais etl init -f etl_spec.yaml --name echo-etl
 ```
 
 This initializes the ETL with default settings. To customize, see the sample [etl_spec.yaml](etl_spec.yaml) for all available fields.
@@ -44,29 +35,6 @@ ais etl object echo-etl ais://<src-bck>/<obj> -
 
 # Bucket-to-bucket transform (copies objects unchanged)
 ais etl bucket echo-etl ais://<src-bck> ais://<dst-bck>
-```
-
----
-
-#### 2. Legacy pod-spec (still supported)
-
-```!bash
-$ cd transformers/echo
-
-$ # Mention communication type between target and container
-$ export COMMUNICATION_TYPE=hpull://
-
-# Substitute env variables in the full pod spec
-$ envsubst < pod.yaml > init_spec.yaml
-
-$ # Initialize ETL
-$ ais etl init spec --from-file init_spec.yaml --name echo-etl-legacy
-
-$ # Transform and retrieve objects from the bucket using this ETL
-$ ais etl object echo-etl-legacy ais://<bck-name>/<obj-name>.<ext> -
-
-$ # Or, for offline (bucket-to-bucket) transformation
-$ ais etl bucket echo-etl-legacy ais://src-bck ais://dst-bck 
 ```
 
 ### Quick test from scratch

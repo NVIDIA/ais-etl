@@ -100,6 +100,8 @@ class KerasPreprocessServer(FastAPIServer):
             datagen = self.datagen
 
         try:
+            # pylint: disable-next=fixme
+            # TODO: Support FQN input by opening the path before processing it as bytes.
             # Load and preprocess image
             img = load_img(io.BytesIO(data))
             img = img_to_array(img)

@@ -51,18 +51,18 @@ Create a JSON Lines (`.jsonl`) file where each line contains:
 
 ### Audio Splitter ETL
 
-Review and edit the configuration ([`audio_splitter/pod.yaml`](audio_splitter/pod.yaml)) as needed.
+Review and edit [`audio_splitter/etl_spec.yaml`](audio_splitter/etl_spec.yaml) as needed.
 
 ```bash
-ais etl init spec --from-file audio_splitter/etl_spec.yaml
+ais etl init -f audio_splitter/etl_spec.yaml
 ```
 
 ### Audio Manager ETL
 
-Review and edit the configuration ([`audio_manager/pod.yaml`](audio_manager/pod.yaml)), ensuring settings match your environment.
+Review and edit [`audio_manager/etl_spec.yaml`](audio_manager/etl_spec.yaml), ensuring settings match your environment.
 
 ```bash
-ais etl init spec --from-file audio_splitter/etl_spec.yaml
+ais etl init -f audio_manager/etl_spec.yaml
 ```
 
 Ensure the manifest file is accessible by the Audio Manager.

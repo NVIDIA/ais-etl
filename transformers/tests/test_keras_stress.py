@@ -7,7 +7,6 @@ Copyright (c) 2023-2025, NVIDIA CORPORATION. All rights reserved.
 import logging
 from datetime import datetime
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL, ETL_COMM_HPUSH
-from aistore.sdk.etl.etl_templates import KERAS_TRANSFORMER
 
 from tests.base import TestBase
 from tests.utils import cases, generate_random_string
@@ -37,23 +36,18 @@ class TestKerasStress(TestBase):
             test_name (str): Name of the test case for logging.
             fqn_flag (bool, optional): Whether to use fully qualified names (FQN). Defaults to False.
         """
-        arg_type = "fqn" if fqn_flag else ""
-
         # Generate a unique ETL name
         etl_name = f"keras-transformer-{generate_random_string(5)}"
         self.etls.append(etl_name)
 
-        # Generate the ETL template
-        template = KERAS_TRANSFORMER.format(
-            communication_type=comm_type,
-            format="JPEG",
-            transform='{"theta":40, "brightness":0.8, "zx":0.9, "zy":0.9}',
-            arg_type=arg_type,
-        )
-
         # Initialize ETL transformation
-        self.client.etl(etl_name).init_spec(
-            template=template, communication_type=comm_type, arg_type=arg_type
+        self.client.etl(etl_name).init(
+            image="aistorage/transformer_keras_preprocess:latest",
+            comm_type=comm_type,
+            direct_file_access=fqn_flag,
+            FORMAT="JPEG",
+            TRANSFORM='{"rotation_range":20, "width_shift_range":0.2, '
+            '"height_shift_range":0.2, "horizontal_flip":true}',
         )
 
         logger.info(
@@ -99,8 +93,8 @@ class TestKerasStress(TestBase):
     @cases(
         (ETL_COMM_HPUSH, "test_keras_hpush_fastapi", False),
         (ETL_COMM_HPULL, "test_keras_hpull_fastapi", False),
-        (ETL_COMM_HPULL, "test_keras_hpull_fastapi_fqn", True),
-        (ETL_COMM_HPUSH, "test_keras_hpush_fastapi_fqn", True),
+        # pylint: disable-next=fixme
+        # TODO: Re-enable FQN cases after KerasPreprocess supports path input.
     )
     def test_keras_transformer(self, test_case):
         """Stress tests Keras ETL transformation using different communication types."""

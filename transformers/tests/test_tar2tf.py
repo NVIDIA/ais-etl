@@ -14,12 +14,10 @@ from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
 from aistore.sdk.etl.etl_const import ETL_COMM_HPULL
-from aistore.sdk.etl.etl_templates import TAR2TF
 from aistore.sdk.etl import ETLConfig
 
 from tests.base import TestBase
 from tests.utils import (
-    format_image_tag_for_git_test_mode,
     cases,
     generate_random_string,
 )
@@ -53,20 +51,17 @@ class TestTar2TFTransformer(TestBase):
         Args:
             spec (dict, optional): JSON spec for transformations. Defaults to None.
         """
-        template = TAR2TF.format(
-            communication_type=ETL_COMM_HPULL,
-            arg="-spec" if spec else "",
-            val=json.dumps(spec) if spec else "",
-        )
-
-        if self.git_test_mode == "true":
-            template = format_image_tag_for_git_test_mode(template, "tar2tf")
+        tag = "test" if self.git_test_mode == "true" else "latest"
+        image = f"aistorage/transformer_tar2tf:{tag}"
+        command = ["./tar2tf", "-l", "0.0.0.0", "-p", "8000"]
+        if spec:
+            command.extend(["-spec", json.dumps(spec)])
 
         # Initialize ETL transformation
         etl_name = f"tar2tf-{generate_random_string(5)}"
         self.etls.append(etl_name)
-        self.client.etl(etl_name).init_spec(
-            communication_type=ETL_COMM_HPULL, template=template
+        self.client.etl(etl_name).init(
+            image=image, command=command, comm_type=ETL_COMM_HPULL
         )
 
         # Retrieve transformed TFRecord bytes

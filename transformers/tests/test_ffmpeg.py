@@ -120,22 +120,20 @@ def test_ffmpeg_transformer(
 ) -> None:
     """
     Validate the Python-based FFmpeg ETL transformer.
-    When FQN is enabled, ETL_DIRECT_FQN is set so ffmpeg reads directly from disk.
+    When FQN is enabled, ffmpeg reads directly from disk.
     """
     # Upload inputs
     for filename, path in local_audio_files.items():
         test_bck.object(filename).get_writer().put_file(str(path))
 
     # Build and initialize ETL
-    extra_env = {"ETL_DIRECT_FQN": "true"} if use_fqn else {}
     etl_name = etl_factory(
         tag="ffmpeg",
         server_type=server_type,
         comm_type=comm_type,
-        arg_type="fqn" if use_fqn else "",
+        direct_file_access=use_fqn,
         AR="16000",
         AC="1",
-        **extra_env,
     )
     logger.info(
         "Initialized FFmpeg ETL '%s' (server=%s, comm=%s, fqn=%s)",
@@ -170,16 +168,14 @@ def test_ffmpeg_go_transformer(
         test_bck.object(filename).get_writer().put_file(str(path))
 
     # Build and initialize ETL
-    extra_env = {"ETL_DIRECT_FQN": "true"} if use_fqn else {}
     etl_name = etl_factory(
         tag="ffmpeg-go",
         server_type="go-http",
         comm_type=comm_type,
-        arg_type="fqn" if use_fqn else "",
+        direct_file_access=use_fqn,
         direct_put=True,
         AR="16000",
         AC="1",
-        **extra_env,
     )
     logger.info(
         "Initialized Go FFmpeg ETL '%s' (comm=%s, fqn=%s)",
@@ -227,16 +223,14 @@ def test_ffmpeg_stress(
         arg="fqn" if use_fqn else "",
         direct=direct_put,
     )
-    extra_env = {"ETL_DIRECT_FQN": "true"} if use_fqn else {}
     etl_name = etl_factory(
         tag="ffmpeg",
         server_type=server_type,
         comm_type=comm_type,
-        arg_type="fqn" if use_fqn else "",
+        direct_file_access=use_fqn,
         direct_put=direct_put,
         AR="16000",
         AC="1",
-        **extra_env,
     )
 
     # 2) Run transform job
@@ -305,16 +299,14 @@ def test_go_ffmpeg_stress(
         direct=direct_put,
     )
 
-    extra_env = {"ETL_DIRECT_FQN": "true"} if use_fqn else {}
     etl_name = etl_factory(
         tag="ffmpeg-go",
         server_type="go-http",
         comm_type=comm_type,
-        arg_type="fqn" if use_fqn else "",
+        direct_file_access=use_fqn,
         direct_put=direct_put,
         AR="16000",
         AC="1",
-        **extra_env,
     )
 
     # 2) Run transform job

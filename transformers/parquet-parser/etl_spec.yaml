@@ -5,11 +5,11 @@ runtime:
   env:
   - name: OUTPUT_FORMAT
     value: "json"  # Default format: json, csv, txt, text
-                   # Can be overridden with --etl-args for inline transforms
+                   # Can be overridden with --args for inline transforms
 
 communication: hpush://
 
 init_timeout: 5m
 obj_timeout: 1m
 
-support_direct_put: true 
+support_direct_put: true

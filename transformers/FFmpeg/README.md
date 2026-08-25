@@ -7,23 +7,23 @@ To transform your audio files using this ETL, follow these steps:
 ## Initialize the ETL
 
 1. **Navigate to the Directory**  
-   Go to the directory where the specification ([`pod.yaml`](pod.yaml)) file exists.
+   Go to the directory containing [`etl_spec.yaml`](etl_spec.yaml).
 
    ```bash
-   cd ais-etl/transformers/NeMo/FFmpeg/
+   cd ais-etl/transformers/FFmpeg/
    ```
 
 2. **Configure AIStore Endpoint**  
    Ensure your `AIS_ENDPOINT` is pointed to the correct AIStore cluster.
 
 3. **Edit Configuration**  
-   Edit the `AR` (Audio Rate) and `AC` (Audio Channels) values in the [`pod.yaml`](pod.yaml) file to match your desired output settings.
+   Edit the `AR` (Audio Rate) and `AC` (Audio Channels) values in [`etl_spec.yaml`](etl_spec.yaml) to match your desired output settings.
 
 4. **Initialize the ETL**  
    Run the following command to create the ETL in the AIStore cluster:
 
    ```bash
-   ais etl init spec --from-file etl_spec.yaml
+   ais etl init -f etl_spec.yaml
    ```
 
 ## Transform Data Using the ETL
@@ -83,7 +83,7 @@ This command transforms all data in the `<source-bucket>` (optionally within the
 
 For best performance with large audio files, enable **direct file access** so that FFmpeg reads directly from the target’s mountpath instead of receiving bytes over the network:
 
-Set `ETL_DIRECT_FQN=true` in the `etl_spec.yaml` environment variables (already enabled by default in the provided spec). This requires `argument: fqn` to be set as well.
+Set `ETL_DIRECT_FQN=true` in the `etl_spec.yaml` environment variables (already enabled by default in the provided spec).
 
 With direct file access:
 - The target passes the local file path to the ETL pod

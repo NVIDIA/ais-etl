@@ -6,7 +6,6 @@ Supports both individual images and tar/webdataset archives.
 
 Environment:
   FORMAT: Output image format (e.g., 'jpg', 'png')
-  ARG_TYPE: Type of argument passed ('fqn' for file path or empty for URL)
   AIS_TARGET_URL: URL of the AIS target
 
 Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
@@ -46,7 +45,6 @@ class FaceDetection(FastAPIServer):
 
         # Load environment variables
         self.format = os.environ.get("FORMAT", "jpg")
-        self.arg_type = os.environ.get("ARG_TYPE", "")
         self.host_target = os.environ.get("AIS_TARGET_URL")
 
         # Load the face detection model
@@ -175,6 +173,8 @@ class FaceDetection(FastAPIServer):
         Returns:
             Processed image data with detected faces marked.
         """
+        # pylint: disable-next=fixme
+        # TODO: Support FQN input by opening the path before processing it as bytes.
         if self._is_tar_file(path):
             return self._transform_tar(data)
         return self._transform_image(data)

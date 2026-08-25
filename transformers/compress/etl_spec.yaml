@@ -10,7 +10,7 @@ runtime:
   # For more details, see: https://github.com/NVIDIA/ais-etl/blob/main/transformers/compress/README.md
   env:
     - name: COMPRESS_OPTIONS
-      value: ${COMPRESS_OPTIONS:-"{}"}
+      value: '{}'
 
 # Communication protocol: hpull://, hpush://, or ws://
 # See https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#communication-mechanisms
@@ -18,7 +18,7 @@ communication: hpull://
 
 # --- Optional Fields Below ---
 
-init_timeout: 5m   
-obj_timeout: 45s  
+init_timeout: 5m
+obj_timeout: 45s
 
-support_direct_put: true 
+support_direct_put: true

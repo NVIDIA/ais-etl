@@ -24,35 +24,23 @@ The following sections demonstrate usage of the `Compress` transformer using the
 
 ### Initialization w/ AIStore CLI
 
-The following demonstrates how to initialize the `Compress` transformer w/ default parameters using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md):
+Initialize the `Compress` transformer with its runtime specification:
 
 ```bash
 cd ais-etl/transformers/compress
 
-# Export Communication Mechanism as Environment Variable
-export COMMUNICATION_TYPE = 'hpull://'
-# Export COMPRESS_OPTIONS as Environment Variable
-export COMPRESS_OPTIONS = '{}'
-# Substitute Environment Variables in Pod Spec
-eval "echo \"$(cat pod.yaml)\"" > gzip_compresssion_pod_config.yaml 
 # Initialize Default Compression ETL
-ais etl init spec --name 'gzip-compression-etl' --from-file './gzip_compression_pod_config.yaml'
+ais etl init -f etl_spec.yaml --name gzip-compression-etl
 ```
 
-The following demonstrates how to initialize the `Compress` transformer w/ parameter specifications using the [AIStore CLI](https://github.com/NVIDIA/aistore/blob/main/docs/cli.md):
+To configure a different operation, update `COMPRESS_OPTIONS` in `etl_spec.yaml` before initialization. For example:
 
 ```bash
 cd ais-etl/transformers/compress
 
-# Export Communication Mechanism as Environment Variable
-export COMMUNICATION_TYPE = 'hpull://'
-# Export COMPRESS_OPTIONS as Environment Variable
-export COMPRESS_OPTIONS = '{"mode": "decompress", "compression": "bz2"}'
-
-# Substitute Environment Variables in Pod Spec
-eval "echo \"$(cat pod.yaml)\"" > bz2_decompresssion_pod_config.yaml 
-# Initialize Decompression ETL
-ais etl init spec --name 'bz2-decompression-etl' --from-file './bz2_decompression_pod_config.yaml'
+# Set runtime.env[COMPRESS_OPTIONS] to:
+# {"mode": "decompress", "compression": "bz2"}
+ais etl init -f etl_spec.yaml --name bz2-decompression-etl
 ```
 
 ### Initialization w/ AIStore Python SDK
@@ -61,52 +49,40 @@ The following demonstrates how to initialize the `Compress` transformer with w/ 
 
 ```python
 import json
+import os
 
 from aistore.sdk.client import Client
-# Import Compress YAML Specification
-from aistore.sdk.etl_templates import COMPRESS
-# Import Communication Mechanism
-from aistore.sdk.etl_const import ETL_COMM_HPULL
 
 AIS_ENDPOINT = os.environ.get("AIS_ENDPOINT")
 client = Client(AIS_ENDPOINT)
 
-compress_options = json.dumps('{}')
-
-# Format Template w/ Communication Mechanism & Default Server Arguments
-compress_template = COMPRESS.format(
-    communication_mechanism=ETL_COMM_PULL,
-    compress_options=compress_options,
-    command=["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--workers", "6", "--no-access-log"]
-)
-
 # Initialize Default Compress ETL
-compress_template = client.etl("gzip-compression-etl").init_spec(template=compress_template, communication_type=ETL_COMM_HPULL)
+client.etl("gzip-compression-etl").init(
+    image="aistorage/transformer_compress:latest",
+    comm_type="hpull",
+    COMPRESS_OPTIONS=json.dumps({}),
+)
 ```
 
 The following demonstrates how to initialize the `Compress` transformer w/ parameter specifications via the [AIStore Python SDK](https://github.com/NVIDIA/aistore/blob/main/python/aistore/sdk/README.md):
 
 ```python
+import json
+import os
+
 from aistore.sdk.client import Client
-# Import Compress YAML Specification
-from aistore.sdk.etl_templates import COMPRESS
-# Import Communication Mechanism
-from aistore.sdk.etl_const import ETL_COMM_HPULL
 
 AIS_ENDPOINT = os.environ.get("AIS_ENDPOINT")
 client = Client(AIS_ENDPOINT)
 
 compress_options = json.dumps({"mode": "decompress", "compression": "bz2"})
 
-# Format Template w/ Communication Mechanism & Additional Server Arguments
-decompress_template = COMPRESS.format(
-    communication_mechanism=ETL_COMM_HPULL,
-    compress_options=compress_options,
-    command=["uvicorn", "fastapi_server:fastapi_app", "--host", "0.0.0.0", "--workers", "6", "--no-access-log"]
+# Initialize ETL
+client.etl("bz2-decompression-etl").init(
+    image="aistorage/transformer_compress:latest",
+    comm_type="hpull",
+    COMPRESS_OPTIONS=compress_options,
 )
-
-# Initialize ETLs
-decompress_template = client.etl("bz2-decompression-etl").init_spec(template=decompress_template, communication_type=ETL_COMM_HPULL)
 ```
 
 ## Server Configuration
@@ -123,7 +99,7 @@ The transformer runs as a FastAPI server with the following default configuratio
   - Ping Interval: 0
   - Ping Timeout: 86400s
 
-These settings can be overridden in the pod.yaml or etl_spec.yaml configuration.
+These settings can be overridden in `etl_spec.yaml`.
 
 ## References
 
