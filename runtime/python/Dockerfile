@@ -2,7 +2,13 @@ ARG PYTHON_VERSION
 
 FROM docker.io/library/python:${PYTHON_VERSION}-alpine
 
-RUN pip3 install --upgrade aistore[etl]>=1.24.0
+# aistore 1.26.0 pins xxhash==3.5.0, which has no cp314 wheels, so pip compiles
+# it from source
+# TODO: remove BUILD_DEPS once the next aistore release ships with xxhash>=4.0.1
+ARG BUILD_DEPS=""
+RUN if [ -n "$BUILD_DEPS" ]; then apk add --no-cache --virtual .build-deps $BUILD_DEPS; fi \
+ && pip3 install --upgrade "aistore[etl]>=1.24.0" \
+ && if [ -n "$BUILD_DEPS" ]; then apk del .build-deps; fi
 
 # Set working directory
 RUN mkdir /code
