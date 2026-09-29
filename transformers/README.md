@@ -29,9 +29,12 @@ The following sections demonstrate initializing ETLs on AIStore using the provid
 
 #### Pre-Requisites
 
-[ETLs](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md) on AIStore requires the installation and use of Kubernetes.
+AIStore ETL requires:
 
-> For more information on AIStore Kubernetes deployment options, refer [here](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#kubernetes-deployment).
+- Kubernetes
+- An ETL-enabled `aisnode` build
+
+See [Deploying AIStore for ETLs](../README.md#deploying-aistore-for-etls) before using these transformers.
 
 ### Usage w/ AIStore CLI
 

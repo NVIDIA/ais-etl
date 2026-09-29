@@ -3,6 +3,8 @@
 `aistore/runtime_python` is the *default* Python-based ETL runtime container for AIStore.  
 Use it with the Python SDK’s new [`init_class` decorator](https://github.com/NVIDIA/aistore/blob/main/docs/etl.md#using-init_class-python-sdk-only) to spin up your ETL servers—no need to build or maintain a custom Docker image.
 
+AIStore must run on Kubernetes with an ETL-enabled `aisnode` build; see [Deploying AIStore for ETLs](../README.md#deploying-aistore-for-etls).
+
 ---
 
 ## Why this runtime?
