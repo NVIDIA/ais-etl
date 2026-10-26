@@ -12,7 +12,7 @@ AIStore must run on Kubernetes with an ETL-enabled `aisnode` build; see [Deployi
 - **Plug-and-play**  
   Launch pure-Python ETLs without writing Dockerfiles or building images.  
 - **Supported versions**  
-  Python 3.9, 3.10, 3.11, 3.12, 3.13  
+  Python 3.10, 3.11, 3.12, 3.13, 3.14, 3.15
 - **Supported extensions**  
   - Install extra PyPI packages via `PACKAGES`  
   - Install OS packages (e.g. `ffmpeg`, `openssl`) via `OS_PACKAGES`
