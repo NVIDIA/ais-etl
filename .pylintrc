@@ -1,0 +1,3 @@
+[MESSAGES CONTROL]
+# The SDK requires either transform or transform_stream, not both.
+disable=abstract-method
