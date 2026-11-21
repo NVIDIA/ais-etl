@@ -171,7 +171,6 @@ func processChunkJSON(table arrow.Table, startRow, endRow, numCols int) ([]byte,
 func processChunkCSV(table arrow.Table, startRow, endRow, numCols int) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
-	defer writer.Flush()
 
 	for row := startRow; row < endRow; row++ {
 		record := make([]string, numCols)
@@ -188,6 +187,11 @@ func processChunkCSV(table arrow.Table, startRow, endRow, numCols int) ([]byte, 
 		if err := writer.Write(record); err != nil {
 			return nil, fmt.Errorf("failed to write CSV row %d: %w", row, err)
 		}
+	}
+	// Flush before reading buf: csv.Writer buffers up to 4 KiB internally.
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return nil, fmt.Errorf("failed to flush CSV chunk: %w", err)
 	}
 	return buf.Bytes(), nil
 }
