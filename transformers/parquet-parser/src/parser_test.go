@@ -192,3 +192,46 @@ func TestFormatConstants(t *testing.T) {
 		})
 	}
 }
+
+// TestConvertTableConcurrentCSVKeepsAllRows checks that tables above
+// ConcurrentThreshold, which are split into chunks, still produce every row.
+func TestConvertTableConcurrentCSVKeepsAllRows(t *testing.T) {
+	pool := memory.NewGoAllocator()
+	schema := arrow.NewSchema([]arrow.Field{
+		{Name: "id", Type: arrow.PrimitiveTypes.Int64},
+		{Name: "text", Type: arrow.BinaryTypes.String},
+	}, nil)
+
+	const numRows = ConcurrentThreshold + 500
+	idBuilder := array.NewInt64Builder(pool)
+	textBuilder := array.NewStringBuilder(pool)
+	defer idBuilder.Release()
+	defer textBuilder.Release()
+	for i := 0; i < numRows; i++ {
+		idBuilder.Append(int64(i))
+		textBuilder.Append("some text value for the row")
+	}
+	idArray := idBuilder.NewArray()
+	textArray := textBuilder.NewArray()
+	defer idArray.Release()
+	defer textArray.Release()
+
+	columns := []arrow.Column{
+		*arrow.NewColumn(schema.Field(0), arrow.NewChunked(idArray.DataType(), []arrow.Array{idArray})),
+		*arrow.NewColumn(schema.Field(1), arrow.NewChunked(textArray.DataType(), []arrow.Array{textArray})),
+	}
+	table := array.NewTable(schema, columns, numRows)
+	defer table.Release()
+
+	for _, format := range []string{FormatCSV, FormatJSON, FormatTXT} {
+		out, err := convertTableConcurrent(table, format)
+		if err != nil {
+			t.Fatalf("%s: convertTableConcurrent failed: %v", format, err)
+		}
+		lines := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+		header := map[string]int{FormatCSV: 1, FormatJSON: 0, FormatTXT: 2}[format]
+		if got := len(lines) - header; got != numRows {
+			t.Errorf("%s: got %d data rows, want %d", format, got, numRows)
+		}
+	}
+}
